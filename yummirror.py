@@ -249,7 +249,7 @@ for arch in repomd_file.keys() :
         if ex.errno != errno.EXDEV :
             print "OSError: %s" % ex
             sys.exit(1)
-        shutil.move( release_file , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
+        shutil.move( repomd_file[arch] , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
 print """
 Mirroring version %s
