@@ -6,11 +6,21 @@ scheme = "http"
 server = "ftp.es.debian.org"
 base_path = "debian"
 destdir = "/home/jpalacios/repomirror"
-destdir = "/shares/internal/PUBLIC/mirrors"
+destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
 codename = "lenny"
 architectures = [ "i386" , "amd64" ]
 components = [ "main" , "contrib" ]
+#
+server = "security.debian.org"
+base_path = ""
+codename = "lenny/updates"
+components = [ "main" ]
+#
+#server = "volatile.debian.org"
+#base_path = "debian-volatile"
+#codename = "lenny/volatile"
+#components = [ "main" ]
 #
 sections = []
 priorities = []
@@ -26,6 +36,7 @@ import urllib2
 
 import os , sys
 import tempfile
+import errno , shutil
 
 extensions = {}
 
@@ -128,20 +139,25 @@ def show_error( str , error=True ) :
         print "WARNING : %s" % str
 
 
+# NOTE : If base_path is empty (security), the produced URL has '//' and download fails
+#        All the stuff with urljoin is to avoid that, taking care of specify the trailing '/'
+#        in cases where we know target is a directory
+
 # This gets built to the typical path on source.list
-repo_url = "%s://%s/%s" % ( scheme , server , base_path )
+repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-base_url = "%s/dists/%s" % ( repo_url , codename )
+base_url = urllib2.urlparse.urljoin( repo_url , "dists/%s/" % codename )
 
-suite_path = os.path.join( destdir , codename )
+suite_path = os.path.join( os.path.join( destdir , "dists" ) , codename )
 
 pool_path = os.path.join( destdir , "pool" )
 
 local_release = os.path.join( suite_path , "Release" )
 
 
+#WD# FIXME : If no pgp, default should be to download Release every time
 #WD#try :
-#WD#    release_pgp_file = downloadRawFile( "%s/Release.gpg" % base_url )
+#WD#    release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release.gpg" )
 #WD#except urllib2.URLError , ex :
 #WD#    print "Exception : %s" % ex
 #WD#    sys.exit(255)
@@ -167,7 +183,7 @@ if os.path.isfile( local_release ) :
 if not os.path.isfile( local_release ) :
 
     try :
-        release_file = downloadRawFile( "%s/Release" % base_url )
+        release_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release" ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -196,7 +212,9 @@ if release['Suite'].lower() == codename.lower() :
     os.unlink( release_file )
     sys.exit(1)
 
-release_comps = release['Components'].split()
+# NOTE : security and volatile repositories prepend a string to the actual component name
+release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
+
 for comp in components :
     if comp not in release_comps :
         show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
@@ -214,7 +232,13 @@ if not os.path.exists( suite_path ) :
     os.mkdir( suite_path )
 
 if not os.path.exists( local_release ) :
-    os.rename( release_file , local_release )
+    try :
+        os.rename( release_file , local_release )
+    except OSError , ex :
+        if ex.errno != errno.EXDEV :
+            print "OSError: %s" % ex
+            sys.exit(1)
+        shutil.move( release_file , local_release )
 
 for comp in components :
     if not os.path.exists( os.path.join( suite_path , comp ) ) :
@@ -232,6 +256,8 @@ for comp in components :
     if not os.path.exists( pool_com_path ) :
         os.mkdir( pool_com_path )
 
+if not release.has_key( 'Version' ) :
+    release['Version'] = "undef"
 print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
 %(Origin)s %(Suite)s , %(Date)s
@@ -290,7 +316,7 @@ for comp in components :
             for ( extension , read_handler ) in extensions.iteritems() :
 
                 localname = os.path.join( suite_path , "%s/Packages%s" % ( packages_path , extension ) )
-                url = "%s/%s/Packages%s" % ( base_url , packages_path , extension )
+                url = urllib2.urlparse.urljoin( base_url , "%s/Packages%s" % ( packages_path , extension ) )
 
                 if downloadRawFile( url , localname ) :
                     #
@@ -393,6 +419,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not downloadRawFile ( "%s/%s" % ( repo_url , pkg['Filename'] ) , destname ) :
+    if not downloadRawFile ( urllib2.urlparse.urljoin( repo_url , pkg['Filename'] ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
