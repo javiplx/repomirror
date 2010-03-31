@@ -19,17 +19,7 @@ sections = []
 priorities = []
 tags = []
 
-# FIXME : Move the listing of secions, prios and so into a separate program
-"""
-From the default importing values, we get
-
-All sects ['utils', 'games', 'net', 'x11', 'perl', 'text', 'libdevel', 'libs', 'graphics', 'doc', 'devel', 'kde', 'sound', 'math', 'science', 'editors', 'tex', 'mail', 'admin', 'gnome', 'misc', 'hamradio', 'web', 'python', 'interpreters', 'otherosfs', 'comm', 'electronics', 'news', 'shells', 'oldlibs', 'embedded', 'contrib/net', 'contrib/games', 'contrib/sound', 'contrib/x11', 'contrib/otherosfs', 'contrib/text', 'contrib/doc', 'contrib/devel', 'contrib/libs', 'contrib/utils', 'contrib/electronics', 'contrib/graphics', 'contrib/misc', 'contrib/science', 'contrib/perl', 'contrib/python', 'contrib/tex', 'contrib/kde', 'contrib/admin', 'contrib/libdevel', 'contrib/editors', 'contrib/mail', 'contrib/math', 'contrib/web']
-All prios ['optional', 'extra', 'required', 'important', 'standard']
-All tags __INFINITE__
-
-After purging the component name, sections get as
-All sects ['utils', 'games', 'net', 'x11', 'perl', 'text', 'libdevel', 'libs', 'graphics', 'doc', 'devel', 'kde', 'sound', 'math', 'science', 'editors', 'tex', 'mail', 'admin', 'gnome', 'misc', 'hamradio', 'web', 'python', 'interpreters', 'otherosfs', 'comm', 'electronics', 'news', 'shells', 'oldlibs', 'embedded']
-"""
+# FIXME : Create a separate program to list all the sections, pririties and tags
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
@@ -88,6 +78,40 @@ def calc_md5(filename, bsize=128):
     f.close()
     return _md5.hexdigest()
 
+def gpg_error( signature , file , full_verification=False ) :
+
+    if full_verification :
+        return _gpg_error( signature , file )
+
+    # FIXME : Use a temporary file instead of a fixed name one
+    signature_file = "/tmp/signa"
+    fd = open( signature )
+    sigfd = open( signature_file , 'w' )
+    line = fd.readline()
+    while line :
+        sigfd.write( line )
+        if line[:-1] == "-----END PGP SIGNATURE-----" :
+            sigfd.close()
+            if not _gpg_error( signature_file , file ) :
+                fd.close()
+                return False
+            sigfd = open( signature_file , 'w' )
+        line = fd.readline()
+    else :
+        sigfd.close()
+    fd.close()
+    return "All signatures failed"
+
+def _gpg_error( signature , file ) :
+    gpgerror = "Not verified"
+    try :
+        result = GnuPGInterface.GnuPG().run( [ "--verify", signature , file ] )
+        result.wait()
+        gpgerror = False
+    except IOError , ex :
+        gpgerror = "Bad signatute : %s" % ex
+    return gpgerror
+
 def show_error( str , error=True ) :
     if error :
         print "ERROR : %s" % str
@@ -100,11 +124,15 @@ repo_url = "%s://%s/%s" % ( scheme , server , base_path )
 
 base_url = "%s/dists/%s" % ( repo_url , codename )
 
-# FIXME : Verify gpg signature. Easier if file gets downloaded.
-#         Verify first aginst local copy. If OK, no changes and exit
+suite_path = os.path.join( destdir , codename )
+
+pool_path = os.path.join( destdir , "pool" )
+
+local_release = os.path.join( suite_path , "Release" )
+
 
 try :
-    release_file = downloadRawFile( "%s/Release" % base_url )
+    release_pgp_file = downloadRawFile( "%s/Release.gpg" % base_url )
 except urllib2.URLError , ex :
     print "Exception : %s" % ex
     sys.exit(255)
@@ -112,11 +140,52 @@ except urllib2.HTTPError , ex :
     print "Exception : %s" % ex
     sys.exit(255)
 
+if not release_pgp_file :
+    show_error( "Release.gpg file for suite '%s' is not found." % ( codename ) )
+    sys.exit(255)
+
+gpgerrstr = "Not verified"
+
+if os.path.isfile( local_release ) :
+    gpgerrstr = gpg_error( release_pgp_file , local_release )
+    if gpgerrstr :
+        show_error( gpgerrstr , False )
+        os.unlink( local_release )
+    else :
+        # FIXME : If we consider that our mirror is complete, it is safe to exit here
+        release_file = local_release
+        os.unlink( release_pgp_file )
+        gpgerrstr = False
+
+if gpgerrstr :
+
+    try :
+        release_file = downloadRawFile( "%s/Release" % base_url )
+    except urllib2.URLError , ex :
+        print "Exception : %s" % ex
+        sys.exit(255)
+    except urllib2.HTTPError , ex :
+        print "Exception : %s" % ex
+        sys.exit(255)
+
+    if not release_file :
+        show_error( "Release file for suite '%s' is not found." % ( codename ) )
+        os.unlink( release_pgp_file )
+        sys.exit(255)
+
+    errstr = gpg_error( release_pgp_file , release_file )
+    os.unlink( release_pgp_file )
+    if errstr :
+        show_error( errstr )
+        os.unlink( release_file )
+        sys.exit(255)
+
+
 release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
 # FIXME : Why not check also against release['Codename'] ??
 if release['Suite'].lower() == codename.lower() :
-    show_error( "You have supplied suite '%s'. Please use codename '%s' instead\n" % ( codename, release['Codename'] ) )
+    show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( codename, release['Codename'] ) )
     os.unlink( release_file )
     sys.exit(1)
 
@@ -132,35 +201,20 @@ for arch in architectures :
         show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
         sys.exit(1)
 
-try :
-    release_pgp_file = downloadRawFile( "%s/Release.gpg" % base_url )
-except urllib2.URLError , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
-except urllib2.HTTPError , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
+# After verify all the mirroring parameters, it is safe create directories and relocate downloaded Release file
 
-#signature = GnuPGInterface.GnuPG()
-try :
-    #result = signature.run( [ "--verify", release_pgp_file , release_file ] )
-    result = GnuPGInterface.GnuPG().run( [ "--verify", release_pgp_file , release_file ] )
-    result.wait()
-except IOError , ex :
-    print "Verification exception : IOError : %s" % ex
-#JaviP#    os.unlink( release_pgp_file )
-#JaviP#    os.unlink( release_file )
-#JaviP#    sys.exit(2)
-os.unlink( release_pgp_file )
-
-# NOTE : We have used a temporary name for Release file to avoid creation of directories with suite names
-#        We are also sure that components and architectures are right ones, so it is also safe create their directories later
-suite_path = os.path.join( destdir , codename )
 if not os.path.exists( suite_path ) :
     os.mkdir( suite_path )
-os.rename( release_file , os.path.join( suite_path , "Release" ) )
 #
-pool_path = os.path.join( destdir , "pool" )
+for comp in components :
+    if not os.path.exists( os.path.join( suite_path , comp ) ) :
+        os.mkdir( os.path.join( suite_path , comp ) )
+    for arch in architectures :
+        packages_path = os.path.join( comp , "binary-%s" % arch )
+        if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
+            os.mkdir( os.path.join( suite_path , packages_path ) )
+
+
 if not os.path.exists( pool_path ) :
     os.mkdir( pool_path )
 #
@@ -169,12 +223,15 @@ for comp in components :
     if not os.path.exists( pool_com_path ) :
         os.mkdir( pool_com_path )
 
+if gpgerrstr :
+    os.rename( release_file , local_release )
 
 print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
 %(Origin)s %(Suite)s , %(Date)s
 """ % release
 print "Components : %s\nArchitectures : %s\n" % ( " ".join(components) , " ".join(architectures) )
+
 
 download_pkgs = {}
 download_size = 0
@@ -185,15 +242,7 @@ release_tags = []
 
 for comp in components :
 
-    #packages_path = comp
-    if not os.path.exists( os.path.join( suite_path , comp ) ) :
-        os.mkdir( os.path.join( suite_path , comp ) )
-
     for arch in architectures :
-
-        packages_path = "%s/binary-%s" % ( comp , arch )
-        if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-            os.mkdir( os.path.join( suite_path , packages_path ) )
 
         print "Scanning %s / %s" % ( comp , arch )
 
@@ -221,10 +270,11 @@ for comp in components :
                             os.unlink( localname )
                         break
                 else :
-                    show_error( "Checksum for file '%s/Packages%s' not found, exiting." % ( packages_path , extension ) , True )
+                    show_error( "Checksum for file '%s/Packages%s' not found, go to next format." % ( packages_path , extension ) , True )
                     continue
 
                 if os.path.isfile( localname ) :
+                    # FIXME : If we consider that our mirror is complete, we should break one more loop, for the next component-architecture pair
                     show_error( "Local copy of '%s/Packages%s' is up-to-date." % ( packages_path , extension ) , False )
                     break
         else :
@@ -248,6 +298,7 @@ for comp in components :
                             error = md5_error( localname , item )
                             if error :
                                 show_error( error , False )
+                                os.unlink( localname )
                                 sys.exit(2)
                             break
                     else :
@@ -306,6 +357,7 @@ for comp in components :
 
         print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
         fd.close()
+
 
 # print "All sects",release_sections
 # print "All prios",release_priorities

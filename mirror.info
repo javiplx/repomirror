@@ -1,28 +1,35 @@
 
+Typical sequence
+
+1 - Verify local file ; remove if failed
+2 - If local file does not exists , download
+2.1 - Verify downloaded file (might be temp) ; remove and exit if failed [continue instead of exit if multichoice]
+2.2 - If downloaded as temp, rename
+3 - [ The name of the local file must be returned if multichoice]
+
+
 0) Read configuration (currently infile)
    two sections :  common and release specific (codename at least)
 
 1) Check for destination directory
    exit if not found
 
-NOTE : Revisitar este primer trozo
-2) Download Release file and verify options [ actually pre-3 ]
+2) Verify current mainfile, downloading Release.gpg
+   remove if failing (finish if OK?)
+2.1) Download fresh release file (either missing or failed-verify)
+2.2) Verify signature
+   exit if failing (this is last resort verification)
 
 3) Verify options (mainly codename) [ This breaks whatever logic you define ]
    exit if fail
    (re)create tree if success
    issue message (if non quiet)
-
-4) gpgverify _existing_ Release
-   if fails, copy downloaded
-   if succeed, exit (unless forced)
-NOTE : This "simple" logic does not verify the just downloaded one !!!
-4 is verify Release, exiting if succeed, then copy downloaded and verify
+3.1) Move Release file into tree (if fresh downloaded)
 
 5) Get list of files to download
 
   5.1) Verify md5 of Packages*
-       if succeed, return [is a continue in this case]
+       remove if failed (continue with next if OK?)
   5.2) DownloadReplace & verify Packages*
        if fails, _exit_ [raise exception??], and remove localcopy
    
