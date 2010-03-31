@@ -8,18 +8,19 @@ base_path = "debian"
 destdir = "/home/jpalacios/repomirror"
 destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
-codename = "lenny"
+# This is usually refered as 'codename' in debian
+version = "lenny"
 architectures = [ "i386" , "amd64" ]
 components = [ "main" , "contrib" ]
 #
 server = "security.debian.org"
 base_path = ""
-codename = "lenny/updates"
+version = "lenny/updates"
 components = [ "main" ]
 #
 #server = "volatile.debian.org"
 #base_path = "debian-volatile"
-#codename = "lenny/volatile"
+#version = "lenny/volatile"
 #components = [ "main" ]
 #
 sections = []
@@ -146,9 +147,9 @@ def show_error( str , error=True ) :
 # This gets built to the typical path on source.list
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-base_url = urllib2.urlparse.urljoin( repo_url , "dists/%s/" % codename )
+base_url = urllib2.urlparse.urljoin( repo_url , "dists/%s/" % version )
 
-suite_path = os.path.join( os.path.join( destdir , "dists" ) , codename )
+suite_path = os.path.join( os.path.join( destdir , "dists" ) , version )
 
 pool_path = os.path.join( destdir , "pool" )
 
@@ -166,7 +167,7 @@ local_release = os.path.join( suite_path , "Release" )
 #WD#    sys.exit(255)
 #WD#
 #WD#if not release_pgp_file :
-#WD#    show_error( "Release.gpg file for suite '%s' is not found." % ( codename ) )
+#WD#    show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
 #WD#    sys.exit(255)
 
 if os.path.isfile( local_release ) :
@@ -192,7 +193,7 @@ if not os.path.isfile( local_release ) :
         sys.exit(255)
 
     if not release_file :
-        show_error( "Release file for suite '%s' is not found." % ( codename ) )
+        show_error( "Release file for suite '%s' is not found." % ( version ) )
         os.unlink( release_pgp_file )
         sys.exit(255)
 
@@ -207,8 +208,8 @@ if not os.path.isfile( local_release ) :
     
     
 # FIXME : Why not check also against release['Codename'] ??
-if release['Suite'].lower() == codename.lower() :
-    show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( codename, release['Codename'] ) )
+if release['Suite'].lower() == version.lower() :
+    show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( version, release['Codename'] ) )
     os.unlink( release_file )
     sys.exit(1)
 
