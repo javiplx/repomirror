@@ -1,0 +1,34 @@
+
+0) Read configuration (currently infile)
+   two sections :  common and release specific (codename at least)
+
+1) Check for destination directory
+   exit if not found
+
+NOTE : Revisitar este primer trozo
+2) Download Release file and verify options [ actually pre-3 ]
+
+3) Verify options (mainly codename) [ This breaks whatever logic you define ]
+   exit if fail
+   (re)create tree if success
+   issue message (if non quiet)
+
+4) gpgverify _existing_ Release
+   if fails, copy downloaded
+   if succeed, exit (unless forced)
+NOTE : This "simple" logic does not verify the just downloaded one !!!
+4 is verify Release, exiting if succeed, then copy downloaded and verify
+
+5) Get list of files to download
+
+  5.1) Verify md5 of Packages*
+       if succeed, return [is a continue in this case]
+  5.2) DownloadReplace & verify Packages*
+       if fails, _exit_ [raise exception??], and remove localcopy
+   
+6) Filter package list, with minor filters
+
+7) Download packages
+  Verify destination, and download if does not exist or fails
+
+
