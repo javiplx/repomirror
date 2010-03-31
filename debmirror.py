@@ -1,7 +1,4 @@
-
-#pgpkey = "archive-key-5.0.asc"
-import GnuPGInterface
-#import gnutls
+#!/usr/bin/python
 
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
@@ -9,11 +6,11 @@ scheme = "http"
 server = "ftp.es.debian.org"
 base_path = "debian"
 destdir = "/home/jpalacios/repomirror"
+destdir = "/shares/internal/PUBLIC/mirrors"
 
 codename = "lenny"
 architectures = [ "i386" , "amd64" ]
 components = [ "main" , "contrib" ]
-components = [ "contrib" ]
 #
 sections = []
 priorities = []
@@ -29,9 +26,21 @@ import urllib2
 
 import os , sys
 import tempfile
-import gzip , bz2
 
-extensions = { '.bz2':bz2.BZ2File , '.gz':gzip.open }
+extensions = {}
+
+try :
+    import gzip
+    extensions['.gz'] = gzip.open
+except :
+    pass
+    
+try :
+    import bz2
+    extensions['.bz2'] = bz2.BZ2File
+except :
+    pass
+
 
 def downloadRawFile ( remote , local=None ) :
     """Downloads a remote file to the local system.
@@ -131,33 +140,31 @@ pool_path = os.path.join( destdir , "pool" )
 local_release = os.path.join( suite_path , "Release" )
 
 
-try :
-    release_pgp_file = downloadRawFile( "%s/Release.gpg" % base_url )
-except urllib2.URLError , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
-except urllib2.HTTPError , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
-
-if not release_pgp_file :
-    show_error( "Release.gpg file for suite '%s' is not found." % ( codename ) )
-    sys.exit(255)
-
-gpgerrstr = "Not verified"
+#WD#try :
+#WD#    release_pgp_file = downloadRawFile( "%s/Release.gpg" % base_url )
+#WD#except urllib2.URLError , ex :
+#WD#    print "Exception : %s" % ex
+#WD#    sys.exit(255)
+#WD#except urllib2.HTTPError , ex :
+#WD#    print "Exception : %s" % ex
+#WD#    sys.exit(255)
+#WD#
+#WD#if not release_pgp_file :
+#WD#    show_error( "Release.gpg file for suite '%s' is not found." % ( codename ) )
+#WD#    sys.exit(255)
 
 if os.path.isfile( local_release ) :
-    gpgerrstr = gpg_error( release_pgp_file , local_release )
-    if gpgerrstr :
-        show_error( gpgerrstr , False )
-        os.unlink( local_release )
-    else :
-        # FIXME : If we consider that our mirror is complete, it is safe to exit here
-        release_file = local_release
-        os.unlink( release_pgp_file )
-        gpgerrstr = False
+#WD#    errstr = gpg_error( release_pgp_file , local_release )
+#WD#    if errstr :
+#WD#        show_error( errstr , False )
+#WD#        os.unlink( local_release )
+#WD#    else :
+#WD#        # FIXME : If we consider that our mirror is complete, it is safe to exit here
+        release = debian_bundle.deb822.Release( sequence=open( local_release ) )
+#WD#        os.unlink( release_pgp_file )
 
-if gpgerrstr :
+
+if not os.path.isfile( local_release ) :
 
     try :
         release_file = downloadRawFile( "%s/Release" % base_url )
@@ -173,16 +180,16 @@ if gpgerrstr :
         os.unlink( release_pgp_file )
         sys.exit(255)
 
-    errstr = gpg_error( release_pgp_file , release_file )
-    os.unlink( release_pgp_file )
-    if errstr :
-        show_error( errstr )
-        os.unlink( release_file )
-        sys.exit(255)
+#WD#    errstr = gpg_error( release_pgp_file , release_file )
+#WD#    os.unlink( release_pgp_file )
+#WD#    if errstr :
+#WD#        show_error( errstr )
+#WD#        os.unlink( release_file )
+#WD#        sys.exit(255)
 
-
-release = debian_bundle.deb822.Release( sequence=open( release_file ) )
-
+    release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+    
+    
 # FIXME : Why not check also against release['Codename'] ??
 if release['Suite'].lower() == codename.lower() :
     show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( codename, release['Codename'] ) )
@@ -201,11 +208,14 @@ for arch in architectures :
         show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
         sys.exit(1)
 
-# After verify all the mirroring parameters, it is safe create directories and relocate downloaded Release file
+# After verify all the mirroring parameters, it is safe to create directory tree
 
 if not os.path.exists( suite_path ) :
     os.mkdir( suite_path )
-#
+
+if not os.path.exists( local_release ) :
+    os.rename( release_file , local_release )
+
 for comp in components :
     if not os.path.exists( os.path.join( suite_path , comp ) ) :
         os.mkdir( os.path.join( suite_path , comp ) )
@@ -214,17 +224,13 @@ for comp in components :
         if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
             os.mkdir( os.path.join( suite_path , packages_path ) )
 
-
 if not os.path.exists( pool_path ) :
     os.mkdir( pool_path )
-#
+
 for comp in components :
     pool_com_path = os.path.join( pool_path , comp )
     if not os.path.exists( pool_com_path ) :
         os.mkdir( pool_com_path )
-
-if gpgerrstr :
-    os.rename( release_file , local_release )
 
 print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
