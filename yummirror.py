@@ -406,12 +406,12 @@ for arch in architectures :
             if _arch != "noarch" :
                 show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
         else :
-            href = pkginfo.getElementsByTagName('location')[0].getAttribute( "href" )
             pkgdict = {
+                'href':pkginfo.getElementsByTagName('location')[0].getAttribute( "href" ) ,
                 'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" ) ,
                 'md5sum':False ,
-                'destname':os.path.join( repo.packages_path(arch) , href ) ,
-                'sourcename':"%s/%s" % ( repo.metadata_path(arch) , href )
+                'destname':os.path.join( repo.packages_path(arch) , pkg['href'] ) ,
+                'sourcename':"%s/%s" % ( repo.metadata_path(arch) , pkg['href'] )
                 }
             download_pkgs[ pkg_key ] = pkgdict
             # FIXME : This might cause a ValueError exception ??
