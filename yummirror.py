@@ -178,6 +178,9 @@ class yum_repository :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
+    def packages_path ( self , arch ) :
+        return "%s/Packages" % self.metadata_path( arch )
+
 class fedora_update_repository ( yum_repository ) :
 
     def __init__ ( self , url , version ) :
@@ -191,6 +194,9 @@ class fedora_update_repository ( yum_repository ) :
 
     def metadata_path ( self ) :
         return "%s/" % arch
+
+    def packages_path ( self ) :
+        return self.metadata_path()
 
 
 # This gets built to the typical path on source.list
@@ -262,6 +268,11 @@ for arch in architectures :
 
 if not os.path.exists( suite_path ) :
     os.makedirs( suite_path )
+
+for arch in repomd_file.keys() :
+    local_packages = os.path.join( pool_path , repo.packages_path(arch) )
+    if not os.path.exists( local_packages ) :
+        os.makedirs( local_packages )
 
 # And then relocate files from temporary locations
 
@@ -396,10 +407,8 @@ for arch in architectures :
             if _arch != "noarch" :
                 show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
         else :
-            href = pkginfo.getElementsByTagName('location')[0].getAttribute( "href" )
             pkgdict = {
-                'sourcename':urllib2.urlparse.urljoin( repo.metadata_path(arch) , href ) ,
-                'destname':os.path.join( repo.metadata_path(arch) , href ) ,
+                'href':pkginfo.getElementsByTagName('location')[0].getAttribute( "href" ) ,
                 'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" ) ,
                 'md5sum':False
                 }
@@ -424,7 +433,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( pool_path , pkg['destname'] )
+    destname = os.path.join( os.path.join( pool_path , repo.packages_path(arch) ) , pkg['href'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
@@ -439,6 +448,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname )
-    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
-        show_error( "Failure downloading file '%s'" % ( os.path.basename( pkg['sourcename'] ) ) , False )
+    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname )
+    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname ) :
+        show_error( "Failure downloading file '%s'" % ( pkg['href'] ) , False )
