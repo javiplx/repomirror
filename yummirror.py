@@ -180,8 +180,8 @@ class yum_repository :
 
 class fedora_update_repository ( yum_repository ) :
 
-    def __init__ ( self , url , version , arch=None ) :
-        yum_repository.__init__( self , url , version , arch )
+    def __init__ ( self , url , version ) :
+        yum_repository.__init__( self , url , version )
 
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( repo_url , "%s/" % version )
@@ -194,10 +194,11 @@ class fedora_update_repository ( yum_repository ) :
 
 
 # This gets built to the typical path on source.list
-repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+#repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+repo_url = urllib2.urlparse.urlunsplit( ( scheme , server_upd , "%s/" % base_path_upd , None , None ) )
 
-repo = yum_repository( repo_url , version )
-#upd#repo = fedora_update_repository( repo_url_upd , version )
+#repo = yum_repository( repo_url , version )
+repo = fedora_update_repository( repo_url , version )
 
 base_url = repo.base_url()
 
