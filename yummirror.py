@@ -409,9 +409,7 @@ for arch in architectures :
             pkgdict = {
                 'href':pkginfo.getElementsByTagName('location')[0].getAttribute( "href" ) ,
                 'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" ) ,
-                'md5sum':False ,
-                'destname':os.path.join( repo.packages_path(arch) , pkg['href'] ) ,
-                'sourcename':"%s/%s" % ( repo.metadata_path(arch) , pkg['href'] )
+                'md5sum':False
                 }
             download_pkgs[ pkg_key ] = pkgdict
             # FIXME : This might cause a ValueError exception ??
@@ -434,7 +432,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( pool_path , pkg['destname'] )
+    destname = os.path.join( os.path.join( pool_path , repo.packages_path(arch) ) , pkg['href'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
@@ -449,6 +447,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname )
-    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
-        show_error( "Failure downloading file '%s'" % ( os.path.basename( pkg['sourcename'] ) ) , False )
+    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname )
+    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname ) :
+        show_error( "Failure downloading file '%s'" % ( pkg['href'] ) , False )
