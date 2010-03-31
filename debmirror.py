@@ -6,17 +6,18 @@ scheme = "http"
 server = "ftp.es.debian.org"
 base_path = "debian"
 destdir = "/home/jpalacios/repomirror"
-destdir = "/shares/internal/PUBLIC/mirrors/debian"
+#destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
 # This is usually refered as 'codename' in debian
 version = "lenny"
 architectures = [ "i386" , "amd64" ]
 components = [ "main" , "contrib" ]
+components = [ "contrib" ]
 #
-server = "security.debian.org"
-base_path = ""
-version = "lenny/updates"
-components = [ "main" ]
+#server = "security.debian.org"
+#base_path = ""
+#version = "lenny/updates"
+#components = [ "main" ]
 #
 #server = "volatile.debian.org"
 #base_path = "debian-volatile"
@@ -26,6 +27,16 @@ components = [ "main" ]
 sections = []
 priorities = []
 tags = []
+
+# Status and command line options
+repostate = "synced"
+force = True
+# FIXME : Add an ignore all verifications? (pgp+md5)
+usegpg = False
+#
+# repostate. If 'synced', the repository is complete, so checking description files could suffice
+# force. Forces processing of synced repositories
+# usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
 
 # FIXME : Create a separate program to list all the sections, pririties and tags
 
@@ -39,6 +50,13 @@ import os , sys
 import tempfile
 import errno , shutil
 
+try :
+    import GnuPGInterface
+except :
+    usegpg = False
+
+
+# FIXME : Include standard plain os.open??
 extensions = {}
 
 try :
@@ -104,23 +122,23 @@ def gpg_error( signature , file , full_verification=False ) :
     if full_verification :
         return _gpg_error( signature , file )
 
-    # FIXME : Use a temporary file instead of a fixed name one
-    signature_file = "/tmp/signa"
+    (sigfd, signature_file ) = tempfile.mkstemp()
     fd = open( signature )
-    sigfd = open( signature_file , 'w' )
     line = fd.readline()
     while line :
-        sigfd.write( line )
+        os.write( sigfd , line )
         if line[:-1] == "-----END PGP SIGNATURE-----" :
-            sigfd.close()
+            os.close( sigfd )
             if not _gpg_error( signature_file , file ) :
                 fd.close()
+                os.unlink( signature_file )
                 return False
-            sigfd = open( signature_file , 'w' )
+            sigfd = os.open( signature_file , os.O_WRONLY | os.O_TRUNC )
         line = fd.readline()
     else :
-        sigfd.close()
+        os.close( sigfd )
     fd.close()
+    os.unlink( signature_file )
     return "All signatures failed"
 
 def _gpg_error( signature , file ) :
@@ -156,30 +174,36 @@ pool_path = os.path.join( destdir , "pool" )
 local_release = os.path.join( suite_path , "Release" )
 
 
-#WD# FIXME : If no pgp, default should be to download Release every time
-#WD#try :
-#WD#    release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release.gpg" )
-#WD#except urllib2.URLError , ex :
-#WD#    print "Exception : %s" % ex
-#WD#    sys.exit(255)
-#WD#except urllib2.HTTPError , ex :
-#WD#    print "Exception : %s" % ex
-#WD#    sys.exit(255)
-#WD#
-#WD#if not release_pgp_file :
-#WD#    show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
-#WD#    sys.exit(255)
+if usegpg :
+    try :
+        release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release.gpg" ) )
+    except urllib2.URLError , ex :
+        print "Exception : %s" % ex
+        sys.exit(255)
+    except urllib2.HTTPError , ex :
+        print "Exception : %s" % ex
+        sys.exit(255)
 
-if os.path.isfile( local_release ) :
-#WD#    errstr = gpg_error( release_pgp_file , local_release )
-#WD#    if errstr :
-#WD#        show_error( errstr , False )
-#WD#        os.unlink( local_release )
-#WD#    else :
-#WD#        # FIXME : If we consider that our mirror is complete, it is safe to exit here
-        release = debian_bundle.deb822.Release( sequence=open( local_release ) )
-#WD#        os.unlink( release_pgp_file )
+    if not release_pgp_file :
+        show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
+        sys.exit(255)
 
+    if os.path.isfile( local_release ) :
+        errstr = gpg_error( release_pgp_file , local_release )
+        if errstr :
+            show_error( errstr , False )
+            os.unlink( local_release )
+        else :
+            # FIXME : If we consider that our mirror is complete, it is safe to exit here
+            if repostate == "synced" and not force :
+                show_error( "Release file unchanged, exiting" , False )
+                sys.exit(0)
+            release = debian_bundle.deb822.Release( sequence=open( local_release ) )
+            os.unlink( release_pgp_file )
+
+else :
+    if os.path.isfile( local_release ) :
+        os.unlink( local_release )
 
 if not os.path.isfile( local_release ) :
 
@@ -197,12 +221,13 @@ if not os.path.isfile( local_release ) :
         os.unlink( release_pgp_file )
         sys.exit(255)
 
-#WD#    errstr = gpg_error( release_pgp_file , release_file )
-#WD#    os.unlink( release_pgp_file )
-#WD#    if errstr :
-#WD#        show_error( errstr )
-#WD#        os.unlink( release_file )
-#WD#        sys.exit(255)
+    if usegpg :
+        errstr = gpg_error( release_pgp_file , release_file )
+        os.unlink( release_pgp_file )
+        if errstr :
+            show_error( errstr )
+            os.unlink( release_file )
+            sys.exit(255)
 
     release = debian_bundle.deb822.Release( sequence=open( release_file ) )
     
@@ -279,10 +304,10 @@ for comp in components :
 
         print "Scanning %s / %s" % ( comp , arch )
 
-        # Downloading Release file is quite redundant
+        # NOTE : Downloading Release file is quite redundant
 
+        fd = False
         localname = None
-        read_handler = None
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
@@ -307,8 +332,11 @@ for comp in components :
                     continue
 
                 if os.path.isfile( localname ) :
-                    # FIXME : If we consider that our mirror is complete, we should break one more loop, for the next component-architecture pair
-                    show_error( "Local copy of '%s/Packages%s' is up-to-date." % ( packages_path , extension ) , False )
+                    # NOTE : force and unsync should behave different here? We could just force download if forced
+                    if repostate == "synced" and not force :
+                        show_error( "Local copy of '%s/Packages%s' is up-to-date, skipping." % ( packages_path , extension ) , False )
+                    else :
+                        fd = read_handler( localname )
                     break
         else :
 
@@ -344,52 +372,50 @@ for comp in components :
                 show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
                 sys.exit(0)
 
+            fd = read_handler( localname )
 
-        # NOTE : The block below will usually be only useful when a new Packages is downloaded, but we
-        #        run through it every time to account for changes in minor filters (sections, priorities, ... )
-
-        fd = read_handler( localname )
-        packages = debian_bundle.debian_support.PackageFile( localname , fileObj=fd )
+        if fd :
+            packages = debian_bundle.debian_support.PackageFile( localname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-        print "Scanning available packages for minor filters"
-        for pkg in packages :
-            pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+            print "Scanning available packages for minor filters"
+            for pkg in packages :
+                pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
-            # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
-            # SOLUTION : Create a second and separate Category with the last part (filename) of Section
-            # For now, we kept the simplest way
-            if pkginfo['Section'].find("%s/"%comp) == 0 :
-                pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
+                # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
+                # SOLUTION : Create a second and separate Category with the last part (filename) of Section
+                # For now, we kept the simplest way
+                if pkginfo['Section'].find("%s/"%comp) == 0 :
+                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-            if pkginfo['Section'] not in release_sections :
-                release_sections.append( pkginfo['Section'] )
-            if pkginfo['Priority'] not in release_priorities :
-                release_priorities.append( pkginfo['Priority'] )
-            if 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in release_tags :
-                release_tags.append( pkginfo['Tag'] )
+                if pkginfo['Section'] not in release_sections :
+                    release_sections.append( pkginfo['Section'] )
+                if pkginfo['Priority'] not in release_priorities :
+                    release_priorities.append( pkginfo['Priority'] )
+                if 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in release_tags :
+                    release_tags.append( pkginfo['Tag'] )
 
-            if sections and pkginfo['Section'] not in sections :
-                continue
-            if priorities and pkginfo['Priority'] not in priorities :
-                continue
-            if tags and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in tags :
-                continue
+                if sections and pkginfo['Section'] not in sections :
+                    continue
+                if priorities and pkginfo['Priority'] not in priorities :
+                    continue
+                if tags and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in tags :
+                    continue
 
-            pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
-            if pkg_key in download_pkgs.keys() :
-                if pkginfo['Architecture'] != "all" :
-                    show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
-            else :
-                download_pkgs[ pkg_key ] = pkginfo
-                # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkginfo['Size'] )
+                pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
+                if pkg_key in download_pkgs.keys() :
+                    if pkginfo['Architecture'] != "all" :
+                        show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
+                else :
+                    download_pkgs[ pkg_key ] = pkginfo
+                    # FIXME : This might cause a ValueError exception ??
+                    download_size += int( pkginfo['Size'] )
 
-        print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
-        fd.close()
+            print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
+            fd.close()
 
 
 # print "All sects",release_sections
