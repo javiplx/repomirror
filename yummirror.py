@@ -5,7 +5,8 @@
 scheme = "http"
 server = "ftp.rediris.es"
 base_path = "mirror/fedora"
-#upd#base_path = "mirror/fedora-updates"
+server_upd = "download.fedora.redhat.com"
+base_path_upd = "pub/fedora/linux/updates"
 destdir = "/home/jpalacios/repomirror"
 #destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
@@ -162,19 +163,52 @@ def show_error( str , error=True ) :
         print "WARNING : %s" % str
 
 
-# NOTE : If base_path is empty (security), the produced URL has '//' and download fails
-#        All the stuff with urljoin is to avoid that, taking care of specify the trailing '/'
-#        in cases where we know target is a directory
+class yum_repository :
+
+    def __init__ ( self , url , version ) :
+        self.repo_url = url
+        self.version = version
+
+    def base_url ( self ) :
+        return urllib2.urlparse.urljoin( repo_url , "%s/Fedora/" % version )
+
+    def repo_path ( self , destdir ) :
+        return os.path.join( os.path.join( destdir , version ) , "Fedora" )
+
+    def metadata_path ( self , arch ) :
+        return "%s/os" % arch
+
+    def packages_path ( self , arch ) :
+        return "%s/Packages" % self.metadata_path( arch )
+
+class fedora_update_repository ( yum_repository ) :
+
+    def __init__ ( self , url , version , arch=None ) :
+        yum_repository.__init__( self , url , version , arch )
+
+    def base_url ( self ) :
+        return urllib2.urlparse.urljoin( repo_url , "%s/" % version )
+
+    def repo_path ( self , destdir ) :
+        return os.path.join( destdir , version )
+
+    def metadata_path ( self ) :
+        return self.arch
+
+    def packages_path ( self ) :
+        return self.metadata_path()
+
 
 # This gets built to the typical path on source.list
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-base_url = urllib2.urlparse.urljoin( repo_url , "%s/Fedora/" % version )
-#upd#base_url = urllib2.urlparse.urljoin( repo_url , "%s/" % version )
+repo = yum_repository( repo_url , version )
+#upd#repo = fedora_update_repository( repo_url_upd , version )
+
+base_url = repo.base_url()
 
 # This is either the home of dists or repomd files
-suite_path = os.path.join( os.path.join( destdir , version ) , "Fedora" )
-#upd#suite_path = os.path.join( destdir , version )
+suite_path = repo.repo_path( destdir )
 
 # For fedora, pool and suite path are the same
 pool_path = suite_path
@@ -208,8 +242,7 @@ repomd_file = {}
 for arch in architectures :
 
     try :
-        repomd_file[arch] = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/os/repodata/repomd.xml" % arch ) )
-        #upd#repomd_file[arch] = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % arch ) )
+        repomd_file[arch] = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % repo.metadata_path(arch) ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         for _arch in repomd_file.keys() :
@@ -236,8 +269,7 @@ if not os.path.exists( suite_path ) :
     os.makedirs( suite_path )
 
 for arch in repomd_file.keys() :
-    local_packages = os.path.join( pool_path , "%s/os/Packages" % arch )
-    #upd#local_packages = os.path.join( pool_path , arch )
+    local_packages = os.path.join( pool_path , repo.packages_path(arch) )
     if not os.path.exists( local_packages ) :
         os.makedirs( local_packages )
 
@@ -245,8 +277,7 @@ for arch in repomd_file.keys() :
 
 local_repodata = {}
 for arch in repomd_file.keys() :
-    local_repodata[arch] = os.path.join( suite_path , "%s/os" % arch )
-    #upd#local_repodata[arch] = os.path.join( suite_path , arch )
+    local_repodata[arch] = os.path.join( suite_path , repo.metadata_path(arch) )
     if not os.path.exists( os.path.join( local_repodata[arch] , "repodata" ) ) :
         os.mkdir( os.path.join( local_repodata[arch] , "repodata" ) )
     try :
@@ -318,8 +349,7 @@ for arch in architectures :
 
         show_error( "No local Packages file exist for %s-%s. Downloading." % ( version , arch ) , True )
 
-        url = urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , item['href'] ) )
-        #upd#url = urllib2.urlparse.urljoin( base_url , "%s/%s" % ( arch , item['href'] ) )
+        url = urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , item['href'] ) )
 
         if downloadRawFile( url , localname ) :
             error = md5_error( localname , item )
@@ -402,8 +432,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( os.path.join( pool_path , "%s/os/Packages" % arch ) , pkg['href'] )
-    #upd#destname = os.path.join( os.path.join( pool_path , arch ) , pkg['href'] )
+    destname = os.path.join( os.path.join( pool_path , repo.packages_path(arch) ) , pkg['href'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
@@ -418,7 +447,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , pkg['href'] ) ) , destname )
-    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , pkg['href'] ) ) , destname ) :
-    #upd#if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( arch , pkg['href'] ) ) , destname ) :
+    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname )
+    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , pkg['href'] ) ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( pkg['href'] ) , False )
