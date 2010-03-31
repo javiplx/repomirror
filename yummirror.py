@@ -176,7 +176,7 @@ class yum_repository :
         return os.path.join( os.path.join( destdir , version ) , "Fedora" )
 
     def metadata_path ( self , arch ) :
-        return "%s/os" % arch
+        return "%s/os/" % arch
 
     def packages_path ( self , arch ) :
         return "%s/Packages" % self.metadata_path( arch )
@@ -193,7 +193,7 @@ class fedora_update_repository ( yum_repository ) :
         return os.path.join( destdir , version )
 
     def metadata_path ( self ) :
-        return self.arch
+        return "%s/" % arch
 
     def packages_path ( self ) :
         return self.metadata_path()
