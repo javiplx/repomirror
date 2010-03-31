@@ -39,3 +39,13 @@ Typical sequence
   Verify destination, and download if does not exist or fails
 
 
+-----
+
+Debian vs. Fedora/Yum
+
+* Fedora has neither pgp nor other verification methods for main file (repomd.xml)
+* There are no components in fedora. The equivalent are the additional repositories (extras for fedora core, epel for RedHat/CentOS, ...)
+* Fedora requires at least two repositories, one for base system and another one for updates
+
+* Fedora has a comps.xml that could be useful, but is only present on base repository, not in updates
+
