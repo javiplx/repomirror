@@ -100,7 +100,9 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 def md5_error ( filename , item , bsize=128 ) :
-    if os.stat( filename ).st_size != int( item['size'] ) :
+    if item['size'] :
+      # FIXME : Temporary to speedup fedora mirroring developement
+      if os.stat( filename ).st_size != int( item['size'] ) :
         return "Bad file size '%s'" % filename
     if item['md5sum'] :
       # FIXME : Temporary to speedup fedora mirroring developement
