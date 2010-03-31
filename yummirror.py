@@ -268,7 +268,7 @@ local_repodata = {}
 for arch in repomd_file.keys() :
     local_repodata[arch] = os.path.join( suite_path , repo.metadata_path(arch) )
     if not os.path.exists( os.path.join( local_repodata[arch] , "repodata" ) ) :
-        os.mkdir( os.path.join( local_repodata[arch] , "repodata" ) )
+        os.makedirs( os.path.join( local_repodata[arch] , "repodata" ) )
     try :
         os.rename( repomd_file[arch] , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
     except OSError , ex :
