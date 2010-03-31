@@ -5,6 +5,7 @@
 scheme = "http"
 server = "ftp.rediris.es"
 base_path = "mirror/fedora"
+#upd#base_path = "mirror/fedora-updates"
 destdir = "/home/jpalacios/repomirror"
 #destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
@@ -169,9 +170,11 @@ def show_error( str , error=True ) :
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
 base_url = urllib2.urlparse.urljoin( repo_url , "%s/Fedora/" % version )
+#upd#base_url = urllib2.urlparse.urljoin( repo_url , "%s/" % version )
 
 # This is either the home of dists or repomd files
 suite_path = os.path.join( os.path.join( destdir , version ) , "Fedora" )
+#upd#suite_path = os.path.join( destdir , version )
 
 # For fedora, pool and suite path are the same
 pool_path = suite_path
@@ -206,6 +209,7 @@ for arch in architectures :
 
     try :
         repomd_file[arch] = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/os/repodata/repomd.xml" % arch ) )
+        #upd#repomd_file[arch] = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % arch ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         for _arch in repomd_file.keys() :
@@ -233,6 +237,7 @@ if not os.path.exists( suite_path ) :
 
 for arch in repomd_file.keys() :
     local_packages = os.path.join( pool_path , "%s/os/Packages" % arch )
+    #upd#local_packages = os.path.join( pool_path , arch )
     if not os.path.exists( local_packages ) :
         os.makedirs( local_packages )
 
@@ -241,6 +246,7 @@ for arch in repomd_file.keys() :
 local_repodata = {}
 for arch in repomd_file.keys() :
     local_repodata[arch] = os.path.join( suite_path , "%s/os" % arch )
+    #upd#local_repodata[arch] = os.path.join( suite_path , arch )
     if not os.path.exists( os.path.join( local_repodata[arch] , "repodata" ) ) :
         os.mkdir( os.path.join( local_repodata[arch] , "repodata" ) )
     try :
@@ -283,7 +289,11 @@ for arch in architectures :
                 continue
             # FIXME : Produce an error if multiple locations ?
             size = node.getElementsByTagName( "size" )
-            item = { 'href':location[0].getAttribute( "href" ) , 'size':int(size[0].firstChild.nodeValue) , 'md5sum':False }
+            if size :
+                _size = int(size[0].firstChild.nodeValue)
+            else :
+                _size = False
+            item = { 'href':location[0].getAttribute( "href" ) , 'size':_size , 'md5sum':False }
             # FIXME : Loop over checksum tags to populate item with available checksums
             break
     else :
@@ -309,6 +319,7 @@ for arch in architectures :
         show_error( "No local Packages file exist for %s-%s. Downloading." % ( version , arch ) , True )
 
         url = urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , item['href'] ) )
+        #upd#url = urllib2.urlparse.urljoin( base_url , "%s/%s" % ( arch , item['href'] ) )
 
         if downloadRawFile( url , localname ) :
             error = md5_error( localname , item )
@@ -392,6 +403,7 @@ else :
 for pkg in download_pkgs.values() :
 
     destname = os.path.join( os.path.join( pool_path , "%s/os/Packages" % arch ) , pkg['href'] )
+    #upd#destname = os.path.join( os.path.join( pool_path , arch ) , pkg['href'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
@@ -406,6 +418,7 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
+    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , pkg['href'] ) ) , destname )
     if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/os/%s" % ( arch , pkg['href'] ) ) , destname ) :
+    #upd#if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , "%s/%s" % ( arch , pkg['href'] ) ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( pkg['href'] ) , False )
-
