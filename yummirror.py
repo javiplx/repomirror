@@ -400,11 +400,11 @@ for arch in architectures :
         """
 
         name = pkginfo.getElementsByTagName('name')[0].firstChild.nodeValue
-        arch = pkginfo.getElementsByTagName('arch')[0].firstChild.nodeValue
-        pkg_key = "%s-%s" % ( name , arch )
+        _arch = pkginfo.getElementsByTagName('arch')[0].firstChild.nodeValue
+        pkg_key = "%s-%s" % ( name , _arch )
         if pkg_key in download_pkgs.keys() :
-            if arch != "noarch" :
-                show_error( "Package '%s - %s' is duplicated in repositories" % ( name , arch ) , False )
+            if _arch != "noarch" :
+                show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
         else :
             pkgdict = {
                 'href':pkginfo.getElementsByTagName('location')[0].getAttribute( "href" ) ,
