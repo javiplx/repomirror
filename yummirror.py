@@ -1,24 +1,5 @@
 #!/usr/bin/python
 
-# FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
-
-components = [ "main" , "contrib" ]
-components = [ "contrib" ]
-#
-#server = "security.debian.org"
-#base_path = ""
-#version = "lenny/updates"
-#components = [ "main" ]
-#
-#server = "volatile.debian.org"
-#base_path = "debian-volatile"
-#version = "lenny/volatile"
-#components = [ "main" ]
-#
-sections = []
-priorities = []
-tags = []
-
 # Status and command line options
 repostate = "synced"
 force = True
@@ -29,10 +10,6 @@ usegpg = False
 # force. Forces processing of synced repositories
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
 
-# FIXME : Create a separate program to list all the sections, pririties and tags
-
-import debian_bundle.deb822 , debian_bundle.debian_support
-
 import md5
 
 import urllib2
@@ -40,27 +17,6 @@ import urllib2
 import os , sys
 import tempfile
 import errno , shutil
-
-try :
-    import GnuPGInterface
-except :
-    usegpg = False
-
-
-# FIXME : Include standard plain os.open??
-extensions = {}
-
-try :
-    import gzip
-    extensions['.gz'] = gzip.open
-except :
-    pass
-    
-try :
-    import bz2
-    extensions['.bz2'] = bz2.BZ2File
-except :
-    pass
 
 
 def downloadRawFile ( remote , local=None ) :
@@ -181,31 +137,6 @@ suite_path = repo.repo_path( destdir )
 # For fedora, pool and suite path are the same
 pool_path = suite_path
 
-
-#if os.path.isfile( local_release ) :
-#    os.unlink( local_release )
-
-#if not os.path.isfile( local_release ) :
-#
-#    try :
-#        release_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release" ) )
-#    except urllib2.URLError , ex :
-#        print "Exception : %s" % ex
-#        sys.exit(255)
-#    except urllib2.HTTPError , ex :
-#        print "Exception : %s" % ex
-#        sys.exit(255)
-#
-#    if not release_file :
-#        show_error( "Release file for suite '%s' is not found." % ( version ) )
-#        os.unlink( release_pgp_file )
-#        sys.exit(255)
-#
-#    # release = debian_bundle.deb822.Release( sequence=open( release_file ) )
-#
-#print "file is",release_file
-
-
 repomd_file = {}
 for arch in architectures :
 
@@ -261,9 +192,6 @@ Architectures : %s
 download_pkgs = {}
 download_size = 0
 
-release_sections = []
-release_priorities = []
-release_tags = []
 
 import xml.dom.minidom
 
@@ -341,29 +269,6 @@ for arch in architectures :
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-
-        """
-                # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
-                # SOLUTION : Create a second and separate Category with the last part (filename) of Section
-                # For now, we kept the simplest way
-                if pkginfo['Section'].find("%s/"%comp) == 0 :
-                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
-
-                if pkginfo['Section'] not in release_sections :
-                    release_sections.append( pkginfo['Section'] )
-                if pkginfo['Priority'] not in release_priorities :
-                    release_priorities.append( pkginfo['Priority'] )
-                if 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in release_tags :
-                    release_tags.append( pkginfo['Tag'] )
-
-                if sections and pkginfo['Section'] not in sections :
-                    continue
-                if priorities and pkginfo['Priority'] not in priorities :
-                    continue
-                if tags and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in tags :
-                    continue
-        """
-
         name = pkginfo.getElementsByTagName('name')[0].firstChild.nodeValue
         _arch = pkginfo.getElementsByTagName('arch')[0].firstChild.nodeValue
         pkg_key = "%s-%s" % ( name , _arch )
@@ -391,11 +296,6 @@ for arch in architectures :
     fd.close()
 
 
-# print "All sects",release_sections
-# print "All prios",release_priorities
-# # print "All tags",release_tags
-
-
 _size = download_size / 1024 / 1024
 if _size > 2048 :
     print "Total size to download : %.1f Gb" % ( _size / 1024 )
@@ -419,6 +319,5 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    print "downloadRawFile ( %s , %s )" % ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname )
     if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( os.path.basename( pkg['sourcename'] ) ) , False )
