@@ -2,14 +2,6 @@
 
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
-scheme = "http"
-server = "ftp.rediris.es"
-base_path = "mirror/fedora"
-server_upd = "download.fedora.redhat.com"
-base_path_upd = "pub/fedora/linux/updates"
-
-version = "12" # "lenny"
-architectures = [ "i386" , "x86_64" ] # architectures = [ "i386" , "amd64" ]
 components = [ "main" , "contrib" ]
 components = [ "contrib" ]
 #
@@ -218,13 +210,25 @@ if not config.has_option( "global", "destdir" ) :
 
 destdir = config.get( "global" , "destdir" )
 
+repo_name = "yum"
+
+if repo_name not in config.sections() :
+    show_error( "Repository '%s' is not configured" % repo_name )
+    sys.exit(255)
+
+
+type = config.get( repo_name , "type" )
+scheme = config.get( repo_name , "scheme" )
+server = config.get( repo_name , "server" )
+base_path = config.get( repo_name , "base_path" )
+version = config.get( repo_name , "version" )
+architectures = config.get( repo_name , "architectures" ).split()
+
 
 # This gets built to the typical path on source.list
-#repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
-repo_url = urllib2.urlparse.urlunsplit( ( scheme , server_upd , "%s/" % base_path_upd , None , None ) )
+repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-#repo = instantiate_repo( "yum" , repo_url , version )
-repo = instantiate_repo( "yum_upd" , repo_url , version )
+repo = instantiate_repo( type , repo_url , version )
 
 base_url = repo.base_url()
 
