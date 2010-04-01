@@ -290,8 +290,7 @@ for arch in architectures :
             pkgdict = {
                 'sourcename':urllib2.urlparse.urljoin( repo.metadata_path(arch) , href ) ,
                 'destname':os.path.join( repo.metadata_path(arch) , href ) ,
-                'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" ) ,
-                'md5sum':False
+                'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" )
                 }
             download_pkgs[ pkg_key ] = pkgdict
             # FIXME : This might cause a ValueError exception ??
