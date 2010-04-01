@@ -8,7 +8,7 @@ import ConfigParser
 def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
+    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") , "repomirror.conf" ] ) :
         show_error( "Could not find a valid configuration file" )
         sys.exit(255)
 
