@@ -99,7 +99,6 @@ Architectures : %s
 download_pkgs = {}
 download_size = 0
 
-
 for arch in architectures :
 
     print "Scanning %s" % ( arch )

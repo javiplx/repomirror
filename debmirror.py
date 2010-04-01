@@ -175,9 +175,9 @@ print "Components : %s\nArchitectures : %s\n" % ( " ".join(components) , " ".joi
 download_pkgs = {}
 download_size = 0
 
-for comp in components :
+for arch in architectures :
 
-    for arch in architectures :
+    for comp in components :
 
       print "Scanning %s / %s" % ( comp , arch )
 
