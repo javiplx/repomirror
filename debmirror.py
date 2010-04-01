@@ -148,8 +148,9 @@ for arch in architectures :
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-if not os.path.exists( suite_path ) :
-    os.makedirs( suite_path )
+repo.build_local_tree( suite_path , architectures , components , pool_path )
+
+# Once created, we move in the primary metadata file
 
 if not os.path.exists( local_release ) :
     try :
@@ -160,24 +161,10 @@ if not os.path.exists( local_release ) :
             sys.exit(1)
         shutil.move( release_file , local_release )
 
-for comp in components :
-    if not os.path.exists( os.path.join( suite_path , comp ) ) :
-        os.mkdir( os.path.join( suite_path , comp ) )
-    for arch in architectures :
-        packages_path = repo.metadata_path( arch , comp )
-        if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-            os.mkdir( os.path.join( suite_path , packages_path ) )
-
-if not os.path.exists( pool_path ) :
-    os.mkdir( pool_path )
-
-for comp in components :
-    pool_com_path = os.path.join( pool_path , comp )
-    if not os.path.exists( pool_com_path ) :
-        os.mkdir( pool_com_path )
-
+# Some Release files hold no 'version' information
 if not release.has_key( 'Version' ) :
     release['Version'] = "undef"
+
 print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
 %(Origin)s %(Suite)s , %(Date)s

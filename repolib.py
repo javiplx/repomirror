@@ -71,6 +71,17 @@ class yum_repository :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
+    #def build_local_tree( self , suite_path , architectures , components , pool_path ) :
+    def build_local_tree( self , suite_path , architectures ) :
+
+        if not os.path.exists( suite_path ) :
+            os.makedirs( suite_path )
+
+        for arch in architectures :
+            packages_path = os.path.join( self.metadata_path(arch) , "repodata" )
+            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
+                os.makedirs( os.path.join( suite_path , packages_path ) )
+
     def get_package_list ( self , arch , local_repodata , repostate , force ) :
 
         download_size = 0
@@ -221,6 +232,27 @@ class debian_repository :
         if arch and comp :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
+
+    def build_local_tree( self , suite_path , architectures , components , pool_path ) :
+
+        if not os.path.exists( suite_path ) :
+            os.makedirs( suite_path )
+
+        for comp in components :
+            if not os.path.exists( os.path.join( suite_path , comp ) ) :
+                os.mkdir( os.path.join( suite_path , comp ) )
+            for arch in architectures :
+                packages_path = self.metadata_path( arch , comp )
+                if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
+                    os.mkdir( os.path.join( suite_path , packages_path ) )
+
+        if not os.path.exists( pool_path ) :
+            os.mkdir( pool_path )
+
+        for comp in components :
+            pool_com_path = os.path.join( pool_path , comp )
+            if not os.path.exists( pool_com_path ) :
+                os.mkdir( pool_com_path )
 
     def get_package_list ( self , arch , suite_path , repostate , force , comp , release , sections , priorities , tags ) :
 

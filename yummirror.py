@@ -74,16 +74,13 @@ for arch in architectures :
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-if not os.path.exists( suite_path ) :
-    os.makedirs( suite_path )
+repo.build_local_tree( suite_path , repomd_file.keys() )
 
 # And then relocate files from temporary locations
 
 local_repodata = {}
 for arch in repomd_file.keys() :
     local_repodata[arch] = os.path.join( suite_path , repo.metadata_path(arch) )
-    if not os.path.exists( os.path.join( local_repodata[arch] , "repodata" ) ) :
-        os.makedirs( os.path.join( local_repodata[arch] , "repodata" ) )
     try :
         os.rename( repomd_file[arch] , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
     except OSError , ex :
