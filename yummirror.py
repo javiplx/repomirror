@@ -16,8 +16,6 @@ import os , sys
 import tempfile
 import errno , shutil
 
-import gzip
-
 
 def downloadRawFile ( remote , local=None ) :
     """Downloads a remote file to the local system.
@@ -206,103 +204,13 @@ download_pkgs = {}
 download_size = 0
 
 
-import xml.dom.minidom
-
 for arch in architectures :
 
     print "Scanning %s" % ( arch )
 
-    item = False
-
-    repodoc = xml.dom.minidom.parse( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-    doc = repodoc.documentElement
-    for node in doc.getElementsByTagName( "data" ) :
-        if node.getAttribute( "type" ) == "primary" :
-            location = node.getElementsByTagName( "location" )
-            if not location :
-                show_error( "No location element within repomd file" )
-                continue
-            # FIXME : Produce an error if multiple locations ?
-            size = node.getElementsByTagName( "size" )
-            item = { 'href':location[0].getAttribute( "href" ) , 'size':int(size[0].firstChild.nodeValue) }
-            for _node in node.getElementsByTagName( "checksum" ) :
-                item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
-            break
-    else :
-        show_error( "No primary node within repomd file" )
-        os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-        sys.exit(255)
-
-    del repodoc
-
-    # FIXME : On problems, exit or continue next arch ???
-
-    localname = os.path.join( local_repodata[arch] , item['href'] )
-
-    if os.path.isfile( localname ) :
-        error = md5_error( localname , item )
-        if error :
-            show_error( error , False )
-            os.unlink( localname )
-        else :
-            if repostate == "synced" and not force :
-                break
-
-    if not os.path.isfile( localname ) :
-
-        show_error( "No local Packages file exist for %s-%s. Downloading." % ( version , arch ) , True )
-
-        url = urllib2.urlparse.urljoin( base_url , "%s/%s" % ( repo.metadata_path(arch) , item['href'] ) )
-
-        if downloadRawFile( url , localname ) :
-            error = md5_error( localname , item )
-            if error :
-                show_error( error )
-                os.unlink( localname )
-                sys.exit(255)
-        else :
-            show_error( "Problems downloading primary file for %s-%s" % ( version , arch ) )
-            sys.exit(255)
-
-    fd = gzip.open( localname )
-    packages = xml.dom.minidom.parse( fd )
-    # FIXME : What about gettint doc root and so ...
-
-    print "Scanning available packages for minor filters (not implemented yet !!!)"
-    # Most relevant for minor filter is   <format><rpm:group>...</rpm:group>
-
-    for pkginfo in packages.getElementsByTagName( "package" ) :
-
-        # FIXME : A XML -> Dict class is quite helpful here !!
-
-# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
-#         Solution : Disable filtering on first approach
-#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
-
-        name = pkginfo.getElementsByTagName('name')[0].firstChild.nodeValue
-        _arch = pkginfo.getElementsByTagName('arch')[0].firstChild.nodeValue
-        pkg_key = "%s-%s" % ( name , _arch )
-        if pkg_key in download_pkgs.keys() :
-            if _arch != "noarch" :
-                show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
-        else :
-            href = pkginfo.getElementsByTagName('location')[0].getAttribute( "href" )
-            pkgdict = {
-                'sourcename':urllib2.urlparse.urljoin( repo.metadata_path(arch) , href ) ,
-                'destname':os.path.join( repo.metadata_path(arch) , href ) ,
-                'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" )
-                }
-            download_pkgs[ pkg_key ] = pkgdict
-            # FIXME : This might cause a ValueError exception ??
-            download_size += int( pkgdict['size'] )
-
-        pkginfo.unlink()
-        del pkginfo
-
-    del packages
-
-    print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
-    fd.close()
+    _size , _pkgs = repo.get_package_list( arch , local_repodata[arch] , md5_error , repostate , force , downloadRawFile )
+    download_size += _size
+    download_pkgs.update( _pkgs )
 
 
 _size = download_size / 1024 / 1024
