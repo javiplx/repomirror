@@ -2,28 +2,6 @@
 
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
-scheme = "http"
-server = "ftp.es.debian.org"
-base_path = "debian"
-destdir = "/home/jpalacios/repomirror"
-#destdir = "/shares/internal/PUBLIC/mirrors/debian"
-
-# This is usually refered as 'codename' in debian
-version = "lenny"
-architectures = [ "i386" , "amd64" ]
-components = [ "main" , "contrib" ]
-components = [ "contrib" ]
-#
-#server = "security.debian.org"
-#base_path = ""
-#version = "lenny/updates"
-#components = [ "main" ]
-#
-#server = "volatile.debian.org"
-#base_path = "debian-volatile"
-#version = "lenny/volatile"
-#components = [ "main" ]
-#
 sections = []
 priorities = []
 tags = []
@@ -156,6 +134,22 @@ def show_error( str , error=True ) :
         print "ERROR : %s" % str
     else :
         print "WARNING : %s" % str
+
+
+import repolib
+
+repo_name = "debian"
+config = repolib.read_config( repo_name )
+
+destdir = config[ "destdir" ]
+
+type = config[ "type" ]
+scheme = config[ "scheme" ]
+server = config[ "server" ]
+base_path = config[ "base_path" ]
+version = config[ "version" ]
+architectures = config[ "architectures" ]
+components = config[ "components" ]
 
 
 # NOTE : If base_path is empty (security), the produced URL has '//' and download fails
