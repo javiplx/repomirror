@@ -159,18 +159,20 @@ components = config[ "components" ]
 # This gets built to the typical path on source.list
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-base_url = urllib2.urlparse.urljoin( repo_url , "dists/%s/" % version )
+repo = repolib.instantiate_repo( type , repo_url , version )
 
-suite_path = os.path.join( os.path.join( destdir , "dists" ) , version )
+base_url = repo.base_url()
 
-pool_path = os.path.join( destdir , "pool" )
+suite_path = os.path.join( repo.repo_path( destdir ) , repo.metadata_path() )
+
+pool_path = os.path.join( repo.repo_path( destdir ) , "pool" )
 
 local_release = os.path.join( suite_path , "Release" )
 
 
 if usegpg :
     try :
-        release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release.gpg" ) )
+        release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease.gpg" % repo.metadata_path() ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -202,7 +204,7 @@ else :
 if not os.path.isfile( local_release ) :
 
     try :
-        release_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "Release" ) )
+        release_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease" % repo.metadata_path() ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -249,7 +251,7 @@ for arch in architectures :
 # After verify all the mirroring parameters, it is safe to create directory tree
 
 if not os.path.exists( suite_path ) :
-    os.mkdir( suite_path )
+    os.makedirs( suite_path )
 
 if not os.path.exists( local_release ) :
     try :
@@ -264,7 +266,7 @@ for comp in components :
     if not os.path.exists( os.path.join( suite_path , comp ) ) :
         os.mkdir( os.path.join( suite_path , comp ) )
     for arch in architectures :
-        packages_path = os.path.join( comp , "binary-%s" % arch )
+        packages_path = repo.metadata_path( arch , comp )
         if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
             os.mkdir( os.path.join( suite_path , packages_path ) )
 
@@ -305,7 +307,7 @@ for comp in components :
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
-            localname = os.path.join( suite_path , "%s/Packages%s" % ( packages_path , extension ) )
+            localname = os.path.join( suite_path , "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) )
 
             if os.path.isfile( localname ) :
                 #
@@ -315,20 +317,20 @@ for comp in components :
                 #
                 # FIXME : What about other checksums (sha1, sha256)
                 for item in release['MD5Sum'] :
-                    if item['name'] == "%s/Packages%s" % ( packages_path , extension ) :
+                    if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                         error = md5_error( localname , item )
                         if error :
                             show_error( error , False )
                             os.unlink( localname )
                         break
                 else :
-                    show_error( "Checksum for file '%s/Packages%s' not found, go to next format." % ( packages_path , extension ) , True )
+                    show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( repo.metadata_path(arch,comp) , extension ) , True )
                     continue
 
                 if os.path.isfile( localname ) :
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if repostate == "synced" and not force :
-                        show_error( "Local copy of '%s/Packages%s' is up-to-date, skipping." % ( packages_path , extension ) , False )
+                        show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
                     else :
                         fd = read_handler( localname )
                     break
@@ -338,8 +340,8 @@ for comp in components :
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
-                localname = os.path.join( suite_path , "%s/Packages%s" % ( packages_path , extension ) )
-                url = urllib2.urlparse.urljoin( base_url , "%s/Packages%s" % ( packages_path , extension ) )
+                localname = os.path.join( suite_path , "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) )
+                url = urllib2.urlparse.urljoin( repo.base_url(arch,comp) , "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) )
 
                 if downloadRawFile( url , localname ) :
                     #
@@ -349,7 +351,7 @@ for comp in components :
                     #
                     # FIXME : What about other checksums (sha1, sha256)
                     for item in release['MD5Sum'] :
-                        if item['name'] == "%s/Packages%s" % ( packages_path , extension ) :
+                        if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                             error = md5_error( localname , item )
                             if error :
                                 show_error( error , False )

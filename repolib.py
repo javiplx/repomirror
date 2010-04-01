@@ -45,6 +45,8 @@ def instantiate_repo ( type , repo_url , version ) :
         repo = yum_repository( repo_url , version )
     elif type == "yum_upd" :
         repo = fedora_update_repository( repo_url , version )
+    elif type == "deb" :
+        repo = debian_repository( repo_url , version )
     else :
         show_error( "Unknown repository type '%s'" % type )
     return repo
@@ -77,6 +79,25 @@ class fedora_update_repository ( yum_repository ) :
 
     def metadata_path ( self , arch ) :
         return "%s/" % arch
+
+class debian_repository :
+
+    def __init__ ( self , url , version ) :
+        self.repo_url = url
+        self.version = version
+
+    def base_url ( self , arch=None , comp=None ) :
+        if arch and comp :
+            return urllib2.urlparse.urljoin( self.repo_url , self.metadata_path() )
+        return self.repo_url
+
+    def repo_path ( self , destdir ) :
+        return destdir
+
+    def metadata_path ( self , arch=None , comp=None ) :
+        if arch and comp :
+            return "%s/binary-%s/" % ( comp , arch )
+        return "dists/%s/" % self.version
 
 
 def show_error( str , error=True ) :
