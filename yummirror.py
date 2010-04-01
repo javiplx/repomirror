@@ -322,6 +322,8 @@ for arch in architectures :
         os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
         sys.exit(255)
 
+    del repodoc
+
     # FIXME : On problems, exit or continue next arch ???
 
     localname = os.path.join( local_repodata[arch] , item['href'] )
@@ -406,6 +408,11 @@ for arch in architectures :
             download_pkgs[ pkg_key ] = pkgdict
             # FIXME : This might cause a ValueError exception ??
             download_size += int( pkgdict['size'] )
+
+        pkginfo.unlink()
+        del pkginfo
+
+    del packages
 
     print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
     fd.close()
