@@ -73,7 +73,7 @@ class yum_repository :
 
     def build_local_tree( self , architectures ) :
 
-        suite_path = repo.repo_path( destdir )
+        suite_path = self.repo_path( destdir )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
@@ -236,7 +236,7 @@ class debian_repository :
 
     def build_local_tree( self , architectures , components , pool_path ) :
 
-        suite_path = os.path.join( repo.repo_path( destdir ) , repo.metadata_path() )
+        suite_path = os.path.join( self.repo_path( destdir ) , self.metadata_path() )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
