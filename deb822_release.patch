@@ -1,0 +1,28 @@
+diff -uNr python-debian.ori/lib/debian/deb822.py python-debian/lib/debian/deb822.py
+--- python-debian.ori/lib/debian/deb822.py	2010-03-16 02:06:28.000000000 +0100
++++ python-debian/lib/debian/deb822.py	2010-04-01 23:04:16.000000000 +0200
+@@ -864,6 +864,10 @@
+                 continue
+ 
+             if self.is_multi_line(contents):
++              if "name" in fields :
++                self[field] = Deb822Dict()
++                updater_method = self[field].update
++              else :
+                 self[field] = []
+                 updater_method = self[field].append
+             else:
+@@ -871,7 +875,12 @@
+                 updater_method = self[field].update
+ 
+             for line in filter(None, contents.splitlines()):
+-                updater_method(Deb822Dict(zip(fields, line.split())))
++                _dict = Deb822Dict(zip(fields, line.split()))
++                if "name" in fields :
++                    key = str(_dict['name'])
++                    updater_method({key:_dict})
++                else :
++                    updater_method(_dict)
+ 
+     def get_as_string(self, key):
+         keyl = key.lower()
