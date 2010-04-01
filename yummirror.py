@@ -153,82 +153,25 @@ def show_error( str , error=True ) :
         print "WARNING : %s" % str
 
 
-def instantiate_repo ( type , repo_url , version ) :
-    repo = None
-    if type == "yum" :
-        repo = yum_repository( repo_url , version )
-    elif type == "yum_upd" :
-        repo = fedora_update_repository( repo_url , version )
-    else :
-        show_error( "Unknown repository type '%s'" % type )
-    return repo
-
-class yum_repository :
-
-    def __init__ ( self , url , version ) :
-        self.repo_url = url
-        self.version = version
-
-    def base_url ( self ) :
-        return urllib2.urlparse.urljoin( repo_url , "%s/Fedora/" % version )
-
-    def repo_path ( self , destdir ) :
-        return os.path.join( os.path.join( destdir , version ) , "Fedora" )
-
-    def metadata_path ( self , arch ) :
-        return "%s/os/" % arch
-
-class fedora_update_repository ( yum_repository ) :
-
-    def __init__ ( self , url , version ) :
-        yum_repository.__init__( self , url , version )
-
-    def base_url ( self ) :
-        return urllib2.urlparse.urljoin( repo_url , "%s/" % version )
-
-    def repo_path ( self , destdir ) :
-        return os.path.join( destdir , version )
-
-    def metadata_path ( self , arch ) :
-        return "%s/" % arch
-
-
-import ConfigParser
-
-config = ConfigParser.RawConfigParser()
-if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-    show_error( "Could not find a valid configuration file" )
-    sys.exit(255)
-
-if "global" not in config.sections() :
-    show_error( "Broken configuration, missing global section" )
-    sys.exit(255)
-
-if not config.has_option( "global", "destdir" ) :
-    show_error( "Broken configuration, missing destination directory" )
-    sys.exit(255)
-
-destdir = config.get( "global" , "destdir" )
+import repolib
 
 repo_name = "yum"
+config = repolib.read_config( repo_name )
 
-if repo_name not in config.sections() :
-    show_error( "Repository '%s' is not configured" % repo_name )
-    sys.exit(255)
+destdir = config[ "destdir" ]
 
-
-type = config.get( repo_name , "type" )
-scheme = config.get( repo_name , "scheme" )
-server = config.get( repo_name , "server" )
-base_path = config.get( repo_name , "base_path" )
-version = config.get( repo_name , "version" )
-architectures = config.get( repo_name , "architectures" ).split()
+type = config[ "type" ]
+scheme = config[ "scheme" ]
+server = config[ "server" ]
+base_path = config[ "base_path" ]
+version = config[ "version" ]
+architectures = config[ "architectures" ]
 
 
 # This gets built to the typical path on source.list
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
-repo = instantiate_repo( type , repo_url , version )
+repo = repolib.instantiate_repo( type , repo_url , version )
 
 base_url = repo.base_url()
 
