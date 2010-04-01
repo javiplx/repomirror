@@ -56,11 +56,13 @@ def instantiate_repo ( type , repo_url , version ) :
 import gzip
 import xml.dom.minidom
 
-class yum_repository :
+class abstract_repository :
 
     def __init__ ( self , url , version ) :
         self.repo_url = url
         self.version = version
+
+class yum_repository ( abstract_repository ) :
 
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( self.repo_url , "%s/Fedora/" % self.version )
@@ -190,8 +192,8 @@ class fedora_update_repository ( yum_repository ) :
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
 
-    def repo_path ( self , destdir ) :
-        return os.path.join( destdir , self.version )
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , arch ) :
         return "%s/" % arch
@@ -215,11 +217,7 @@ except :
     pass
 
 
-class debian_repository :
-
-    def __init__ ( self , url , version ) :
-        self.repo_url = url
-        self.version = version
+class debian_repository ( abstract_repository ) :
 
     def base_url ( self , arch=None , comp=None ) :
         if arch and comp :
