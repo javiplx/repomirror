@@ -267,7 +267,8 @@ class debian_repository ( abstract_repository ) :
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
-            localname = os.path.join( suite_path , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
+            _name = "%sPackages%s" % ( self.metadata_path(arch,comp) , extension )
+            localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
                 #
@@ -279,7 +280,7 @@ class debian_repository ( abstract_repository ) :
                 _item = {}
                 for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
                     for item in release[type] :
-                        if item['name'] == "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) :
+                        if item['name'] == _name :
                             _item.update( item )
                 if _item :
                     error = repoutils.md5_error( localname , _item )
@@ -290,14 +291,14 @@ class debian_repository ( abstract_repository ) :
 
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if repostate == "synced" and not force :
-                        repoutils.show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( self.metadata_path(arch,comp) , extension ) , False )
+                        repoutils.show_error( "Local copy of '%s' is up-to-date, skipping." % _name , False )
                     else :
                         fd = read_handler( localname )
 
                     break
 
                 else :
-                    repoutils.show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( self.metadata_path(arch,comp) , extension ) , True )
+                    repoutils.show_error( "Checksum for file '%s' not found, go to next format." % _name , True )
                     continue
 
         else :
@@ -306,8 +307,9 @@ class debian_repository ( abstract_repository ) :
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
-                localname = os.path.join( suite_path , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
-                url = urllib2.urlparse.urljoin( self.base_url(arch,comp) , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
+                _name = "%sPackages%s" % ( self.metadata_path(arch,comp) , extension )
+                localname = os.path.join( suite_path , _name )
+                url = urllib2.urlparse.urljoin( self.base_url(arch,comp) , _name )
 
                 if repoutils.downloadRawFile( url , localname ) :
                     #
@@ -319,7 +321,7 @@ class debian_repository ( abstract_repository ) :
                     _item = {}
                     for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
                         for item in release[type] :
-                            if item['name'] == "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) :
+                            if item['name'] == _name :
                                 _item.update( item )
                     if _item :
                         error = repoutils.md5_error( localname , _item )
@@ -331,7 +333,7 @@ class debian_repository ( abstract_repository ) :
                         break
 
                     else :
-                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % _item['name'] ) 
+                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % _name ) 
                         continue
 
             else :
