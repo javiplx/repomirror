@@ -39,31 +39,16 @@ import repolib
 repo_name = "debian"
 config = repolib.read_config( repo_name )
 
-destdir = config[ "destdir" ]
-
-type = config[ "type" ]
-scheme = config[ "scheme" ]
-server = config[ "server" ]
-base_path = config[ "base_path" ]
-version = config[ "version" ]
 architectures = config[ "architectures" ]
 components = config[ "components" ]
 
-
-# NOTE : If base_path is empty (security), the produced URL has '//' and download fails
-#        All the stuff with urljoin is to avoid that, taking care of specify the trailing '/'
-#        in cases where we know target is a directory
-
-# This gets built to the typical path on source.list
-repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
-
-repo = repolib.instantiate_repo( type , repo_url , version )
+repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
-suite_path = os.path.join( repo.repo_path( destdir ) , repo.metadata_path() )
+suite_path = os.path.join( repo.repo_path() , repo.metadata_path() )
 
-pool_path = os.path.join( repo.repo_path( destdir ) , "pool" )
+pool_path = os.path.join( repo.repo_path() , "pool" )
 
 local_release = os.path.join( suite_path , "Release" )
 
@@ -79,7 +64,7 @@ if usegpg :
         sys.exit(255)
 
     if not release_pgp_file :
-        repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
+        repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( repo.version ) )
         sys.exit(255)
 
     if os.path.isfile( local_release ) :
@@ -111,7 +96,7 @@ if not os.path.isfile( local_release ) :
         sys.exit(255)
 
     if not release_file :
-        repoutils.show_error( "Release file for suite '%s' is not found." % ( version ) )
+        repoutils.show_error( "Release file for suite '%s' is not found." % ( repo.version ) )
         os.unlink( release_pgp_file )
         sys.exit(255)
 
@@ -127,8 +112,8 @@ if not os.path.isfile( local_release ) :
     
     
 # FIXME : Why not check also against release['Codename'] ??
-if release['Suite'].lower() == version.lower() :
-    repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( version, release['Codename'] ) )
+if release['Suite'].lower() == repo.version.lower() :
+    repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( repo.version, release['Codename'] ) )
     os.unlink( release_file )
     sys.exit(1)
 
@@ -194,7 +179,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( destdir , pkg['Filename'] )
+    destname = os.path.join( repo.destdir , pkg['Filename'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :

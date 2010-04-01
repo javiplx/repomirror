@@ -24,28 +24,17 @@ import repolib
 repo_name = "yum"
 config = repolib.read_config( repo_name )
 
-destdir = config[ "destdir" ]
-
-type = config[ "type" ]
-scheme = config[ "scheme" ]
-server = config[ "server" ]
-base_path = config[ "base_path" ]
-version = config[ "version" ]
 architectures = config[ "architectures" ]
 
-
-# This gets built to the typical path on source.list
-repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
-
-repo = repolib.instantiate_repo( type , repo_url , version )
+repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
 # This is either the home of dists or repomd files
-suite_path = repo.repo_path( destdir )
+suite_path = repo.repo_path()
 
 # For fedora, pool and suite path are the same
-pool_path = repo.repo_path( destdir )
+pool_path = repo.repo_path()
 
 repomd_file = {}
 for arch in architectures :
@@ -66,7 +55,7 @@ for arch in architectures :
         sys.exit(255)
 
     if not repomd_file[arch] :
-        repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , version ) )
+        repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , repo.version ) )
         for _arch in repomd_file.keys() :
             if _arch != arch :
                 os.unlink( repomd_file[_arch] )
@@ -93,7 +82,7 @@ print """
 Mirroring version %s
 %s
 Architectures : %s
-""" % ( version , repo_url , " ".join(architectures) )
+""" % ( repo.version , repo.repo_url , " ".join(architectures) )
 
 
 download_pkgs = {}

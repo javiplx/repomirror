@@ -41,16 +41,16 @@ def read_config ( repo_name ) :
     return conf
 
 
-def instantiate_repo ( type , repo_url , version ) :
+def instantiate_repo ( config ) :
     repo = None
-    if type == "yum" :
-        repo = yum_repository( repo_url , version )
-    elif type == "yum_upd" :
-        repo = fedora_update_repository( repo_url , version )
-    elif type == "deb" :
-        repo = debian_repository( repo_url , version )
+    if config['type'] == "yum" :
+        repo = yum_repository( config )
+    elif config['type'] == "yum_upd" :
+        repo = fedora_update_repository( config )
+    elif config['type'] == "deb" :
+        repo = debian_repository( config )
     else :
-        repoutils.show_error( "Unknown repository type '%s'" % type )
+        repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
     return repo
 
 import gzip
@@ -58,24 +58,31 @@ import xml.dom.minidom
 
 class abstract_repository :
 
-    def __init__ ( self , url , version ) :
-        self.repo_url = url
-        self.version = version
+    def __init__ ( self , config ) :
+        scheme = config[ "scheme" ]
+        server = config[ "server" ]
+        base_path = config[ "base_path" ]
+
+        # This gets built to the typical path on source.list
+        self.repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+
+	self.destdir = config[ "destdir" ]
+        self.version = config[ "version" ]
 
 class yum_repository ( abstract_repository ) :
 
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( self.repo_url , "%s/Fedora/" % self.version )
 
-    def repo_path ( self , destdir ) :
-        return os.path.join( os.path.join( destdir , self.version ) , "Fedora" )
+    def repo_path ( self ) :
+        return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
     def build_local_tree( self , architectures ) :
 
-        suite_path = self.repo_path( destdir )
+        suite_path = self.repo_path()
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
@@ -186,8 +193,8 @@ class yum_repository ( abstract_repository ) :
 
 class fedora_update_repository ( yum_repository ) :
 
-    def __init__ ( self , url , version ) :
-        yum_repository.__init__( self , url , version )
+    def __init__ ( self , url ) :
+        yum_repository.__init__( self , url )
 
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
@@ -224,8 +231,8 @@ class debian_repository ( abstract_repository ) :
             return urllib2.urlparse.urljoin( self.repo_url , self.metadata_path() )
         return self.repo_url
 
-    def repo_path ( self , destdir ) :
-        return destdir
+    def repo_path ( self ) :
+        return self.destdir
 
     def metadata_path ( self , arch=None , comp=None ) :
         if arch and comp :
@@ -234,7 +241,7 @@ class debian_repository ( abstract_repository ) :
 
     def build_local_tree( self , architectures , components , pool_path ) :
 
-        suite_path = os.path.join( self.repo_path( destdir ) , self.metadata_path() )
+        suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
