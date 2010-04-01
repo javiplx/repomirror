@@ -13,7 +13,6 @@ usegpg = False
 import urllib2
 
 import os , sys
-import tempfile
 import errno , shutil
 
 

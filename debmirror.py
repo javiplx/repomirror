@@ -25,11 +25,6 @@ import urllib2
 import os , sys
 import errno , shutil
 
-try :
-    import GnuPGInterface
-except :
-    usegpg = False
-
 
 import repoutils
 
