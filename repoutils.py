@@ -4,6 +4,11 @@ import os , sys
 import urllib2
 import tempfile
 
+try :
+    import GnuPGInterface
+except :
+    usegpg = False
+
 
 def downloadRawFile ( remote , local=None ) :
     """Downloads a remote file to the local system.
