@@ -55,6 +55,7 @@ def instantiate_repo ( config ) :
 
 import gzip
 import xml.dom.minidom
+import filelist_xmlparser
 
 class abstract_repository :
 
@@ -150,41 +151,33 @@ class yum_repository ( abstract_repository ) :
                 sys.exit(255)
     
         fd = gzip.open( localname )
-        packages = xml.dom.minidom.parse( fd )
-        # FIXME : What about gettint doc root and so ...
+        packages = filelist_xmlparser.get_package_list( fd )
     
         print "Scanning available packages for minor filters (not implemented yet !!!)"
         # Most relevant for minor filter is   <format><rpm:group>...</rpm:group>
     
-        for pkginfo in packages.getElementsByTagName( "package" ) :
-    
-            # FIXME : A XML -> Dict class is quite helpful here !!
+        for pkginfo in packages :
     
     # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
     #         Solution : Disable filtering on first approach
     #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
     
-            name = pkginfo.getElementsByTagName('name')[0].firstChild.nodeValue
-            _arch = pkginfo.getElementsByTagName('arch')[0].firstChild.nodeValue
+            name = pkginfo['name']
+            _arch = pkginfo['arch']
             pkg_key = "%s-%s" % ( name , _arch )
             if pkg_key in download_pkgs.keys() :
                 if _arch != "noarch" :
                     repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
             else :
-                href = pkginfo.getElementsByTagName('location')[0].getAttribute( "href" )
+                href = pkginfo['href']
                 pkgdict = {
                     'sourcename':urllib2.urlparse.urljoin( self.metadata_path(arch) , href ) ,
                     'destname':os.path.join( self.metadata_path(arch) , href ) ,
-                    'size':pkginfo.getElementsByTagName('size')[0].getAttribute( "package" )
+                    'size':pkginfo['size']
                     }
                 download_pkgs[ pkg_key ] = pkgdict
                 # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkgdict['size'] )
-    
-            pkginfo.unlink()
-            del pkginfo
-    
-        del packages
+                download_size += pkgdict['size']
     
         print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
         fd.close()
