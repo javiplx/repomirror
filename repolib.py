@@ -331,7 +331,7 @@ class debian_repository ( abstract_repository ) :
                         break
 
                     else :
-                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
+                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % _item['name'] ) 
                         continue
 
             else :
