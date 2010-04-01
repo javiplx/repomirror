@@ -184,6 +184,25 @@ class fedora_update_repository ( yum_repository ) :
     def metadata_path ( self , arch ) :
         return "%s/" % arch
 
+
+import debian_bundle.deb822 , debian_bundle.debian_support
+
+# FIXME : Include standard plain os.open??
+extensions = {}
+
+try :
+    import gzip
+    extensions['.gz'] = gzip.open
+except :
+    pass
+    
+try :
+    import bz2
+    extensions['.bz2'] = bz2.BZ2File
+except :
+    pass
+
+
 class debian_repository :
 
     def __init__ ( self , url , version ) :
@@ -202,5 +221,127 @@ class debian_repository :
         if arch and comp :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
+
+    def get_package_list ( self , arch , suite_path , repostate , force , comp , release , sections , priorities , tags ) :
+
+        # NOTE : Downloading Release file is quite redundant
+
+        download_size = 0
+        download_pkgs = {}
+
+        fd = False
+        localname = None
+
+        for ( extension , read_handler ) in extensions.iteritems() :
+
+            localname = os.path.join( suite_path , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
+
+            if os.path.isfile( localname ) :
+                #
+                # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
+                #
+                # FIXME : 'size' element should be a number !!!
+                #
+                # FIXME : What about other checksums (sha1, sha256)
+                _item = {}
+                for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+                    for item in release[type] :
+                        if item['name'] == "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) :
+                            _item.update( item )
+                if _item :
+                    error = repoutils.md5_error( localname , _item )
+                    if error :
+                        repoutils.show_error( error , False )
+                        os.unlink( localname )
+                        continue
+
+                    # NOTE : force and unsync should behave different here? We could just force download if forced
+                    if repostate == "synced" and not force :
+                        repoutils.show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( self.metadata_path(arch,comp) , extension ) , False )
+                    else :
+                        fd = read_handler( localname )
+
+                    break
+
+                else :
+                    repoutils.show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( self.metadata_path(arch,comp) , extension ) , True )
+                    continue
+
+        else :
+
+            repoutils.show_error( "No local Packages file exist for %s / %s. Downloading." % ( comp , arch ) , True )
+
+            for ( extension , read_handler ) in extensions.iteritems() :
+
+                localname = os.path.join( suite_path , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
+                url = urllib2.urlparse.urljoin( self.base_url(arch,comp) , "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) )
+
+                if repoutils.downloadRawFile( url , localname ) :
+                    #
+                    # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
+                    #
+                    # FIXME : 'size' element should be a number !!!
+                    #
+                    # FIXME : What about other checksums (sha1, sha256)
+                    _item = {}
+                    for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+                        for item in release[type] :
+                            if item['name'] == "%sPackages%s" % ( self.metadata_path(arch,comp) , extension ) :
+                                _item.update( item )
+                    if _item :
+                        error = repoutils.md5_error( localname , _item )
+                        if error :
+                            repoutils.show_error( error , False )
+                            os.unlink( localname )
+                            continue
+
+                        break
+
+                    else :
+                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
+                        continue
+
+            else :
+                repoutils.show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
+                sys.exit(0)
+
+            fd = read_handler( localname )
+
+        if fd :
+            packages = debian_bundle.debian_support.PackageFile( localname , fd )
+
+# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
+#         Solution : Disable filtering on first approach
+#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
+
+            print "Scanning available packages for minor filters"
+            for pkg in packages :
+                pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+
+                # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
+                # SOLUTION : Create a second and separate Category with the last part (filename) of Section
+                # For now, we kept the simplest way
+                if pkginfo['Section'].find("%s/"%comp) == 0 :
+                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
+
+                if sections and pkginfo['Section'] not in sections :
+                    continue
+                if priorities and pkginfo['Priority'] not in priorities :
+                    continue
+                if tags and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in tags :
+                    continue
+
+                pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
+                if pkg_key in download_pkgs.keys() :
+                    if pkginfo['Architecture'] != "all" :
+                        repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
+                else :
+                    download_pkgs[ pkg_key ] = pkginfo
+                    # FIXME : This might cause a ValueError exception ??
+                    download_size += int( pkginfo['Size'] )
+
+            print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
+            fd.close()
+        return download_size , download_pkgs
 
 

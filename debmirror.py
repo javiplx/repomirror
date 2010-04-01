@@ -32,22 +32,6 @@ except :
     usegpg = False
 
 
-# FIXME : Include standard plain os.open??
-extensions = {}
-
-try :
-    import gzip
-    extensions['.gz'] = gzip.open
-except :
-    pass
-    
-try :
-    import bz2
-    extensions['.bz2'] = bz2.BZ2File
-except :
-    pass
-
-
 import repoutils
 
 import repolib
@@ -204,16 +188,16 @@ print "Components : %s\nArchitectures : %s\n" % ( " ".join(components) , " ".joi
 download_pkgs = {}
 download_size = 0
 
-release_sections = []
-release_priorities = []
-release_tags = []
-
 for comp in components :
 
     for arch in architectures :
 
-        print "Scanning %s / %s" % ( comp , arch )
+      print "Scanning %s / %s" % ( comp , arch )
 
+      _size , _pkgs = repo.get_package_list( arch , suite_path , repostate , force , comp , release , sections , priorities , tags )
+      download_size += _size
+      download_pkgs.update( _pkgs )
+      if False :
         # NOTE : Downloading Release file is quite redundant
 
         fd = False
@@ -311,13 +295,6 @@ for comp in components :
                 if pkginfo['Section'].find("%s/"%comp) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                if pkginfo['Section'] not in release_sections :
-                    release_sections.append( pkginfo['Section'] )
-                if pkginfo['Priority'] not in release_priorities :
-                    release_priorities.append( pkginfo['Priority'] )
-                if 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in release_tags :
-                    release_tags.append( pkginfo['Tag'] )
-
                 if sections and pkginfo['Section'] not in sections :
                     continue
                 if priorities and pkginfo['Priority'] not in priorities :
@@ -336,11 +313,6 @@ for comp in components :
 
             print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
             fd.close()
-
-
-# print "All sects",release_sections
-# print "All prios",release_priorities
-# # print "All tags",release_tags
 
 
 _size = download_size / 1024 / 1024
