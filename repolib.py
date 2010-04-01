@@ -126,7 +126,7 @@ class yum_repository ( abstract_repository ) :
         localname = os.path.join( local_repodata , item['href'] )
     
         if os.path.isfile( localname ) :
-            error = repoutils.md5_error( localname , item )
+            error = repoutils.md5_error( localname , item , item.has_key('size') )
             if error :
                 repoutils.show_error( error , False )
                 os.unlink( localname )

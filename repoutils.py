@@ -39,8 +39,8 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 
-def md5_error ( filename , item , bsize=128 ) :
-    if os.stat( filename ).st_size != int( item['size'] ) :
+def md5_error ( filename , item , check_size=True , bsize=128 ) :
+    if check_size and os.stat( filename ).st_size != int( item['size'] ) :
         return "Bad file size '%s'" % filename
     # Policy is to verify all the checksums
     for type in cksum_handles.keys() :
