@@ -135,7 +135,7 @@ base_url = repo.base_url()
 suite_path = repo.repo_path( destdir )
 
 # For fedora, pool and suite path are the same
-pool_path = suite_path
+pool_path = repo.repo_path( destdir )
 
 repomd_file = {}
 for arch in architectures :
