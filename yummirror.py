@@ -330,5 +330,5 @@ for pkg in download_pkgs.values() :
             os.makedirs( path )
 
     if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
-        show_error( "Failure downloading file '%s'" % ( os.path.basename( pkg['sourcename'] ) ) , False )
+        show_error( "Failure downloading file '%s'" % ( pkg['sourcename'] ) , False )
 

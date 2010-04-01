@@ -467,6 +467,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not downloadRawFile ( urllib2.urlparse.urljoin( repo_url , pkg['Filename'] ) , destname ) :
+    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
