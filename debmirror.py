@@ -23,7 +23,6 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 import urllib2
 
 import os , sys
-import tempfile
 import errno , shutil
 
 try :
