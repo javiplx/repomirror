@@ -10,8 +10,6 @@ usegpg = False
 # force. Forces processing of synced repositories
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
 
-import md5
-
 import urllib2
 
 import os , sys
@@ -48,14 +46,13 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 def md5_error ( filename , item , bsize=128 ) :
-    if item['size'] :
-      # FIXME : Temporary to speedup fedora mirroring developement
-      if os.stat( filename ).st_size != int( item['size'] ) :
+    if os.stat( filename ).st_size != int( item['size'] ) :
         return "Bad file size '%s'" % filename
-    if item['md5sum'] :
-      # FIXME : Temporary to speedup fedora mirroring developement
-      if calc_md5( filename , bsize ) != item['md5sum'] :
-        return "Bad MD5 checksum '%s'" % filename
+    # Policy is to verify all the checksums
+    for type in cksum_handles.keys() :
+        if item.has_key( type ) :
+            if cksum_handles[type]( filename , bsize ) != item[type] :
+                return "Bad %s checksum '%s'" % ( type , filename )
     return None
 
 def calc_md5(filename, bsize=128):
@@ -67,6 +64,20 @@ def calc_md5(filename, bsize=128):
         data = f.read(bsize)
     f.close()
     return _md5.hexdigest()
+
+def calc_sha(filename, bsize=128):
+    f = open( filename , 'rb' )
+    _sha = sha.sha()
+    data = f.read(bsize)
+    while data :
+        _sha.update(data)
+        data = f.read(bsize)
+    f.close()
+    return _sha.hexdigest()
+
+import md5 , sha
+
+cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha }
 
 def gpg_error( signature , file , full_verification=False ) :
 
@@ -211,12 +222,9 @@ for arch in architectures :
                 continue
             # FIXME : Produce an error if multiple locations ?
             size = node.getElementsByTagName( "size" )
-            if size :
-                _size = int(size[0].firstChild.nodeValue)
-            else :
-                _size = False
-            item = { 'href':location[0].getAttribute( "href" ) , 'size':_size , 'md5sum':False }
-            # FIXME : Loop over checksum tags to populate item with available checksums
+            item = { 'href':location[0].getAttribute( "href" ) , 'size':int(size[0].firstChild.nodeValue) }
+            for _node in node.getElementsByTagName( "checksum" ) :
+                item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
             break
     else :
         show_error( "No primary node within repomd file" )
@@ -321,3 +329,4 @@ for pkg in download_pkgs.values() :
 
     if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
         show_error( "Failure downloading file '%s'" % ( os.path.basename( pkg['sourcename'] ) ) , False )
+

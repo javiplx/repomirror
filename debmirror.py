@@ -20,8 +20,6 @@ usegpg = False
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
-import md5
-
 import urllib2
 
 import os , sys
@@ -81,8 +79,11 @@ def downloadRawFile ( remote , local=None ) :
 def md5_error ( filename , item , bsize=128 ) :
     if os.stat( filename ).st_size != int( item['size'] ) :
         return "Bad file size '%s'" % filename
-    if calc_md5( filename , bsize ) != item['md5sum'] :
-        return "Bad MD5 checksum '%s'" % filename
+    # Policy is to verify all the checksums
+    for type in cksum_handles.keys() :
+        if item.has_key( type ) :
+            if cksum_handles[type]( filename , bsize ) != item[type] :
+                return "Bad %s checksum '%s'" % ( type , filename )
     return None
 
 def calc_md5(filename, bsize=128):
@@ -94,6 +95,20 @@ def calc_md5(filename, bsize=128):
         data = f.read(bsize)
     f.close()
     return _md5.hexdigest()
+
+def calc_sha(filename, bsize=128):
+    f = open( filename , 'rb' )
+    _sha = sha.sha()
+    data = f.read(bsize)
+    while data :
+        _sha.update(data)
+        data = f.read(bsize)
+    f.close()
+    return _sha.hexdigest()
+
+import md5 , sha
+
+cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha }
 
 def gpg_error( signature , file , full_verification=False ) :
 
@@ -316,24 +331,28 @@ for comp in components :
                 # FIXME : 'size' element should be a number !!!
                 #
                 # FIXME : What about other checksums (sha1, sha256)
-                for item in release['MD5Sum'] :
-                    if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
-                        error = md5_error( localname , item )
-                        if error :
-                            show_error( error , False )
-                            os.unlink( localname )
-                        break
-                else :
+                _item = {}
+                for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+                    for item in release[type] :
+                        if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
+                            _item.update( item )
+                if not _item :
                     show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( repo.metadata_path(arch,comp) , extension ) , True )
                     continue
+                error = md5_error( localname , _item )
+                if error :
+                    show_error( error , False )
+                    os.unlink( localname )
+                    continue
 
-                if os.path.isfile( localname ) :
-                    # NOTE : force and unsync should behave different here? We could just force download if forced
-                    if repostate == "synced" and not force :
-                        show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
-                    else :
-                        fd = read_handler( localname )
-                    break
+                # NOTE : force and unsync should behave different here? We could just force download if forced
+                if repostate == "synced" and not force :
+                    show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
+                else :
+                    fd = read_handler( localname )
+
+                break
+
         else :
 
             show_error( "No local Packages file exist for %s / %s. Downloading." % ( comp , arch ) , True )
@@ -350,17 +369,19 @@ for comp in components :
                     # FIXME : 'size' element should be a number !!!
                     #
                     # FIXME : What about other checksums (sha1, sha256)
-                    for item in release['MD5Sum'] :
-                        if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
-                            error = md5_error( localname , item )
-                            if error :
-                                show_error( error , False )
-                                os.unlink( localname )
-                                sys.exit(2)
-                            break
-                    else :
+                    _item = {}
+                    for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+                        for item in release[type] :
+                            if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
+                                _item.update( item )
+                    if not _item :
                         show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
-                        sys.exit(0)
+                        continue
+                    error = md5_error( localname , _item )
+                    if error :
+                        show_error( error , False )
+                        os.unlink( localname )
+                        continue
 
                     break
 
