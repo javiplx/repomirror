@@ -48,108 +48,7 @@ except :
     pass
 
 
-def downloadRawFile ( remote , local=None ) :
-    """Downloads a remote file to the local system.
-
-    remote - URL
-    local - Optional local name for the file
-
-    Returns the local file name"""
-
-    if not local :
-        (handle, fname) = tempfile.mkstemp()
-    else :
-        fname = local
-        handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-    try:
-        response = urllib2.urlopen( remote )
-        data = response.read(256)
-        while data :
-            os.write(handle, data)
-            data = response.read(256)
-        os.close(handle)
-    except Exception ,ex :
-        print "Exception : %s" % ex
-        os.close(handle)
-        if not local :
-            os.unlink(fname)
-        return None
-    return fname
-
-def md5_error ( filename , item , bsize=128 ) :
-    if os.stat( filename ).st_size != int( item['size'] ) :
-        return "Bad file size '%s'" % filename
-    # Policy is to verify all the checksums
-    for type in cksum_handles.keys() :
-        if item.has_key( type ) :
-            if cksum_handles[type]( filename , bsize ) != item[type] :
-                return "Bad %s checksum '%s'" % ( type , filename )
-    return None
-
-def calc_md5(filename, bsize=128):
-    f = open( filename , 'rb' )
-    _md5 = md5.md5()
-    data = f.read(bsize)
-    while data :
-        _md5.update(data)
-        data = f.read(bsize)
-    f.close()
-    return _md5.hexdigest()
-
-def calc_sha(filename, bsize=128):
-    f = open( filename , 'rb' )
-    _sha = sha.sha()
-    data = f.read(bsize)
-    while data :
-        _sha.update(data)
-        data = f.read(bsize)
-    f.close()
-    return _sha.hexdigest()
-
-import md5 , sha
-
-cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha }
-
-def gpg_error( signature , file , full_verification=False ) :
-
-    if full_verification :
-        return _gpg_error( signature , file )
-
-    (sigfd, signature_file ) = tempfile.mkstemp()
-    fd = open( signature )
-    line = fd.readline()
-    while line :
-        os.write( sigfd , line )
-        if line[:-1] == "-----END PGP SIGNATURE-----" :
-            os.close( sigfd )
-            if not _gpg_error( signature_file , file ) :
-                fd.close()
-                os.unlink( signature_file )
-                return False
-            sigfd = os.open( signature_file , os.O_WRONLY | os.O_TRUNC )
-        line = fd.readline()
-    else :
-        os.close( sigfd )
-    fd.close()
-    os.unlink( signature_file )
-    return "All signatures failed"
-
-def _gpg_error( signature , file ) :
-    gpgerror = "Not verified"
-    try :
-        result = GnuPGInterface.GnuPG().run( [ "--verify", signature , file ] )
-        result.wait()
-        gpgerror = False
-    except IOError , ex :
-        gpgerror = "Bad signatute : %s" % ex
-    return gpgerror
-
-def show_error( str , error=True ) :
-    if error :
-        print "ERROR : %s" % str
-    else :
-        print "WARNING : %s" % str
-
+import repoutils
 
 import repolib
 
@@ -187,7 +86,7 @@ local_release = os.path.join( suite_path , "Release" )
 
 if usegpg :
     try :
-        release_pgp_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease.gpg" % repo.metadata_path() ) )
+        release_pgp_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease.gpg" % repo.metadata_path() ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -196,18 +95,18 @@ if usegpg :
         sys.exit(255)
 
     if not release_pgp_file :
-        show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
+        repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( version ) )
         sys.exit(255)
 
     if os.path.isfile( local_release ) :
-        errstr = gpg_error( release_pgp_file , local_release )
+        errstr = repoutils.gpg_error( release_pgp_file , local_release )
         if errstr :
-            show_error( errstr , False )
+            repoutils.show_error( errstr , False )
             os.unlink( local_release )
         else :
             # FIXME : If we consider that our mirror is complete, it is safe to exit here
             if repostate == "synced" and not force :
-                show_error( "Release file unchanged, exiting" , False )
+                repoutils.show_error( "Release file unchanged, exiting" , False )
                 sys.exit(0)
             release = debian_bundle.deb822.Release( sequence=open( local_release ) )
             os.unlink( release_pgp_file )
@@ -219,7 +118,7 @@ else :
 if not os.path.isfile( local_release ) :
 
     try :
-        release_file = downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease" % repo.metadata_path() ) )
+        release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease" % repo.metadata_path() ) )
     except urllib2.URLError , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -228,15 +127,15 @@ if not os.path.isfile( local_release ) :
         sys.exit(255)
 
     if not release_file :
-        show_error( "Release file for suite '%s' is not found." % ( version ) )
+        repoutils.show_error( "Release file for suite '%s' is not found." % ( version ) )
         os.unlink( release_pgp_file )
         sys.exit(255)
 
     if usegpg :
-        errstr = gpg_error( release_pgp_file , release_file )
+        errstr = repoutils.gpg_error( release_pgp_file , release_file )
         os.unlink( release_pgp_file )
         if errstr :
-            show_error( errstr )
+            repoutils.show_error( errstr )
             os.unlink( release_file )
             sys.exit(255)
 
@@ -245,7 +144,7 @@ if not os.path.isfile( local_release ) :
     
 # FIXME : Why not check also against release['Codename'] ??
 if release['Suite'].lower() == version.lower() :
-    show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( version, release['Codename'] ) )
+    repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( version, release['Codename'] ) )
     os.unlink( release_file )
     sys.exit(1)
 
@@ -254,13 +153,13 @@ release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].spli
 
 for comp in components :
     if comp not in release_comps :
-        show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
+        repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
         sys.exit(1)
 
 release_archs = release['Architectures'].split()
 for arch in architectures :
     if arch not in release_archs :
-        show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
+        repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
         sys.exit(1)
 
 # After verify all the mirroring parameters, it is safe to create directory tree
@@ -337,34 +236,34 @@ for comp in components :
                         if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                             _item.update( item )
                 if _item :
-                    error = md5_error( localname , _item )
+                    error = repoutils.md5_error( localname , _item )
                     if error :
-                        show_error( error , False )
+                        repoutils.show_error( error , False )
                         os.unlink( localname )
                         continue
 
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if repostate == "synced" and not force :
-                        show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
+                        repoutils.show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
                     else :
                         fd = read_handler( localname )
 
                     break
 
                 else :
-                    show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( repo.metadata_path(arch,comp) , extension ) , True )
+                    repoutils.show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( repo.metadata_path(arch,comp) , extension ) , True )
                     continue
 
         else :
 
-            show_error( "No local Packages file exist for %s / %s. Downloading." % ( comp , arch ) , True )
+            repoutils.show_error( "No local Packages file exist for %s / %s. Downloading." % ( comp , arch ) , True )
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
                 localname = os.path.join( suite_path , "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) )
                 url = urllib2.urlparse.urljoin( repo.base_url(arch,comp) , "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) )
 
-                if downloadRawFile( url , localname ) :
+                if repoutils.downloadRawFile( url , localname ) :
                     #
                     # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
                     #
@@ -377,20 +276,20 @@ for comp in components :
                             if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                                 _item.update( item )
                     if _item :
-                        error = md5_error( localname , _item )
+                        error = repoutils.md5_error( localname , _item )
                         if error :
-                            show_error( error , False )
+                            repoutils.show_error( error , False )
                             os.unlink( localname )
                             continue
 
                         break
 
                     else :
-                        show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
+                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
                         continue
 
             else :
-                show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
+                repoutils.show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
                 sys.exit(0)
 
             fd = read_handler( localname )
@@ -429,7 +328,7 @@ for comp in components :
                 pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
                 if pkg_key in download_pkgs.keys() :
                     if pkginfo['Architecture'] != "all" :
-                        show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
+                        repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
                 else :
                     download_pkgs[ pkg_key ] = pkginfo
                     # FIXME : This might cause a ValueError exception ??
@@ -456,9 +355,9 @@ for pkg in download_pkgs.values() :
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
-        error = md5_error( destname , pkg )
+        error = repoutils.md5_error( destname , pkg )
         if error :
-            show_error( error , False )
+            repoutils.show_error( error , False )
             os.unlink( destname )
         else :
             continue
@@ -467,6 +366,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
-        show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
+    if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
+        repoutils.show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 

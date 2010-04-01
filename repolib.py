@@ -4,24 +4,26 @@ import os , sys
 import urllib2
 import ConfigParser
 
+import repoutils
+
 
 def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") , "repomirror.conf" ] ) :
-        show_error( "Could not find a valid configuration file" )
+        repoutils.show_error( "Could not find a valid configuration file" )
         sys.exit(255)
 
     if "global" not in config.sections() :
-        show_error( "Broken configuration, missing global section" )
+        repoutils.show_error( "Broken configuration, missing global section" )
         sys.exit(255)
 
     if not config.has_option( "global", "destdir" ) :
-        show_error( "Broken configuration, missing destination directory" )
+        repoutils.show_error( "Broken configuration, missing destination directory" )
         sys.exit(255)
 
     if repo_name not in config.sections() :
-        show_error( "Repository '%s' is not configured" % repo_name )
+        repoutils.show_error( "Repository '%s' is not configured" % repo_name )
         sys.exit(255)
 
     conf = {}
@@ -48,7 +50,7 @@ def instantiate_repo ( type , repo_url , version ) :
     elif type == "deb" :
         repo = debian_repository( repo_url , version )
     else :
-        show_error( "Unknown repository type '%s'" % type )
+        repoutils.show_error( "Unknown repository type '%s'" % type )
     return repo
 
 import gzip
@@ -69,7 +71,7 @@ class yum_repository :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
-    def get_package_list ( self , arch , local_repodata , md5_error , repostate , force , downloadRawFile ) :
+    def get_package_list ( self , arch , local_repodata , repostate , force ) :
 
         download_size = 0
         download_pkgs = {}
@@ -82,7 +84,7 @@ class yum_repository :
             if node.getAttribute( "type" ) == "primary" :
                 location = node.getElementsByTagName( "location" )
                 if not location :
-                    show_error( "No location element within repomd file" )
+                    repoutils.show_error( "No location element within repomd file" )
                     continue
                 # FIXME : Produce an error if multiple locations ?
                 size = node.getElementsByTagName( "size" )
@@ -91,7 +93,7 @@ class yum_repository :
                     item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
                 break
         else :
-            show_error( "No primary node within repomd file" )
+            repoutils.show_error( "No primary node within repomd file" )
             os.unlink( os.path.join( local_repodata , "repodata/repomd.xml" ) )
             sys.exit(255)
     
@@ -102,9 +104,9 @@ class yum_repository :
         localname = os.path.join( local_repodata , item['href'] )
     
         if os.path.isfile( localname ) :
-            error = md5_error( localname , item )
+            error = repoutils.md5_error( localname , item )
             if error :
-                show_error( error , False )
+                repoutils.show_error( error , False )
                 os.unlink( localname )
             else :
                 if repostate == "synced" and not force :
@@ -112,18 +114,18 @@ class yum_repository :
     
         if not os.path.isfile( localname ) :
     
-            show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+            repoutils.show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
             url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
     
-            if downloadRawFile( url , localname ) :
-                error = md5_error( localname , item )
+            if repoutils.downloadRawFile( url , localname ) :
+                error = repoutils.md5_error( localname , item )
                 if error :
-                    show_error( error )
+                    repoutils.show_error( error )
                     os.unlink( localname )
                     sys.exit(255)
             else :
-                show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                repoutils.show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
                 sys.exit(255)
     
         fd = gzip.open( localname )
@@ -146,7 +148,7 @@ class yum_repository :
             pkg_key = "%s-%s" % ( name , _arch )
             if pkg_key in download_pkgs.keys() :
                 if _arch != "noarch" :
-                    show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
+                    repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
             else :
                 href = pkginfo.getElementsByTagName('location')[0].getAttribute( "href" )
                 pkgdict = {
@@ -200,12 +202,5 @@ class debian_repository :
         if arch and comp :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
-
-
-def show_error( str , error=True ) :
-    if error :
-        print "ERROR : %s" % str
-    else :
-        print "WARNING : %s" % str
 
 
