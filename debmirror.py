@@ -148,7 +148,7 @@ for arch in architectures :
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-repo.build_local_tree( suite_path , architectures , components , pool_path )
+repo.build_local_tree( architectures , components , pool_path )
 
 # Once created, we move in the primary metadata file
 

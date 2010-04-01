@@ -71,8 +71,9 @@ class yum_repository :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
-    #def build_local_tree( self , suite_path , architectures , components , pool_path ) :
-    def build_local_tree( self , suite_path , architectures ) :
+    def build_local_tree( self , architectures ) :
+
+        suite_path = repo.repo_path( destdir )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
@@ -233,7 +234,9 @@ class debian_repository :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
 
-    def build_local_tree( self , suite_path , architectures , components , pool_path ) :
+    def build_local_tree( self , architectures , components , pool_path ) :
+
+        suite_path = os.path.join( repo.repo_path( destdir ) , repo.metadata_path() )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
