@@ -7,8 +7,6 @@ server = "ftp.rediris.es"
 base_path = "mirror/fedora"
 server_upd = "download.fedora.redhat.com"
 base_path_upd = "pub/fedora/linux/updates"
-destdir = "/home/jpalacios/repomirror"
-#destdir = "/shares/internal/PUBLIC/mirrors/debian"
 
 version = "12" # "lenny"
 architectures = [ "i386" , "x86_64" ] # architectures = [ "i386" , "amd64" ]
@@ -201,6 +199,24 @@ class fedora_update_repository ( yum_repository ) :
 
     def metadata_path ( self , arch ) :
         return "%s/" % arch
+
+
+import ConfigParser
+
+config = ConfigParser.RawConfigParser()
+if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
+    show_error( "Could not find a valid configuration file" )
+    sys.exit(255)
+
+if "global" not in config.sections() :
+    show_error( "Broken configuration, missing global section" )
+    sys.exit(255)
+
+if not config.has_option( "global", "destdir" ) :
+    show_error( "Broken configuration, missing destination directory" )
+    sys.exit(255)
+
+destdir = config.get( "global" , "destdir" )
 
 
 # This gets built to the typical path on source.list
