@@ -71,7 +71,7 @@ def calc_sha(filename, bsize=128):
 
 import md5 , sha
 
-cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha }
+cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha , 'sha':calc_sha }
 
 
 def gpg_error( signature , file , full_verification=False ) :
