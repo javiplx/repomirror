@@ -163,6 +163,16 @@ def show_error( str , error=True ) :
         print "WARNING : %s" % str
 
 
+def instantiate_repo ( type , repo_url , version ) :
+    repo = None
+    if type == "yum" :
+        repo = yum_repository( repo_url , version )
+    elif type == "yum_upd" :
+        repo = fedora_update_repository( repo_url , version )
+    else :
+        show_error( "Unknown repository type '%s'" % type )
+    return repo
+
 class yum_repository :
 
     def __init__ ( self , url , version ) :
@@ -197,8 +207,8 @@ class fedora_update_repository ( yum_repository ) :
 #repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 repo_url = urllib2.urlparse.urlunsplit( ( scheme , server_upd , "%s/" % base_path_upd , None , None ) )
 
-#repo = yum_repository( repo_url , version )
-repo = fedora_update_repository( repo_url , version )
+#repo = instantiate_repo( "yum" , repo_url , version )
+repo = instantiate_repo( "yum_upd" , repo_url , version )
 
 base_url = repo.base_url()
 
