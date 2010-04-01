@@ -336,22 +336,24 @@ for comp in components :
                     for item in release[type] :
                         if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                             _item.update( item )
-                if not _item :
+                if _item :
+                    error = md5_error( localname , _item )
+                    if error :
+                        show_error( error , False )
+                        os.unlink( localname )
+                        continue
+
+                    # NOTE : force and unsync should behave different here? We could just force download if forced
+                    if repostate == "synced" and not force :
+                        show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
+                    else :
+                        fd = read_handler( localname )
+
+                    break
+
+                else :
                     show_error( "Checksum for file '%sPackages%s' not found, go to next format." % ( repo.metadata_path(arch,comp) , extension ) , True )
                     continue
-                error = md5_error( localname , _item )
-                if error :
-                    show_error( error , False )
-                    os.unlink( localname )
-                    continue
-
-                # NOTE : force and unsync should behave different here? We could just force download if forced
-                if repostate == "synced" and not force :
-                    show_error( "Local copy of '%sPackages%s' is up-to-date, skipping." % ( repo.metadata_path(arch,comp) , extension ) , False )
-                else :
-                    fd = read_handler( localname )
-
-                break
 
         else :
 
@@ -374,16 +376,18 @@ for comp in components :
                         for item in release[type] :
                             if item['name'] == "%sPackages%s" % ( repo.metadata_path(arch,comp) , extension ) :
                                 _item.update( item )
-                    if not _item :
+                    if _item :
+                        error = md5_error( localname , _item )
+                        if error :
+                            show_error( error , False )
+                            os.unlink( localname )
+                            continue
+
+                        break
+
+                    else :
                         show_error( "Checksum for file '%s' not found, exiting." % item['name'] ) 
                         continue
-                    error = md5_error( localname , _item )
-                    if error :
-                        show_error( error , False )
-                        os.unlink( localname )
-                        continue
-
-                    break
 
             else :
                 show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
