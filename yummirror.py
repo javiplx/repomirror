@@ -16,6 +16,8 @@ import os , sys
 import tempfile
 import errno , shutil
 
+import gzip
+
 
 def downloadRawFile ( remote , local=None ) :
     """Downloads a remote file to the local system.
