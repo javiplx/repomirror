@@ -303,36 +303,41 @@ class debian_repository ( abstract_repository ) :
                     if params['mode'] == "update" :
                         repoutils.show_error( "Release file unchanged, exiting" , False )
                         return
-                    release = debian_bundle.deb822.Release( sequence=open( local_release ) )
                     os.unlink( release_pgp_file )
 
         else :
             if os.path.isfile( local_release ) :
                 os.unlink( local_release )
 
-        try :
-            release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
-        except urllib2.URLError , ex :
-            repoutils.show_error( "Exception : %s" % ex )
-            return
-        except urllib2.HTTPError , ex :
-            repoutils.show_error( "Exception : %s" % ex )
-            return
-
-        if not release_file :
-            repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
-            if params['usegpg'] :
-                os.unlink( release_pgp_file )
-            sys.exit(255)
-
-        if params['usegpg'] :
-            errstr = repoutils.gpg_error( release_pgp_file , release_file )
-            os.unlink( release_pgp_file )
-            if errstr :
-                repoutils.show_error( errstr )
-                os.unlink( release_file )
+        if not os.path.isfile( local_release ) :
+            try :
+                release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
+            except urllib2.URLError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
                 return
+            except urllib2.HTTPError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
+                return
+
+            if not release_file :
+                repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
+                if params['usegpg'] :
+                    os.unlink( release_pgp_file )
+                sys.exit(255)
+
+            if params['usegpg'] :
+                errstr = repoutils.gpg_error( release_pgp_file , release_file )
+                os.unlink( release_pgp_file )
+                if errstr :
+                    repoutils.show_error( errstr )
+                    os.unlink( release_file )
+                    return
+
             release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+
+        else :
+
+            release = debian_bundle.deb822.Release( sequence=open( local_release ) )
 
         # FIXME : Why not check also against release['Codename'] ??
         if release['Suite'].lower() == repo.version.lower() :
