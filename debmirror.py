@@ -33,9 +33,6 @@ import repolib
 repo_name = "debian"
 config = repolib.read_config( repo_name )
 
-architectures = config[ "architectures" ]
-components = config[ "components" ]
-
 repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
@@ -62,20 +59,20 @@ if release['Suite'].lower() == repo.version.lower() :
 # NOTE : security and volatile repositories prepend a string to the actual component name
 release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
 
-for comp in components :
+for comp in repo.components :
     if comp not in release_comps :
         repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
         sys.exit(1)
 
 release_archs = release['Architectures'].split()
-for arch in architectures :
+for arch in repo.architectures :
     if arch not in release_archs :
         repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
         sys.exit(1)
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-repo.build_local_tree( architectures , components , pool_path )
+repo.build_local_tree( pool_path )
 
 # Once created, we move in the primary metadata file
 
@@ -98,15 +95,15 @@ print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
 %(Origin)s %(Suite)s , %(Date)s
 """ % release
-print "Components : %s\nArchitectures : %s\n" % ( " ".join(components) , " ".join(architectures) )
+print "Components : %s\nArchitectures : %s\n" % ( " ".join(repo.components) , " ".join(repo.architectures) )
 
 
 download_pkgs = {}
 download_size = 0
 
-for arch in architectures :
+for arch in repo.architectures :
 
-    for comp in components :
+    for comp in repo.components :
 
       print "Scanning %s / %s" % ( comp , arch )
 

@@ -70,6 +70,8 @@ class abstract_repository :
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
 
+        self.architectures = config[ "architectures" ]
+
 class yum_repository ( abstract_repository ) :
 
     def base_url ( self ) :
@@ -81,10 +83,10 @@ class yum_repository ( abstract_repository ) :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
-    def get_master_file ( self , repostate , force , usegpg=True , architectures=None ) :
+    def get_master_file ( self , repostate , force , usegpg=True ) :
 
         repomd_files = {}
-        for arch in architectures :
+        for arch in self.architectures :
 
             try :
                 repomd_file[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % repo.metadata_path(arch) ) )
@@ -107,14 +109,14 @@ class yum_repository ( abstract_repository ) :
 
         return repomd_files
 
-    def build_local_tree( self , architectures ) :
+    def build_local_tree( self ) :
 
         suite_path = self.repo_path()
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
 
-        for arch in architectures :
+        for arch in self.architectures :
             packages_path = os.path.join( self.metadata_path(arch) , "repodata" )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
@@ -212,8 +214,8 @@ class yum_repository ( abstract_repository ) :
 
 class fedora_update_repository ( yum_repository ) :
 
-    def __init__ ( self , url ) :
-        yum_repository.__init__( self , url )
+    def __init__ ( self , config ) :
+        yum_repository.__init__( self , config )
 
     def base_url ( self ) :
         return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
@@ -244,6 +246,11 @@ except :
 
 
 class debian_repository ( abstract_repository ) :
+
+    def __init__ ( self , config ) :
+        abstract_repository.__init__( self , config )
+
+        self.components = config[ "components" ]
 
     def base_url ( self , arch=None , comp=None ) :
         if arch and comp :
@@ -320,17 +327,17 @@ class debian_repository ( abstract_repository ) :
 
         return release_file
 
-    def build_local_tree( self , architectures , components , pool_path ) :
+    def build_local_tree( self , pool_path ) :
 
         suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
         if not os.path.exists( suite_path ) :
             os.makedirs( suite_path )
 
-        for comp in components :
+        for comp in self.components :
             if not os.path.exists( os.path.join( suite_path , comp ) ) :
                 os.mkdir( os.path.join( suite_path , comp ) )
-            for arch in architectures :
+            for arch in self.architectures :
                 packages_path = self.metadata_path( arch , comp )
                 if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                     os.mkdir( os.path.join( suite_path , packages_path ) )
@@ -338,7 +345,7 @@ class debian_repository ( abstract_repository ) :
         if not os.path.exists( pool_path ) :
             os.mkdir( pool_path )
 
-        for comp in components :
+        for comp in self.components :
             pool_com_path = os.path.join( pool_path , comp )
             if not os.path.exists( pool_com_path ) :
                 os.mkdir( pool_com_path )

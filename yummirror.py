@@ -23,8 +23,6 @@ import repolib
 repo_name = "yum"
 config = repolib.read_config( repo_name )
 
-architectures = config[ "architectures" ]
-
 repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
@@ -35,7 +33,7 @@ suite_path = repo.repo_path()
 # For fedora, pool and suite path are the same
 pool_path = repo.repo_path()
 
-repomd_file = repo.get_master_file( repostate , force , usegpg , architectures )
+repomd_file = repo.get_master_file( repostate , force , usegpg )
 
 # FIXME : For yum repositories, only errors produce empty output
 if not release_file :
@@ -45,7 +43,7 @@ release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-repo.build_local_tree( architectures )
+repo.build_local_tree()
 
 # And then relocate files from temporary locations
 
@@ -64,13 +62,13 @@ print """
 Mirroring version %s
 %s
 Architectures : %s
-""" % ( repo.version , repo.repo_url , " ".join(architectures) )
+""" % ( repo.version , repo.repo_url , " ".join(repo.architectures) )
 
 
 download_pkgs = {}
 download_size = 0
 
-for arch in architectures :
+for arch in repo.architectures :
 
     print "Scanning %s" % ( arch )
 
