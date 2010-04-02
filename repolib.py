@@ -327,7 +327,7 @@ class debian_repository ( abstract_repository ) :
 
         return release_file
 
-    def build_local_tree( self , pool_path ) :
+    def build_local_tree( self ) :
 
         suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
@@ -341,6 +341,8 @@ class debian_repository ( abstract_repository ) :
                 packages_path = self.metadata_path( arch , comp )
                 if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                     os.mkdir( os.path.join( suite_path , packages_path ) )
+
+        pool_path = os.path.join( self.repo_path() , "pool" )
 
         if not os.path.exists( pool_path ) :
             os.mkdir( pool_path )

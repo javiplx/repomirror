@@ -39,8 +39,6 @@ base_url = repo.base_url()
 
 suite_path = os.path.join( repo.repo_path() , repo.metadata_path() )
 
-pool_path = os.path.join( repo.repo_path() , "pool" )
-
 release_file = repo.get_master_file( repostate , force , usegpg )
 
 # FIXME : Identify error from updated repositories
@@ -72,7 +70,7 @@ for arch in repo.architectures :
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
-repo.build_local_tree( pool_path )
+repo.build_local_tree()
 
 # Once created, we move in the primary metadata file
 
