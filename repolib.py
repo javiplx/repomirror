@@ -403,7 +403,7 @@ class debian_repository ( abstract_repository ) :
 
         else :
 
-            repoutils.show_error( "No local Packages file exist for %s. Downloading." % subrepo , True )
+            repoutils.show_error( "No local Packages file exist for %s / %s. Downloading." % subrepo , True )
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
@@ -436,7 +436,7 @@ class debian_repository ( abstract_repository ) :
                         continue
 
             else :
-                repoutils.show_error( "No Valid Packages file found for %s" % subrepo )
+                repoutils.show_error( "No Valid Packages file found for %s / %s" % subrepo )
                 sys.exit(0)
 
             fd = read_handler( localname )
@@ -455,7 +455,7 @@ class debian_repository ( abstract_repository ) :
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
                 # SOLUTION : Create a second and separate Category with the last part (filename) of Section
                 # For now, we kept the simplest way
-                if pkginfo['Section'].find("%s/"%comp) == 0 :
+                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 if sections and pkginfo['Section'] not in sections :
