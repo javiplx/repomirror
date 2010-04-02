@@ -27,8 +27,6 @@ def read_config ( repo_name ) :
         sys.exit(255)
 
     conf = {}
-    print dir(config)
-    print config.get.__doc__
     conf['destdir'] = config.get( "global" , "destdir" )
 
     conf['type'] = config.get( repo_name , "type" )
@@ -66,7 +64,7 @@ class abstract_repository :
 
     def __init__ ( self , config ) :
 
-        if config.has_key[ "url" ] :
+        if config.has_key( "url" ) :
             self.repo_url = config[ "url" ]
         else :
             scheme = config[ "scheme" ]
@@ -188,7 +186,7 @@ class yum_repository ( abstract_repository ) :
         fd = gzip.open( localname )
         packages = filelist_xmlparser.get_package_list( fd )
     
-        print "Scanning available packages for minor filters (not implemented yet !!!)"
+        repoutils.show_error( "Scanning available packages for minor filters (not implemented yet !!!)" , False )
         # Most relevant for minor filter is   <format><rpm:group>...</rpm:group>
     
         for pkginfo in packages :
@@ -214,7 +212,7 @@ class yum_repository ( abstract_repository ) :
                 # FIXME : This might cause a ValueError exception ??
                 download_size += pkgdict['size']
     
-        print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
+        repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
         fd.close()
 
         return download_size , download_pkgs
@@ -455,7 +453,7 @@ class debian_repository ( abstract_repository ) :
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            print "Scanning available packages for minor filters"
+            repoutils.show_error( "Scanning available packages for minor filters" , False )
             for pkg in packages :
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
@@ -481,7 +479,7 @@ class debian_repository ( abstract_repository ) :
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
-            print "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 )
+            repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
             fd.close()
         return download_size , download_pkgs
 
