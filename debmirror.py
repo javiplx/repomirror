@@ -44,65 +44,13 @@ suite_path = os.path.join( repo.repo_path() , repo.metadata_path() )
 
 pool_path = os.path.join( repo.repo_path() , "pool" )
 
-local_release = os.path.join( suite_path , "Release" )
+release_file = repo.get_master_file( repostate , force , usegpg )
 
-
-if usegpg :
-    try :
-        release_pgp_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease.gpg" % repo.metadata_path() ) )
-    except urllib2.URLError , ex :
-        print "Exception : %s" % ex
-        sys.exit(255)
-    except urllib2.HTTPError , ex :
-        print "Exception : %s" % ex
-        sys.exit(255)
-
-    if not release_pgp_file :
-        repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( repo.version ) )
-        sys.exit(255)
-
-    if os.path.isfile( local_release ) :
-        errstr = repoutils.gpg_error( release_pgp_file , local_release )
-        if errstr :
-            repoutils.show_error( errstr , False )
-            os.unlink( local_release )
-        else :
-            # FIXME : If we consider that our mirror is complete, it is safe to exit here
-            if repostate == "synced" and not force :
-                repoutils.show_error( "Release file unchanged, exiting" , False )
-                sys.exit(0)
-            release = debian_bundle.deb822.Release( sequence=open( local_release ) )
-            os.unlink( release_pgp_file )
-
-else :
-    if os.path.isfile( local_release ) :
-        os.unlink( local_release )
-
-if not os.path.isfile( local_release ) :
-
-    try :
-        release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%sRelease" % repo.metadata_path() ) )
-    except urllib2.URLError , ex :
-        print "Exception : %s" % ex
-        sys.exit(255)
-    except urllib2.HTTPError , ex :
-        print "Exception : %s" % ex
-        sys.exit(255)
-
-    if not release_file :
-        repoutils.show_error( "Release file for suite '%s' is not found." % ( repo.version ) )
-        os.unlink( release_pgp_file )
-        sys.exit(255)
-
-    if usegpg :
-        errstr = repoutils.gpg_error( release_pgp_file , release_file )
-        os.unlink( release_pgp_file )
-        if errstr :
-            repoutils.show_error( errstr )
-            os.unlink( release_file )
-            sys.exit(255)
-
-    release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+# FIXME : Identify error from updated repositories
+if not release_file :
+    repoutils.show_error( "Cannot process, exiting" )
+    sys.exit(255)
+release = debian_bundle.deb822.Release( sequence=open( release_file ) )
     
     
 # FIXME : Why not check also against release['Codename'] ??
@@ -130,6 +78,8 @@ for arch in architectures :
 repo.build_local_tree( architectures , components , pool_path )
 
 # Once created, we move in the primary metadata file
+
+local_release = os.path.join( suite_path , "Release" )
 
 if not os.path.exists( local_release ) :
     try :

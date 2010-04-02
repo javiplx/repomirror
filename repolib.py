@@ -232,6 +232,68 @@ class debian_repository ( abstract_repository ) :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
 
+    def get_master_file ( self , repostate , force , usegpg=True ) :
+
+        release_path = os.path.join( self.metadata_path() , "Release" )
+        local_release = os.path.join( self.repo_path() , release_path )
+
+        if usegpg :
+
+            try :
+                release_pgp_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % release_path ) )
+            except urllib2.URLError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
+                return
+            except urllib2.HTTPError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
+                return
+
+            if not release_pgp_file :
+                repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( repo.version ) )
+                return
+
+            if os.path.isfile( local_release ) :
+                errstr = repoutils.gpg_error( release_pgp_file , local_release )
+                if errstr :
+                    repoutils.show_error( errstr , False )
+                    os.unlink( local_release )
+                else :
+                    # FIXME : If we consider that our mirror is complete, it is safe to exit here
+                    if repostate == "synced" and not force :
+                        repoutils.show_error( "Release file unchanged, exiting" , False )
+                        return
+                    release = debian_bundle.deb822.Release( sequence=open( local_release ) )
+                    os.unlink( release_pgp_file )
+
+        else :
+            if os.path.isfile( local_release ) :
+                os.unlink( local_release )
+
+        try :
+            release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
+        except urllib2.URLError , ex :
+            repoutils.show_error( "Exception : %s" % ex )
+            return
+        except urllib2.HTTPError , ex :
+            repoutils.show_error( "Exception : %s" % ex )
+            return
+
+        if not release_file :
+            repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
+            if usegpg :
+                os.unlink( release_pgp_file )
+            sys.exit(255)
+
+        if usegpg :
+            errstr = repoutils.gpg_error( release_pgp_file , release_file )
+            os.unlink( release_pgp_file )
+            if errstr :
+                repoutils.show_error( errstr )
+                os.unlink( release_file )
+                return
+
+        return release_file
+
     def build_local_tree( self , architectures , components , pool_path ) :
 
         suite_path = os.path.join( self.repo_path() , self.metadata_path() )
