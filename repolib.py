@@ -27,12 +27,17 @@ def read_config ( repo_name ) :
         sys.exit(255)
 
     conf = {}
+    print dir(config)
+    print config.get.__doc__
     conf['destdir'] = config.get( "global" , "destdir" )
 
     conf['type'] = config.get( repo_name , "type" )
-    conf['scheme'] = config.get( repo_name , "scheme" )
-    conf['server'] = config.get( repo_name , "server" )
-    conf['base_path'] = config.get( repo_name , "base_path" )
+    if config.has_option ( repo_name , "url" ) :
+        conf['url'] = config.get( repo_name , "url" )
+    else :
+        conf['scheme'] = config.get( repo_name , "scheme" )
+        conf['server'] = config.get( repo_name , "server" )
+        conf['base_path'] = config.get( repo_name , "base_path" )
     conf['version'] = config.get( repo_name , "version" )
     conf['architectures'] = config.get( repo_name , "architectures" ).split()
     if config.has_option( repo_name , "components" ) :
@@ -60,12 +65,14 @@ import filelist_xmlparser
 class abstract_repository :
 
     def __init__ ( self , config ) :
-        scheme = config[ "scheme" ]
-        server = config[ "server" ]
-        base_path = config[ "base_path" ]
 
-        # This gets built to the typical path on source.list
-        self.repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+        if config.has_key[ "url" ] :
+            self.repo_url = config[ "url" ]
+        else :
+            scheme = config[ "scheme" ]
+            server = config[ "server" ]
+            base_path = config[ "base_path" ]
+            self.repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
 
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
