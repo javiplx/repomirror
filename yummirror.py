@@ -1,14 +1,12 @@
 #!/usr/bin/python
 
-# Status and command line options
-repostate = "synced"
-force = True
-# FIXME : Add an ignore all verifications? (pgp+md5)
-usegpg = False
-#
-# repostate. If 'synced', the repository is complete, so checking description files could suffice
-# force. Forces processing of synced repositories
+params = {}
+# mode (update|init) - decides if we stop processing for unchanged metadata files
+params['mode'] = "update"
+
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
+# FIXME : Add an ignore all verifications? (pgp+md5)
+params['usegpg'] = False
 
 import urllib2
 
@@ -33,7 +31,7 @@ suite_path = repo.repo_path()
 # For fedora, pool and suite path are the same
 pool_path = repo.repo_path()
 
-repomd_file = repo.get_master_file( repostate , force , usegpg )
+repomd_file = repo.get_master_file( params )
 
 # FIXME : For yum repositories, only errors produce empty output
 if not repomd_file :
@@ -71,7 +69,7 @@ for arch in repo.architectures :
 
     print "Scanning %s" % ( arch )
 
-    _size , _pkgs = repo.get_package_list( arch , local_repodata[arch] , repostate , force )
+    _size , _pkgs = repo.get_package_list( arch , local_repodata[arch] , params )
     download_size += _size
     download_pkgs.update( _pkgs )
 

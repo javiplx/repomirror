@@ -90,7 +90,7 @@ class yum_repository ( abstract_repository ) :
     def metadata_path ( self , subrepo ) :
         return "%s/os/" % subrepo
 
-    def get_master_file ( self , repostate , force , usegpg=True ) :
+    def get_master_file ( self , params ) :
 
         repomd_files = {}
         for arch in self.architectures :
@@ -128,7 +128,7 @@ class yum_repository ( abstract_repository ) :
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
 
-    def get_package_list ( self , arch , local_repodata , repostate , force ) :
+    def get_package_list ( self , arch , local_repodata , params ) :
 
         download_size = 0
         download_pkgs = {}
@@ -166,7 +166,7 @@ class yum_repository ( abstract_repository ) :
                 repoutils.show_error( error , False )
                 os.unlink( localname )
             else :
-                if repostate == "synced" and not force :
+                if params['mode'] == "update" :
                     return 0 , {}
     
         if not os.path.isfile( localname ) :
@@ -275,12 +275,12 @@ class debian_repository ( abstract_repository ) :
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
 
-    def get_master_file ( self , repostate , force , usegpg=True ) :
+    def get_master_file ( self , params ) :
 
         release_path = os.path.join( self.metadata_path() , "Release" )
         local_release = os.path.join( self.repo_path() , release_path )
 
-        if usegpg :
+        if params['usegpg'] :
 
             try :
                 release_pgp_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % release_path ) )
@@ -302,7 +302,7 @@ class debian_repository ( abstract_repository ) :
                     os.unlink( local_release )
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
-                    if repostate == "synced" and not force :
+                    if params['mode'] == "update" :
                         repoutils.show_error( "Release file unchanged, exiting" , False )
                         return
                     release = debian_bundle.deb822.Release( sequence=open( local_release ) )
@@ -323,11 +323,11 @@ class debian_repository ( abstract_repository ) :
 
         if not release_file :
             repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
-            if usegpg :
+            if params['usegpg'] :
                 os.unlink( release_pgp_file )
             sys.exit(255)
 
-        if usegpg :
+        if params['usegpg'] :
             errstr = repoutils.gpg_error( release_pgp_file , release_file )
             os.unlink( release_pgp_file )
             if errstr :
@@ -363,7 +363,7 @@ class debian_repository ( abstract_repository ) :
             if not os.path.exists( pool_com_path ) :
                 os.mkdir( pool_com_path )
 
-    def get_package_list ( self , subrepo , suite_path , repostate , force , release , sections , priorities , tags ) :
+    def get_package_list ( self , subrepo , suite_path , params , release , sections , priorities , tags ) :
 
         # NOTE : Downloading Release file is quite redundant
 
@@ -397,7 +397,7 @@ class debian_repository ( abstract_repository ) :
                         continue
 
                     # NOTE : force and unsync should behave different here? We could just force download if forced
-                    if repostate == "synced" and not force :
+                    if params['mode'] == "update" :
                         repoutils.show_error( "Local copy of '%s' is up-to-date, skipping." % _name , False )
                     else :
                         fd = read_handler( localname )

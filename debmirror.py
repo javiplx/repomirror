@@ -6,15 +6,13 @@ sections = []
 priorities = []
 tags = []
 
-# Status and command line options
-repostate = "synced"
-force = True
-# FIXME : Add an ignore all verifications? (pgp+md5)
-usegpg = False
-#
-# repostate. If 'synced', the repository is complete, so checking description files could suffice
-# force. Forces processing of synced repositories
+params = {}
+# mode (update|init) - decides if we stop processing for unchanged metadata files
+params['mode'] = "update"
+
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
+# FIXME : Add an ignore all verifications? (pgp+md5)
+params['usegpg'] = False
 
 # FIXME : Create a separate program to list all the sections, pririties and tags
 
@@ -39,7 +37,7 @@ base_url = repo.base_url()
 
 suite_path = os.path.join( repo.repo_path() , repo.metadata_path() )
 
-release_file = repo.get_master_file( repostate , force , usegpg )
+release_file = repo.get_master_file( params )
 
 # FIXME : Identify error from updated repositories
 if not release_file :
@@ -106,7 +104,7 @@ for arch in repo.architectures :
       subrepo = ( arch , comp )
       print "Scanning %s / %s" % subrepo
 
-      _size , _pkgs = repo.get_package_list( subrepo , suite_path , repostate , force , release , sections , priorities , tags )
+      _size , _pkgs = repo.get_package_list( subrepo , suite_path , params , release , sections , priorities , tags )
       download_size += _size
       download_pkgs.update( _pkgs )
 
