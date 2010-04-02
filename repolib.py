@@ -80,8 +80,8 @@ class yum_repository ( abstract_repository ) :
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
-    def metadata_path ( self , arch ) :
-        return "%s/os/" % arch
+    def metadata_path ( self , subrepo ) :
+        return "%s/os/" % subrepo
 
     def get_master_file ( self , repostate , force , usegpg=True ) :
 
@@ -223,8 +223,8 @@ class fedora_update_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , arch ) :
-        return "%s/" % arch
+    def metadata_path ( self , subrepo ) :
+        return "%s/" % subrepo
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
@@ -252,16 +252,19 @@ class debian_repository ( abstract_repository ) :
 
         self.components = config[ "components" ]
 
-    def base_url ( self , arch=None , comp=None ) :
-        if arch and comp :
+    def base_url ( self , subrepo=None ) :
+        if subrepo :
+            arch , comp = subrepo
             return urllib2.urlparse.urljoin( self.repo_url , self.metadata_path() )
         return self.repo_url
 
     def repo_path ( self ) :
         return self.destdir
 
-    def metadata_path ( self , arch=None , comp=None ) :
-        if arch and comp :
+    def metadata_path ( self , subrepo=None ) :
+    #def metadata_path ( self , arch=None , comp=None ) :
+        if subrepo :
+            arch , comp = subrepo
             return "%s/binary-%s/" % ( comp , arch )
         return "dists/%s/" % self.version
 
@@ -338,7 +341,8 @@ class debian_repository ( abstract_repository ) :
             if not os.path.exists( os.path.join( suite_path , comp ) ) :
                 os.mkdir( os.path.join( suite_path , comp ) )
             for arch in self.architectures :
-                packages_path = self.metadata_path( arch , comp )
+                subrepo = ( arch , comp )
+                packages_path = self.metadata_path( subrepo )
                 if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                     os.mkdir( os.path.join( suite_path , packages_path ) )
 
@@ -352,7 +356,7 @@ class debian_repository ( abstract_repository ) :
             if not os.path.exists( pool_com_path ) :
                 os.mkdir( pool_com_path )
 
-    def get_package_list ( self , arch , suite_path , repostate , force , comp , release , sections , priorities , tags ) :
+    def get_package_list ( self , subrepo , suite_path , repostate , force , release , sections , priorities , tags ) :
 
         # NOTE : Downloading Release file is quite redundant
 
@@ -364,7 +368,7 @@ class debian_repository ( abstract_repository ) :
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(arch,comp) , extension )
+            _name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
             localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
@@ -399,13 +403,13 @@ class debian_repository ( abstract_repository ) :
 
         else :
 
-            repoutils.show_error( "No local Packages file exist for %s / %s. Downloading." % ( comp , arch ) , True )
+            repoutils.show_error( "No local Packages file exist for %s. Downloading." % subrepo , True )
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
-                _name = "%sPackages%s" % ( self.metadata_path(arch,comp) , extension )
+                _name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
                 localname = os.path.join( suite_path , _name )
-                url = urllib2.urlparse.urljoin( self.base_url(arch,comp) , _name )
+                url = urllib2.urlparse.urljoin( self.base_url(subrepo) , _name )
 
                 if repoutils.downloadRawFile( url , localname ) :
                     #
@@ -432,7 +436,7 @@ class debian_repository ( abstract_repository ) :
                         continue
 
             else :
-                repoutils.show_error( "No Valid Packages file found for %s / %s" % ( comp , arch ) )
+                repoutils.show_error( "No Valid Packages file found for %s" % subrepo )
                 sys.exit(0)
 
             fd = read_handler( localname )

@@ -103,9 +103,10 @@ for arch in repo.architectures :
 
     for comp in repo.components :
 
-      print "Scanning %s / %s" % ( comp , arch )
+      subrepo = ( arch , comp )
+      print "Scanning %s" % subrepo
 
-      _size , _pkgs = repo.get_package_list( arch , suite_path , repostate , force , comp , release , sections , priorities , tags )
+      _size , _pkgs = repo.get_package_list( subrepo , suite_path , repostate , force , release , sections , priorities , tags )
       download_size += _size
       download_pkgs.update( _pkgs )
 
