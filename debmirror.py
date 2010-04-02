@@ -43,28 +43,6 @@ release_file = repo.get_master_file( params )
 if not release_file :
     repoutils.show_error( "Cannot process, exiting" )
     sys.exit(255)
-release = debian_bundle.deb822.Release( sequence=open( release_file ) )
-    
-    
-# FIXME : Why not check also against release['Codename'] ??
-if release['Suite'].lower() == repo.version.lower() :
-    repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( repo.version, release['Codename'] ) )
-    os.unlink( release_file )
-    sys.exit(1)
-
-# NOTE : security and volatile repositories prepend a string to the actual component name
-release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
-
-for comp in repo.components :
-    if comp not in release_comps :
-        repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
-        sys.exit(1)
-
-release_archs = release['Architectures'].split()
-for arch in repo.architectures :
-    if arch not in release_archs :
-        repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
-        sys.exit(1)
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
@@ -82,6 +60,8 @@ if not os.path.exists( local_release ) :
             print "OSError: %s" % ex
             sys.exit(1)
         shutil.move( release_file , local_release )
+
+release = debian_bundle.deb822.Release( sequence=open( local_release ) )
 
 # Some Release files hold no 'version' information
 if not release.has_key( 'Version' ) :

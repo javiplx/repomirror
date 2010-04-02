@@ -332,6 +332,27 @@ class debian_repository ( abstract_repository ) :
                 repoutils.show_error( errstr )
                 os.unlink( release_file )
                 return
+            release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+
+        # FIXME : Why not check also against release['Codename'] ??
+        if release['Suite'].lower() == repo.version.lower() :
+            repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( repo.version, release['Codename'] ) )
+            os.unlink( release_file )
+            return
+
+        # NOTE : security and volatile repositories prepend a string to the actual component name
+        release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
+
+        for comp in repo.components :
+            if comp not in release_comps :
+                repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
+                return
+
+        release_archs = release['Architectures'].split()
+        for arch in repo.architectures :
+            if arch not in release_archs :
+                repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
+                return
 
         return release_file
 
