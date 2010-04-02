@@ -36,10 +36,9 @@ pool_path = repo.repo_path()
 repomd_file = repo.get_master_file( repostate , force , usegpg )
 
 # FIXME : For yum repositories, only errors produce empty output
-if not release_file :
+if not repomd_file :
     repoutils.show_error( "Cannot process, exiting" )
     sys.exit(255)
-release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
