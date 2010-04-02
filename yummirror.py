@@ -35,30 +35,13 @@ suite_path = repo.repo_path()
 # For fedora, pool and suite path are the same
 pool_path = repo.repo_path()
 
-repomd_file = {}
-for arch in architectures :
+repomd_file = repo.get_master_file( repostate , force , usegpg , architectures )
 
-    try :
-        repomd_file[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % repo.metadata_path(arch) ) )
-    except urllib2.URLError , ex :
-        print "Exception : %s" % ex
-        for _arch in repomd_file.keys() :
-            if _arch != arch :
-                os.unlink( repomd_file[_arch] )
-        sys.exit(255)
-    except urllib2.HTTPError , ex :
-        print "Exception : %s" % ex
-        for _arch in repomd_file.keys() :
-            if _arch != arch :
-                os.unlink( repomd_file[_arch] )
-        sys.exit(255)
-
-    if not repomd_file[arch] :
-        repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , repo.version ) )
-        for _arch in repomd_file.keys() :
-            if _arch != arch :
-                os.unlink( repomd_file[_arch] )
-        sys.exit(1)
+# FIXME : For yum repositories, only errors produce empty output
+if not release_file :
+    repoutils.show_error( "Cannot process, exiting" )
+    sys.exit(255)
+release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 

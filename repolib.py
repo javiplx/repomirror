@@ -81,6 +81,32 @@ class yum_repository ( abstract_repository ) :
     def metadata_path ( self , arch ) :
         return "%s/os/" % arch
 
+    def get_master_file ( self , repostate , force , usegpg=True , architectures=None ) :
+
+        repomd_files = {}
+        for arch in architectures :
+
+            try :
+                repomd_file[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % repo.metadata_path(arch) ) )
+            except urllib2.URLError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
+                for file in repomd_files.values :
+                    os.unlink( file )
+                return
+            except urllib2.HTTPError , ex :
+                repoutils.show_error( "Exception : %s" % ex )
+                for file in repomd_files.values :
+                    os.unlink( file )
+                return
+
+            if not repomd_files[arch] :
+                repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , repo.version ) )
+                for file in repomd_files.values :
+                    os.unlink( file )
+                return
+
+        return repomd_files
+
     def build_local_tree( self , architectures ) :
 
         suite_path = self.repo_path()
