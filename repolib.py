@@ -89,7 +89,7 @@ class yum_repository ( abstract_repository ) :
         for arch in self.architectures :
 
             try :
-                repomd_file[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( base_url , "%s/repodata/repomd.xml" % repo.metadata_path(arch) ) )
+                repomd_files[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
             except urllib2.URLError , ex :
                 repoutils.show_error( "Exception : %s" % ex )
                 for file in repomd_files.values :
@@ -102,7 +102,7 @@ class yum_repository ( abstract_repository ) :
                 return
 
             if not repomd_files[arch] :
-                repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , repo.version ) )
+                repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
                 for file in repomd_files.values :
                     os.unlink( file )
                 return
@@ -285,7 +285,7 @@ class debian_repository ( abstract_repository ) :
                 return
 
             if not release_pgp_file :
-                repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( repo.version ) )
+                repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( self.version ) )
                 return
 
             if os.path.isfile( local_release ) :
