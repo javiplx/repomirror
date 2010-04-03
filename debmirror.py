@@ -67,6 +67,10 @@ release = debian_bundle.deb822.Release( sequence=open( local_release ) )
 if not release.has_key( 'Version' ) :
     release['Version'] = "undef"
 
+# Some Release files hold no 'Date' information
+if not release.has_key( 'Date' ) :
+    release['Date'] = "undef"
+
 print """
 Mirroring %(Label)s %(Version)s (%(Codename)s)
 %(Origin)s %(Suite)s , %(Date)s

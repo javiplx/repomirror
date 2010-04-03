@@ -361,10 +361,11 @@ class debian_repository ( abstract_repository ) :
 
             release = debian_bundle.deb822.Release( sequence=open( local_release ) )
 
-        if release['Suite'].lower() == self.version.lower() :
-            repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
-            os.unlink( release_file )
-            return
+        if release['Suite'] !=  release['Codename'] :
+            if release['Suite'].lower() == self.version.lower() :
+                repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
+                os.unlink( release_file )
+                return
 
         if release['Codename'].lower() != self.version.lower() :
             repoutils.show_error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
