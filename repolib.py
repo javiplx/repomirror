@@ -277,7 +277,7 @@ class debian_repository ( abstract_repository ) :
     def __init__ ( self , config ) :
         abstract_repository.__init__( self , config )
 
-        self.components = config[ "components" ]
+        self.components = config.get( "components" , None )
 
     def base_url ( self , subrepo=None ) :
         if subrepo :
@@ -371,13 +371,26 @@ class debian_repository ( abstract_repository ) :
             os.unlink( release_file )
             return
 
-        # NOTE : security and volatile repositories prepend a string to the actual component name
-        release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
+        if release.has_key( "Components" ) :
+            # NOTE : security and volatile repositories prepend a string to the actual component name
+            release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
 
-        for comp in self.components :
-            if comp not in release_comps :
-                repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
-                return
+            if self.components :
+                for comp in self.components :
+                    if comp not in release_comps :
+                        repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
+                        return
+            else :
+                repoutils.show_error( "No components specified, selected all components from Release file" , False )
+                self.components = release_comps
+
+        elif self.components :
+            repoutils.show_error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
+            return
+        else :
+            # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
+            repoutils.show_error( "Va que no, ni haskey, ni components" , False )
+            self.components = ( "main" ,)
 
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
