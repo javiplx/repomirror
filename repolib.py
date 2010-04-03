@@ -52,6 +52,8 @@ def instantiate_repo ( config ) :
         repo = centos_repository( config )
     elif config['type'] == "yum_upd" :
         repo = fedora_update_repository( config )
+    elif config['type'] == "centos_upd" :
+        repo = centos_update_repository( config )
     elif config['type'] == "deb" :
         repo = debian_repository( config )
     else :
@@ -245,6 +247,11 @@ class centos_repository ( yum_repository ) :
 
     def metadata_path ( self , subrepo ) :
         return "os/%s/" % subrepo
+
+class centos_update_repository ( centos_repository ) :
+
+    def metadata_path ( self , subrepo ) :
+        return "updates/%s/" % subrepo
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
