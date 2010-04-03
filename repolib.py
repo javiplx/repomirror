@@ -48,6 +48,8 @@ def instantiate_repo ( config ) :
     repo = None
     if config['type'] == "yum" :
         repo = yum_repository( config )
+    elif config['type'] == "centos" :
+        repo = centos_repository( config )
     elif config['type'] == "yum_upd" :
         repo = fedora_update_repository( config )
     elif config['type'] == "deb" :
@@ -141,9 +143,11 @@ class yum_repository ( abstract_repository ) :
                 if not location :
                     repoutils.show_error( "No location element within repomd file" )
                     continue
+                item = { 'href':location[0].getAttribute( "href" ) }
                 # FIXME : Produce an error if multiple locations ?
                 size = node.getElementsByTagName( "size" )
-                item = { 'href':location[0].getAttribute( "href" ) , 'size':int(size[0].firstChild.nodeValue) }
+                if size :
+                    item['size'] = int(size[0].firstChild.nodeValue)
                 for _node in node.getElementsByTagName( "checksum" ) :
                     item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
                 break
@@ -174,7 +178,7 @@ class yum_repository ( abstract_repository ) :
             url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if repoutils.downloadRawFile( url , localname ) :
-                error = repoutils.md5_error( localname , item )
+                error = repoutils.md5_error( localname , item , item.has_key('size') )
                 if error :
                     repoutils.show_error( error )
                     os.unlink( localname )
@@ -230,6 +234,17 @@ class fedora_update_repository ( yum_repository ) :
 
     def metadata_path ( self , subrepo ) :
         return "%s/" % subrepo
+
+class centos_repository ( yum_repository ) :
+
+    def base_url ( self ) :
+        return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
+    def metadata_path ( self , subrepo ) :
+        return "os/%s/" % subrepo
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
