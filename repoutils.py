@@ -33,8 +33,7 @@ def downloadRawFile ( remote , local=None ) :
     except Exception ,ex :
         print "Exception : %s" % ex
         os.close(handle)
-        if not local :
-            os.unlink(fname)
+        os.unlink(fname)
         return None
     return fname
 
