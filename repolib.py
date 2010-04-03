@@ -69,7 +69,7 @@ class abstract_repository :
     def __init__ ( self , config ) :
 
         if config.has_key( "url" ) :
-            self.repo_url = config[ "url" ]
+            self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
         else :
             scheme = config[ "scheme" ]
             server = config[ "server" ]
