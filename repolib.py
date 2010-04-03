@@ -450,8 +450,9 @@ class debian_repository ( abstract_repository ) :
                 # FIXME : What about other checksums (sha1, sha256)
                 _item = {}
                 for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
-                    if release[type].has_key( _name ) :
-                        _item.update( release[type][_name] )
+                    if release.has_key(type) :
+                        if release[type].has_key( _name ) :
+                            _item.update( release[type][_name] )
                 if _item :
                     error = repoutils.md5_error( localname , _item )
                     if error :
@@ -490,8 +491,9 @@ class debian_repository ( abstract_repository ) :
                     # FIXME : What about other checksums (sha1, sha256)
                     _item = {}
                     for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
-                        if release[type].has_key( _name ) :
-                            _item.update( release[type][_name] )
+                        if release.has_key(type) :
+                            if release[type].has_key( _name ) :
+                                _item.update( release[type][_name] )
                     if _item :
                         error = repoutils.md5_error( localname , _item )
                         if error :
