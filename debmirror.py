@@ -11,8 +11,11 @@ params = {}
 params['mode'] = "update"
 
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
-# FIXME : Add an ignore all verifications? (pgp+md5)
 params['usegpg'] = False
+
+
+# usemd5. To disable size & checksums verification for broken repositories
+params['usemd5'] = False
 
 # FIXME : Create a separate program to list all the sections, pririties and tags
 

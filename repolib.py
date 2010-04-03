@@ -455,11 +455,12 @@ class debian_repository ( abstract_repository ) :
                         if release[type].has_key( _name ) :
                             _item.update( release[type][_name] )
                 if _item :
-                    error = repoutils.md5_error( localname , _item )
-                    if error :
-                        repoutils.show_error( error , False )
-                        os.unlink( localname )
-                        continue
+                    if params['usemd5'] :
+                        error = repoutils.md5_error( localname , _item )
+                        if error :
+                            repoutils.show_error( error , False )
+                            os.unlink( localname )
+                            continue
 
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if params['mode'] == "update" :
@@ -496,11 +497,12 @@ class debian_repository ( abstract_repository ) :
                             if release[type].has_key( _name ) :
                                 _item.update( release[type][_name] )
                     if _item :
-                        error = repoutils.md5_error( localname , _item )
-                        if error :
-                            repoutils.show_error( error , False )
-                            os.unlink( localname )
-                            continue
+                        if params['usemd5'] :
+                            error = repoutils.md5_error( localname , _item )
+                            if error :
+                                repoutils.show_error( error , False )
+                                os.unlink( localname )
+                                continue
 
                         break
 
