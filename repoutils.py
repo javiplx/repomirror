@@ -38,14 +38,25 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 
-def md5_error ( filename , item , check_size=True , bsize=128 ) :
-    if check_size and os.stat( filename ).st_size != int( item['size'] ) :
-        return "Bad file size '%s'" % filename
+DO_SIZE = 1
+DO_CKSUM = 2
+
+def md5_error ( filename , item , check_flag = DO_SIZE | DO_CKSUM , bsize=128 ) :
+    if not check_flag :
+        return "No check selected for '%s'" % filename
+        return None
+
+    if check_flag & DO_SIZE :
+        if os.stat( filename ).st_size != int( item['size'] ) :
+            return "Bad file size '%s'" % filename
+
     # Policy is to verify all the checksums
-    for type in cksum_handles.keys() :
-        if item.has_key( type ) :
-            if cksum_handles[type]( filename , bsize ) != item[type] :
-                return "Bad %s checksum '%s'" % ( type , filename )
+    if check_flag & DO_CKSUM :
+        for type in cksum_handles.keys() :
+            if item.has_key( type ) :
+                if cksum_handles[type]( filename , bsize ) != item[type] :
+                    return "Bad %s checksum '%s'" % ( type , filename )
+
     return None
 
 def calc_md5(filename, bsize=128):
