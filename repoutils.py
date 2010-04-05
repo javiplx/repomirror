@@ -42,7 +42,7 @@ SKIP_SIZE = 1
 SKIP_CKSUM = 2
 
 def md5_error ( filename , item , skip_check = 0 , bsize=128 ) :
-    if not skip_check :
+    if skip_check & ( SKIP_SIZE | SKIP_CKSUM ) :
         return "No check selected for '%s'" % filename
         return None
 
