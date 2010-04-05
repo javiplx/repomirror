@@ -38,20 +38,20 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 
-DO_SIZE = 1
-DO_CKSUM = 2
+SKIP_SIZE = 1
+SKIP_CKSUM = 2
 
-def md5_error ( filename , item , check_flag = DO_SIZE | DO_CKSUM , bsize=128 ) :
-    if not check_flag :
+def md5_error ( filename , item , skip_check = 0 , bsize=128 ) :
+    if not skip_check :
         return "No check selected for '%s'" % filename
         return None
 
-    if check_flag & DO_SIZE :
+    if not ( skip_check | SKIP_SIZE ) :
         if os.stat( filename ).st_size != int( item['size'] ) :
             return "Bad file size '%s'" % filename
 
     # Policy is to verify all the checksums
-    if check_flag & DO_CKSUM :
+    if not ( skip_check | SKIP_CKSUM ) :
         for type in cksum_handles.keys() :
             if item.has_key( type ) :
                 if cksum_handles[type]( filename , bsize ) != item[type] :

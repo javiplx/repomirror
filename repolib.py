@@ -165,7 +165,7 @@ class yum_repository ( abstract_repository ) :
         localname = os.path.join( local_repodata , item['href'] )
     
         if os.path.isfile( localname ) :
-            error = repoutils.md5_error( localname , item , item.has_key('size') & repoutils.DO_SIZE )
+            error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
             if error :
                 repoutils.show_error( error , False )
                 os.unlink( localname )
@@ -180,7 +180,7 @@ class yum_repository ( abstract_repository ) :
             url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if repoutils.downloadRawFile( url , localname ) :
-                error = repoutils.md5_error( localname , item , item.has_key('size') & repoutils.DO_SIZE )
+                error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
                 if error :
                     repoutils.show_error( error )
                     os.unlink( localname )
