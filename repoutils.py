@@ -42,7 +42,7 @@ def downloadRawFile ( remote , local=None ) :
 def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") , "repomirror.conf" ] ) :
+    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
         repoutils.show_error( "Could not find a valid configuration file" )
         sys.exit(255)
 
