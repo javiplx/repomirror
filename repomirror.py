@@ -1,6 +1,11 @@
 #!/usr/bin/python
 
+# FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
+
 minor_filters = {}
+minor_filters['sections'] = []
+minor_filters['priorities'] = []
+minor_filters['tags'] = []
 
 params = {}
 # mode (update|init) - decides if we stop processing for unchanged metadata files
@@ -9,6 +14,11 @@ params['mode'] = "update"
 # usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
 # FIXME : Add an ignore all verifications? (pgp+md5)
 params['usegpg'] = False
+
+
+# usemd5. To disable size & checksums verification for broken repositories
+params['usemd5'] = False
+
 
 import urllib2
 
@@ -19,7 +29,16 @@ import repoutils
 
 import repolib
 
-repo_name = "yum"
+if sys.argv[1:] :
+    if len(sys.argv) > 2 :
+        print "Too many arguments"
+        print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
+        sys.exit(2)
+    repo_name = sys.argv[1]
+else :
+    print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
+    sys.exit(1)
+
 config = repoutils.read_config( repo_name )
 
 repo = repolib.instantiate_repo( config )
@@ -29,7 +48,8 @@ base_url = repo.base_url()
 
 meta_files = repo.get_master_file( params )
 
-# FIXME : For yum repositories, only errors produce empty output
+# FIXME : debian - identify error from updated repositories
+# FIXME : yum - only errors produce empty output
 if not meta_files :
     repoutils.show_error( "Cannot process, exiting" )
     sys.exit(255)
@@ -38,7 +58,7 @@ if not meta_files :
 
 repo.build_local_tree()
 
-# And then relocate files from temporary locations
+# Once created, we move in the primary metadata file
 
 local_repodata = repo.write_master_file( meta_files )
 
