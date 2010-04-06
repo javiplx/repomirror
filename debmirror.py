@@ -2,9 +2,10 @@
 
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
-sections = []
-priorities = []
-tags = []
+minor_filters = {}
+minor_filters['sections'] = []
+minor_filters['priorities'] = []
+minor_filters['tags'] = []
 
 params = {}
 # mode (update|init) - decides if we stop processing for unchanged metadata files
@@ -17,7 +18,6 @@ params['usegpg'] = False
 # usemd5. To disable size & checksums verification for broken repositories
 params['usemd5'] = False
 
-# FIXME : Create a separate program to list all the sections, pririties and tags
 
 import urllib2
 
@@ -61,7 +61,7 @@ for subrepo in repo.get_subrepos() :
 
     print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , sections , priorities , tags )
+    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , minor_filters )
     download_size += _size
     download_pkgs.update( _pkgs )
 
@@ -74,7 +74,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( repo.destdir , pkg['Filename'] )
+    destname = os.path.join( repo.repo_path() , pkg['Filename'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :

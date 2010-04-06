@@ -118,14 +118,14 @@ class yum_repository ( abstract_repository ) :
     def get_subrepos ( self ) :
         return self.architectures
 
-    def get_package_list ( self , arch , local_repodata , params ) :
+    def get_package_list ( self , arch , local_repodata , params , minor_filters ) :
 
         download_size = 0
         download_pkgs = {}
 
         item = False
 
-        repodoc = xml.dom.minidom.parse( os.path.join( local_repodata , "repodata/repomd.xml" ) )
+        repodoc = xml.dom.minidom.parse( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
         doc = repodoc.documentElement
         for node in doc.getElementsByTagName( "data" ) :
             if node.getAttribute( "type" ) == "primary" :
@@ -143,14 +143,14 @@ class yum_repository ( abstract_repository ) :
                 break
         else :
             repoutils.show_error( "No primary node within repomd file" )
-            os.unlink( os.path.join( local_repodata , "repodata/repomd.xml" ) )
+            os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
             sys.exit(255)
     
         del repodoc
     
         # FIXME : On problems, exit or continue next arch ???
     
-        localname = os.path.join( local_repodata , item['href'] )
+        localname = os.path.join( local_repodata[arch] , item['href'] )
     
         if os.path.isfile( localname ) :
             error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
@@ -443,7 +443,7 @@ class debian_repository ( abstract_repository ) :
               subrepos.append( ( arch , comp ) )
         return subrepos
 
-    def get_package_list ( self , subrepo , suite_path , params , sections , priorities , tags ) :
+    def get_package_list ( self , subrepo , suite_path , params , minor_filters ) :
 
         release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
 
@@ -551,11 +551,11 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                if sections and pkginfo['Section'] not in sections :
+                if minor_filters['sections'] and pkginfo['Section'] not in minor_filters['sections'] :
                     continue
-                if priorities and pkginfo['Priority'] not in priorities :
+                if minor_filters['priorities'] and pkginfo['Priority'] not in minor_filters['priorities'] :
                     continue
-                if tags and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in tags :
+                if minor_filters['tags'] and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in minor_filters['tags'] :
                     continue
 
                 pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )

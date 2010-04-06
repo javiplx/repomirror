@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+minor_filters = {}
+
 params = {}
 # mode (update|init) - decides if we stop processing for unchanged metadata files
 params['mode'] = "update"
@@ -50,7 +52,7 @@ for subrepo in repo.get_subrepos() :
 
     print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs = repo.get_package_list( subrepo , local_repodata[arch] , params )
+    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , minor_filters )
     download_size += _size
     download_pkgs.update( _pkgs )
 
