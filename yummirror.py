@@ -65,7 +65,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( repo.repo_path() , pkg['destname'] )
+    destname = os.path.join( repo.repo_path() , pkg['Filename'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
@@ -80,6 +80,6 @@ for pkg in download_pkgs.values() :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['sourcename'] ) , destname ) :
+    if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
         repoutils.show_error( "Failure downloading file '%s'" % ( pkg['sourcename'] ) , False )
 

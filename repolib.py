@@ -198,8 +198,7 @@ class yum_repository ( abstract_repository ) :
             else :
                 href = pkginfo['href']
                 pkgdict = {
-                    'sourcename':urllib2.urlparse.urljoin( self.metadata_path(arch) , href ) ,
-                    'destname':os.path.join( self.metadata_path(arch) , href ) ,
+                    'Filename':os.path.join( self.metadata_path(arch) , href ) ,
                     'size':pkginfo['size']
                     }
                 download_pkgs[ pkg_key ] = pkgdict
