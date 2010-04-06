@@ -33,9 +33,10 @@ def read_config ( repo_name ) :
     if config.has_option ( repo_name , "url" ) :
         conf['url'] = config.get( repo_name , "url" )
     else :
-        conf['scheme'] = config.get( repo_name , "scheme" )
-        conf['server'] = config.get( repo_name , "server" )
-        conf['base_path'] = config.get( repo_name , "base_path" )
+        scheme = config.get( repo_name , "scheme" )
+        server = config.get( repo_name , "server" )
+        base_path = config.get( repo_name , "base_path" )
+        conf['url'] = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
     conf['version'] = config.get( repo_name , "version" )
     conf['architectures'] = config.get( repo_name , "architectures" ).split()
     if config.has_option( repo_name , "components" ) :
@@ -68,13 +69,7 @@ class abstract_repository :
 
     def __init__ ( self , config ) :
 
-        if config.has_key( "url" ) :
-            self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
-        else :
-            scheme = config[ "scheme" ]
-            server = config[ "server" ]
-            base_path = config[ "base_path" ]
-            self.repo_url = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+        self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
 
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
