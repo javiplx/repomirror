@@ -11,7 +11,6 @@ params['usegpg'] = False
 import urllib2
 
 import os , sys
-import errno , shutil
 
 
 import repoutils
@@ -19,18 +18,18 @@ import repoutils
 import repolib
 
 repo_name = "yum"
+repo_name = "centos"
 config = repoutils.read_config( repo_name )
 
 repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
-suite_path = repo.repo_path()
 
-repomd_file = repo.get_master_file( params )
+meta_files = repo.get_master_file( params )
 
 # FIXME : For yum repositories, only errors produce empty output
-if not repomd_file :
+if not meta_files :
     repoutils.show_error( "Cannot process, exiting" )
     sys.exit(255)
 
@@ -40,22 +39,9 @@ repo.build_local_tree()
 
 # And then relocate files from temporary locations
 
-local_repodata = {}
-for arch in repomd_file.keys() :
-    local_repodata[arch] = os.path.join( suite_path , repo.metadata_path(arch) )
-    try :
-        os.rename( repomd_file[arch] , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-    except OSError , ex :
-        if ex.errno != errno.EXDEV :
-            print "OSError: %s" % ex
-            sys.exit(1)
-        shutil.move( repomd_file[arch] , os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
+local_repodata = repo.write_master_file( meta_files )
 
-print """
-Mirroring version %s
-%s
-Architectures : %s
-""" % ( repo.version , repo.repo_url , " ".join(repo.architectures) )
+print repo.info( local_repodata )
 
 
 download_pkgs = {}

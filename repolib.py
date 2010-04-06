@@ -1,5 +1,6 @@
 
 import os , sys
+import errno , shutil
 
 import urllib2
 import ConfigParser
@@ -89,6 +90,28 @@ class yum_repository ( abstract_repository ) :
             packages_path = os.path.join( self.metadata_path(arch) , "repodata" )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
+
+    def write_master_file ( self , repomd_file ) :
+
+        local = {}
+
+        for arch in repomd_file.keys() :
+            local[arch] = os.path.join( self.repo_path() , self.metadata_path(arch) )
+            try :
+                os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+            except OSError , ex :
+                if ex.errno != errno.EXDEV :
+                    print "OSError: %s" % ex
+                    sys.exit(1)
+                shutil.move( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+
+        return local
+
+    def info ( self , metafile ) :
+        str  = "Mirroring version %s\n" % self.version
+        str += "%s\n" % self.repo_url
+        str += "Architectures : %s\n" % " ".join(self.architectures)
+        return str
 
     def get_package_list ( self , arch , local_repodata , params ) :
 
@@ -239,6 +262,8 @@ class debian_repository ( abstract_repository ) :
 
         self.components = config.get( "components" , None )
 
+        self.release = os.path.join( self.metadata_path() , "Release" )
+
     def base_url ( self , subrepo=None ) :
         if subrepo :
             arch , comp = subrepo
@@ -249,7 +274,6 @@ class debian_repository ( abstract_repository ) :
         return self.destdir
 
     def metadata_path ( self , subrepo=None ) :
-    #def metadata_path ( self , arch=None , comp=None ) :
         if subrepo :
             arch , comp = subrepo
             return "%s/binary-%s/" % ( comp , arch )
@@ -257,12 +281,11 @@ class debian_repository ( abstract_repository ) :
 
     def get_master_file ( self , params ) :
 
-        release_path = os.path.join( self.metadata_path() , "Release" )
-        local_release = os.path.join( self.repo_path() , release_path )
+        local_release = os.path.join( self.repo_path() , self.release )
 
         if params['usegpg'] :
 
-            release_pgp_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % release_path ) )
+            release_pgp_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % self.release ) )
 
             if not release_pgp_file :
                 repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( self.version ) )
@@ -286,7 +309,7 @@ class debian_repository ( abstract_repository ) :
 
         if not os.path.isfile( local_release ) :
 
-            release_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
+            release_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
 
             if not release_file :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
@@ -374,9 +397,45 @@ class debian_repository ( abstract_repository ) :
             if not os.path.exists( pool_com_path ) :
                 os.mkdir( pool_com_path )
 
-    def get_package_list ( self , subrepo , suite_path , params , release , sections , priorities , tags ) :
+    def write_master_file ( self , release_file ) :
 
-        # NOTE : Downloading Release file is quite redundant
+        local = os.path.join( self.repo_path() , self.release )
+
+        # FIXME : If we reach this point, is it possible that the file is still there ?
+        if not os.path.exists( local ) :
+            try :
+                os.rename( release_file , local )
+            except OSError , ex :
+                if ex.errno != errno.EXDEV :
+                    print "OSError: %s" % ex
+                    sys.exit(1)
+                shutil.move( release_file , local )
+
+        return os.path.dirname( local )
+
+    def info ( self , release_file ) :
+
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file , "Release" ) ) )
+
+        # Some Release files hold no 'version' information
+        if not release.has_key( 'Version' ) :
+            release['Version'] = None
+
+        # Some Release files hold no 'Date' information
+        if not release.has_key( 'Date' ) :
+            release['Date'] = None
+
+        str  = "Mirroring %(Label)s %(Version)s (%(Codename)s)\n" % release
+        str += "%(Origin)s %(Suite)s , %(Date)s\n" % release
+        str += "Components : %s\n" % " ".join(self.components)
+        str += "Architectures : %s\n" % " ".join(self.architectures)
+        return str
+
+    def get_package_list ( self , subrepo , suite_path , params , sections , priorities , tags ) :
+
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
+
+        # NOTE : Downloading Package Release file is quite redundant
 
         download_size = 0
         download_pkgs = {}

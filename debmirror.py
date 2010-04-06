@@ -19,12 +19,9 @@ params['usemd5'] = False
 
 # FIXME : Create a separate program to list all the sections, pririties and tags
 
-import debian_bundle.deb822 , debian_bundle.debian_support
-
 import urllib2
 
 import os , sys
-import errno , shutil
 
 
 import repoutils
@@ -38,12 +35,11 @@ repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
-suite_path = repo.repo_path()
 
-release_file = repo.get_master_file( params )
+meta_files = repo.get_master_file( params )
 
 # FIXME : Identify error from updated repositories
-if not release_file :
+if not meta_files :
     repoutils.show_error( "Cannot process, exiting" )
     sys.exit(255)
 
@@ -53,32 +49,9 @@ repo.build_local_tree()
 
 # Once created, we move in the primary metadata file
 
-local_release = os.path.join( suite_path , "%s/Release" % repo.metadata_path() )
+local_repodata = repo.write_master_file( meta_files )
 
-if not os.path.exists( local_release ) :
-    try :
-        os.rename( release_file , local_release )
-    except OSError , ex :
-        if ex.errno != errno.EXDEV :
-            print "OSError: %s" % ex
-            sys.exit(1)
-        shutil.move( release_file , local_release )
-
-release = debian_bundle.deb822.Release( sequence=open( local_release ) )
-
-# Some Release files hold no 'version' information
-if not release.has_key( 'Version' ) :
-    release['Version'] = "undef"
-
-# Some Release files hold no 'Date' information
-if not release.has_key( 'Date' ) :
-    release['Date'] = "undef"
-
-print """
-Mirroring %(Label)s %(Version)s (%(Codename)s)
-%(Origin)s %(Suite)s , %(Date)s
-""" % release
-print "Components : %s\nArchitectures : %s\n" % ( " ".join(repo.components) , " ".join(repo.architectures) )
+print repo.info( local_repodata )
 
 
 download_pkgs = {}
@@ -91,7 +64,7 @@ for arch in repo.architectures :
       subrepo = ( arch , comp )
       print "Scanning %s / %s" % subrepo
 
-      _size , _pkgs = repo.get_package_list( subrepo , os.path.join( suite_path , repo.metadata_path() ) , params , release , sections , priorities , tags )
+      _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , sections , priorities , tags )
       download_size += _size
       download_pkgs.update( _pkgs )
 
