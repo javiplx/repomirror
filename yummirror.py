@@ -18,7 +18,6 @@ import repoutils
 import repolib
 
 repo_name = "yum"
-repo_name = "centos"
 config = repoutils.read_config( repo_name )
 
 repo = repolib.instantiate_repo( config )
