@@ -81,5 +81,5 @@ for pkg in download_pkgs.values() :
             os.makedirs( path )
 
     if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
-        repoutils.show_error( "Failure downloading file '%s'" % ( pkg['sourcename'] ) , False )
+        repoutils.show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
