@@ -3,6 +3,7 @@ import os , sys
 
 import urllib2
 import tempfile
+import ConfigParser
 
 try :
     import GnuPGInterface

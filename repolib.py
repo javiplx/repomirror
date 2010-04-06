@@ -3,7 +3,6 @@ import os , sys
 import errno , shutil
 
 import urllib2
-import ConfigParser
 
 import repoutils
 
