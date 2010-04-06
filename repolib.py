@@ -38,7 +38,7 @@ class abstract_repository :
 
         self.architectures = config[ "architectures" ]
 
-    def __retrieve_file ( self , location , localname=None ) :
+    def _retrieve_file ( self , location , localname=None ) :
 
         try :
             filename  = repoutils.downloadRawFile( location , localname )
@@ -68,7 +68,7 @@ class yum_repository ( abstract_repository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            repomd_files[arch] = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
+            repomd_files[arch] = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
 
             if not repomd_files[arch] :
                 repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
@@ -161,7 +161,7 @@ class yum_repository ( abstract_repository ) :
     
             url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
     
-            if self.__retrieve_file( url , localname ) :
+            if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
                 if error :
                     repoutils.show_error( error )
@@ -284,7 +284,7 @@ class debian_repository ( abstract_repository ) :
 
         if params['usegpg'] :
 
-            release_pgp_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % self.release ) )
+            release_pgp_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % self.release ) )
 
             if not release_pgp_file :
                 repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( self.version ) )
@@ -308,7 +308,7 @@ class debian_repository ( abstract_repository ) :
 
         if not os.path.isfile( local_release ) :
 
-            release_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
+            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
 
             if not release_file :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
@@ -489,7 +489,7 @@ class debian_repository ( abstract_repository ) :
                 localname = os.path.join( suite_path , _name )
                 url = urllib2.urlparse.urljoin( self.base_url(subrepo) , _name )
 
-                if self.__retrieve_file( url , localname ) :
+                if self._retrieve_file( url , localname ) :
                     #
                     # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
                     #
