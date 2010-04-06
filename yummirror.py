@@ -25,11 +25,7 @@ repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
-# This is either the home of dists or repomd files
 suite_path = repo.repo_path()
-
-# For fedora, pool and suite path are the same
-pool_path = repo.repo_path()
 
 repomd_file = repo.get_master_file( params )
 
@@ -82,7 +78,7 @@ else :
 
 for pkg in download_pkgs.values() :
 
-    destname = os.path.join( pool_path , pkg['destname'] )
+    destname = os.path.join( repo.repo_path() , pkg['destname'] )
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :

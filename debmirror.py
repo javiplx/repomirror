@@ -38,7 +38,7 @@ repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
 
-suite_path = os.path.join( repo.repo_path() , repo.metadata_path() )
+suite_path = repo.repo_path()
 
 release_file = repo.get_master_file( params )
 
@@ -53,7 +53,7 @@ repo.build_local_tree()
 
 # Once created, we move in the primary metadata file
 
-local_release = os.path.join( suite_path , "Release" )
+local_release = os.path.join( suite_path , "%s/Release" % repo.metadata_path() )
 
 if not os.path.exists( local_release ) :
     try :
@@ -91,7 +91,7 @@ for arch in repo.architectures :
       subrepo = ( arch , comp )
       print "Scanning %s / %s" % subrepo
 
-      _size , _pkgs = repo.get_package_list( subrepo , suite_path , params , release , sections , priorities , tags )
+      _size , _pkgs = repo.get_package_list( subrepo , os.path.join( suite_path , repo.metadata_path() ) , params , release , sections , priorities , tags )
       download_size += _size
       download_pkgs.update( _pkgs )
 
