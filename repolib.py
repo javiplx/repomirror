@@ -38,6 +38,9 @@ class abstract_repository :
 
         self.architectures = config[ "architectures" ]
 
+        if not os.path.isdir( self.destdir ) :
+            raise Exception( "Destination directory %s does not exists" % self.destdir )
+
     def _retrieve_file ( self , location , localname=None ) :
 
         try :
