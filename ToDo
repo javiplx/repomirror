@@ -1,0 +1,9 @@
+
+* Implement minor filters on Yum repositories
+* General cleaning in repolib module
+* Implement exceptions on repolib
+* Basic command line option parsing
+* Extend with SHA256 checksums
+
+* Extend with yum-1.x(rhn?) type
+

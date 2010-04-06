@@ -27,18 +27,20 @@ Typical sequence
    move metadata files into tree
    issue message (if non quiet)
 
-5) Get list of files to download iterating over subrepos
+4) Get list of files to download iterating over subrepos
 
   5.1) Verify md5 of Packages*
        remove if failed (continue with next if OK?)
   5.2) DownloadReplace & verify Packages*
        if fails, _exit_ [raise exception??], and remove localcopy
    
-6) Filter package list, with minor filters
+5) Filter package list, with minor filters
 
-7) Download packages
+6) Download packages
   Verify destination, and download if does not exist or fails
 
+
+NOTE : Steps 2, 4 & 6 correspond to the three mirroging stages : metadata, filelist, packages
 
 -----
 
