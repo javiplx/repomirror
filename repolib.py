@@ -38,6 +38,20 @@ class abstract_repository :
 
         self.architectures = config[ "architectures" ]
 
+    def __retrieve_file ( self , location , localname=None ) :
+
+        try :
+            filename  = repoutils.downloadRawFile( location , localname )
+        except urllib2.URLError , ex :
+            repoutils.show_error( "Exception : %s" % ex )
+            return
+        except urllib2.HTTPError , ex :
+            repoutils.show_error( "Exception : %s" % ex )
+            return
+
+        return filename
+
+
 class yum_repository ( abstract_repository ) :
 
     def base_url ( self ) :
@@ -54,18 +68,7 @@ class yum_repository ( abstract_repository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            try :
-                repomd_files[arch] = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
-            except urllib2.URLError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                for file in repomd_files.values :
-                    os.unlink( file )
-                return
-            except urllib2.HTTPError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                for file in repomd_files.values :
-                    os.unlink( file )
-                return
+            repomd_files[arch] = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
 
             if not repomd_files[arch] :
                 repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
@@ -136,7 +139,7 @@ class yum_repository ( abstract_repository ) :
     
             url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
     
-            if repoutils.downloadRawFile( url , localname ) :
+            if self.__retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
                 if error :
                     repoutils.show_error( error )
@@ -259,14 +262,7 @@ class debian_repository ( abstract_repository ) :
 
         if params['usegpg'] :
 
-            try :
-                release_pgp_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % release_path ) )
-            except urllib2.URLError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                return
-            except urllib2.HTTPError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                return
+            release_pgp_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % release_path ) )
 
             if not release_pgp_file :
                 repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( self.version ) )
@@ -289,14 +285,8 @@ class debian_repository ( abstract_repository ) :
                 os.unlink( local_release )
 
         if not os.path.isfile( local_release ) :
-            try :
-                release_file = repoutils.downloadRawFile( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
-            except urllib2.URLError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                return
-            except urllib2.HTTPError , ex :
-                repoutils.show_error( "Exception : %s" % ex )
-                return
+
+            release_file = self.__retrieve_file( urllib2.urlparse.urljoin( self.base_url() , release_path ) )
 
             if not release_file :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
@@ -441,7 +431,7 @@ class debian_repository ( abstract_repository ) :
                 localname = os.path.join( suite_path , _name )
                 url = urllib2.urlparse.urljoin( self.base_url(subrepo) , _name )
 
-                if repoutils.downloadRawFile( url , localname ) :
+                if self.__retrieve_file( url , localname ) :
                     #
                     # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
                     #
