@@ -7,44 +7,6 @@ import ConfigParser
 import repoutils
 
 
-def read_config ( repo_name ) :
-
-    config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") , "repomirror.conf" ] ) :
-        repoutils.show_error( "Could not find a valid configuration file" )
-        sys.exit(255)
-
-    if "global" not in config.sections() :
-        repoutils.show_error( "Broken configuration, missing global section" )
-        sys.exit(255)
-
-    if not config.has_option( "global", "destdir" ) :
-        repoutils.show_error( "Broken configuration, missing destination directory" )
-        sys.exit(255)
-
-    if repo_name not in config.sections() :
-        repoutils.show_error( "Repository '%s' is not configured" % repo_name )
-        sys.exit(255)
-
-    conf = {}
-    conf['destdir'] = config.get( "global" , "destdir" )
-
-    conf['type'] = config.get( repo_name , "type" )
-    if config.has_option ( repo_name , "url" ) :
-        conf['url'] = config.get( repo_name , "url" )
-    else :
-        scheme = config.get( repo_name , "scheme" )
-        server = config.get( repo_name , "server" )
-        base_path = config.get( repo_name , "base_path" )
-        conf['url'] = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
-    conf['version'] = config.get( repo_name , "version" )
-    conf['architectures'] = config.get( repo_name , "architectures" ).split()
-    if config.has_option( repo_name , "components" ) :
-        conf['components'] = config.get( repo_name , "components" ).split()
-
-    return conf
-
-
 def instantiate_repo ( config ) :
     repo = None
     if config['type'] == "yum" :

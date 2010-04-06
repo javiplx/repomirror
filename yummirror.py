@@ -19,7 +19,7 @@ import repoutils
 import repolib
 
 repo_name = "yum"
-config = repolib.read_config( repo_name )
+config = repoutils.read_config( repo_name )
 
 repo = repolib.instantiate_repo( config )
 
