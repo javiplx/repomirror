@@ -57,16 +57,13 @@ print repo.info( local_repodata )
 download_pkgs = {}
 download_size = 0
 
-for arch in repo.architectures :
+for subrepo in repo.get_subrepos() :
 
-    for comp in repo.components :
+    print "Scanning %s" % ( subrepo , )
 
-      subrepo = ( arch , comp )
-      print "Scanning %s / %s" % subrepo
-
-      _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , sections , priorities , tags )
-      download_size += _size
-      download_pkgs.update( _pkgs )
+    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , sections , priorities , tags )
+    download_size += _size
+    download_pkgs.update( _pkgs )
 
 
 _size = download_size / 1024 / 1024

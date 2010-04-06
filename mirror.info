@@ -8,25 +8,26 @@ Typical sequence
 3 - [ The name of the local file must be returned if multichoice]
 
 
-0) Read configuration (currently infile)
-   two sections :  common and release specific (codename at least)
+0) Read configuration
+   two sections :  common and release specific (codename/version at least)
 
-1) Check for destination directory
-   exit if not found
+1) Instantiate proper repository object
+   exception if no destination directory
 
-2) Verify current mainfile, downloading Release.gpg
-   remove if failing (finish if OK?)
+2) download master file(s). Might return nothing if local copies are verifiable and up-to-date
+   performs verification (gpg)
+      if verification does not succeed (or impossible), remove local version
+      if succeed, return 
 2.1) Download fresh release file (either missing or failed-verify)
 2.2) Verify signature
    exit if failing (this is last resort verification)
+   verify options (mainly codename), exiting under problems
 
-3) Verify options (mainly codename) [ This breaks whatever logic you define ]
-   exit if fail
-   (re)create tree if success
+3) Create the local tree
+   move metadata files into tree
    issue message (if non quiet)
-3.1) Move Release file into tree (if fresh downloaded)
 
-5) Get list of files to download
+5) Get list of files to download iterating over subrepos
 
   5.1) Verify md5 of Packages*
        remove if failed (continue with next if OK?)

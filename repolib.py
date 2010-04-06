@@ -115,6 +115,9 @@ class yum_repository ( abstract_repository ) :
         str += "Architectures : %s\n" % " ".join(self.architectures)
         return str
 
+    def get_subrepos ( self ) :
+        return self.architectures
+
     def get_package_list ( self , arch , local_repodata , params ) :
 
         download_size = 0
@@ -432,6 +435,13 @@ class debian_repository ( abstract_repository ) :
         str += "Components : %s\n" % " ".join(self.components)
         str += "Architectures : %s\n" % " ".join(self.architectures)
         return str
+
+    def get_subrepos ( self ) :
+        subrepos = []
+        for arch in self.architectures :
+            for comp in self.components :
+              subrepos.append( ( arch , comp ) )
+        return subrepos
 
     def get_package_list ( self , subrepo , suite_path , params , sections , priorities , tags ) :
 

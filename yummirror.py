@@ -46,11 +46,11 @@ print repo.info( local_repodata )
 download_pkgs = {}
 download_size = 0
 
-for arch in repo.architectures :
+for subrepo in repo.get_subrepos() :
 
-    print "Scanning %s" % ( arch )
+    print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs = repo.get_package_list( arch , local_repodata[arch] , params )
+    _size , _pkgs = repo.get_package_list( subrepo , local_repodata[arch] , params )
     download_size += _size
     download_pkgs.update( _pkgs )
 
