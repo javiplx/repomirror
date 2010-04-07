@@ -85,9 +85,6 @@ class yum_repository ( abstract_repository ) :
 
         suite_path = self.repo_path()
 
-        if not os.path.exists( suite_path ) :
-            os.makedirs( suite_path )
-
         for arch in self.architectures :
             packages_path = os.path.join( self.metadata_path(arch) , "repodata" )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
@@ -379,27 +376,10 @@ class debian_repository ( abstract_repository ) :
 
         suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
-        if not os.path.exists( suite_path ) :
-            os.makedirs( suite_path )
-
-        for comp in self.components :
-            if not os.path.exists( os.path.join( suite_path , comp ) ) :
-                os.mkdir( os.path.join( suite_path , comp ) )
-            for arch in self.architectures :
-                subrepo = ( arch , comp )
-                packages_path = self.metadata_path( subrepo )
-                if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-                    os.mkdir( os.path.join( suite_path , packages_path ) )
-
-        pool_path = os.path.join( self.repo_path() , "pool" )
-
-        if not os.path.exists( pool_path ) :
-            os.mkdir( pool_path )
-
-        for comp in self.components :
-            pool_com_path = os.path.join( pool_path , comp )
-            if not os.path.exists( pool_com_path ) :
-                os.mkdir( pool_com_path )
+        for subrepo in self.get_subrepos() :
+            packages_path = self.metadata_path( subrepo )
+            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
+                os.makedirs( os.path.join( suite_path , packages_path ) )
 
     def write_master_file ( self , release_file ) :
 
