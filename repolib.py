@@ -469,8 +469,9 @@ class debian_repository ( abstract_repository ) :
                 _item = {}
                 for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
                     if release.has_key(type) :
-                        if release[type].has_key( _name ) :
-                            _item.update( release[type][_name] )
+                        for item in release[type] :
+                            if item['name'] == _name :
+                                _item.update( item )
                 if _item :
                     if params['usemd5'] :
                         error = repoutils.md5_error( localname , _item )
@@ -511,8 +512,9 @@ class debian_repository ( abstract_repository ) :
                     _item = {}
                     for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
                         if release.has_key(type) :
-                            if release[type].has_key( _name ) :
-                                _item.update( release[type][_name] )
+                            for item in release[type] :
+                                if item['name'] == _name :
+                                    _item.update( item )
                     if _item :
                         if params['usemd5'] :
                             error = repoutils.md5_error( localname , _item )
