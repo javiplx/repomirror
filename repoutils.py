@@ -43,19 +43,19 @@ def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        repoutils.show_error( "Could not find a valid configuration file" )
+        show_error( "Could not find a valid configuration file" )
         sys.exit(255)
 
     if "global" not in config.sections() :
-        repoutils.show_error( "Broken configuration, missing global section" )
+        show_error( "Broken configuration, missing global section" )
         sys.exit(255)
 
     if not config.has_option( "global", "destdir" ) :
-        repoutils.show_error( "Broken configuration, missing destination directory" )
+        show_error( "Broken configuration, missing destination directory" )
         sys.exit(255)
 
     if repo_name not in config.sections() :
-        repoutils.show_error( "Repository '%s' is not configured" % repo_name )
+        show_error( "Repository '%s' is not configured" % repo_name )
         sys.exit(255)
 
     conf = {}
