@@ -63,7 +63,7 @@ class yum_repository ( abstract_repository ) :
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
-    def metadata_path ( self , subrepo=None ) :
+    def metadata_path ( self , subrepo=None , partial=False ) :
         if subrepo :
             return "%s/os/" % subrepo
         return ""
@@ -220,7 +220,7 @@ class fedora_update_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None ) :
+    def metadata_path ( self , subrepo=None , partial=False ) :
         if subrepo :
             return "%s/" % subrepo
         return ""
@@ -233,14 +233,14 @@ class centos_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None ) :
+    def metadata_path ( self , subrepo=None , partial=False ) :
         if subrepo :
             return "os/%s/" % subrepo
         return ""
 
 class centos_update_repository ( centos_repository ) :
 
-    def metadata_path ( self , subrepo=None ) :
+    def metadata_path ( self , subrepo=None , partial=False ) :
         if subrepo :
             return "updates/%s/" % subrepo
         return ""
@@ -279,8 +279,11 @@ class debian_repository ( abstract_repository ) :
     def repo_path ( self ) :
         return self.destdir
 
-    def metadata_path ( self , subrepo=None ) :
-        path = "dists/%s/" % self.version
+    def metadata_path ( self , subrepo=None , partial=False ) :
+        if partial :
+            path = ""
+        else :
+            path = "dists/%s/" % self.version
         if subrepo :
             arch , comp = subrepo
             path += "%s/binary-%s/" % ( comp , arch )
@@ -442,8 +445,7 @@ class debian_repository ( abstract_repository ) :
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
-            _full_name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
-            _name = _full_name[len(self.metadata_path()):]
+            _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
@@ -485,8 +487,7 @@ class debian_repository ( abstract_repository ) :
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
-                _full_name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
-                _name = _full_name[len(self.metadata_path()):]
+                _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )
                 url = urllib2.urlparse.urljoin( urllib2.urlparse.urljoin( self.base_url() , self.metadata_path() ) , _name )
 
