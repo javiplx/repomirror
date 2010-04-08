@@ -63,8 +63,10 @@ class yum_repository ( abstract_repository ) :
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
-    def metadata_path ( self , subrepo ) :
-        return "%s/os/" % subrepo
+    def metadata_path ( self , subrepo=None ) :
+        if subrepo :
+            return "%s/os/" % subrepo
+        return ""
 
     def get_master_file ( self , params ) :
 
@@ -218,8 +220,10 @@ class fedora_update_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo ) :
-        return "%s/" % subrepo
+    def metadata_path ( self , subrepo=None ) :
+        if subrepo :
+            return "%s/" % subrepo
+        return ""
 
 class centos_repository ( yum_repository ) :
 
@@ -229,13 +233,17 @@ class centos_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo ) :
-        return "os/%s/" % subrepo
+    def metadata_path ( self , subrepo=None ) :
+        if subrepo :
+            return "os/%s/" % subrepo
+        return ""
 
 class centos_update_repository ( centos_repository ) :
 
-    def metadata_path ( self , subrepo ) :
-        return "updates/%s/" % subrepo
+    def metadata_path ( self , subrepo=None ) :
+        if subrepo :
+            return "updates/%s/" % subrepo
+        return ""
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
