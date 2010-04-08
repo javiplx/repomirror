@@ -85,7 +85,7 @@ class yum_repository ( abstract_repository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            repomd_files[arch] = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s/repodata/repomd.xml" % self.metadata_path(arch) ) )
+            repomd_files[arch] = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%srepomd.xml" % self.metadata_path(arch,False) ) )
 
             if not repomd_files[arch] :
                 repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
