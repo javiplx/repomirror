@@ -21,6 +21,8 @@ def instantiate_repo ( config ) :
         repo = debian_repository( config )
     elif config['type'] == "yast2" :
         repo = yast2_repository( config )
+    elif config['type'] == "yast2_update" :
+        repo = yast2_update_repository( config )
     else :
         repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
     return repo
@@ -262,10 +264,10 @@ class centos_update_repository ( centos_repository ) :
 class yast2_repository ( yum_repository ) :
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "%s/repo/oss/suse/" % self.version )
+        return urllib2.urlparse.urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
 
     def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version )
+        return os.path.join( self.destdir , "distribution/%s" % self.version )
 
     def metadata_path ( self , subrepo=None , partial=True ) :
         path = ""
@@ -273,6 +275,14 @@ class yast2_repository ( yum_repository ) :
         if not partial :
             path += "repodata/"
         return path
+
+class yast2_update_repository ( yast2_repository ) :
+
+    def base_url ( self ) :
+        return urllib2.urlparse.urljoin( self.repo_url , "update/%s/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , "update/%s" % self.version )
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
