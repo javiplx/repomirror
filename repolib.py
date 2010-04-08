@@ -63,10 +63,13 @@ class yum_repository ( abstract_repository ) :
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , subrepo=None , partial=True ) :
+        path = ""
         if subrepo :
-            return "%s/os/" % subrepo
-        return ""
+            path += "%s/os/" % subrepo
+        if not partial :
+            path += "repodata/"
+        return path
 
     def get_master_file ( self , params ) :
 
@@ -88,7 +91,7 @@ class yum_repository ( abstract_repository ) :
         suite_path = self.repo_path()
 
         for arch in self.architectures :
-            packages_path = os.path.join( self.metadata_path(arch) , "repodata" )
+            packages_path = self.metadata_path(arch,False)
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
 
@@ -220,10 +223,13 @@ class fedora_update_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , subrepo=None , partial=True ) :
+        path = ""
         if subrepo :
             return "%s/" % subrepo
-        return ""
+        if not partial :
+            path += "repodata/"
+        return path
 
 class centos_repository ( yum_repository ) :
 
@@ -233,17 +239,23 @@ class centos_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , subrepo=None , partial=True ) :
+        path = ""
         if subrepo :
             return "os/%s/" % subrepo
-        return ""
+        if not partial :
+            path += "repodata/"
+        return path
 
 class centos_update_repository ( centos_repository ) :
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , subrepo=None , partial=True ) :
+        path = ""
         if subrepo :
             return "updates/%s/" % subrepo
-        return ""
+        if not partial :
+            path += "repodata/"
+        return path
 
 
 import debian_bundle.deb822 , debian_bundle.debian_support
@@ -280,13 +292,12 @@ class debian_repository ( abstract_repository ) :
         return self.destdir
 
     def metadata_path ( self , subrepo=None , partial=False ) :
-        if partial :
-            path = ""
-        else :
-            path = "dists/%s/" % self.version
+        path = ""
         if subrepo :
             arch , comp = subrepo
             path += "%s/binary-%s/" % ( comp , arch )
+        if not partial :
+            path = "dists/%s/%s" % ( self.version , path )
         return path
 
     def get_master_file ( self , params ) :
