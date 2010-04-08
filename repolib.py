@@ -265,10 +265,7 @@ class debian_repository ( abstract_repository ) :
 
         self.release = os.path.join( self.metadata_path() , "Release" )
 
-    def base_url ( self , subrepo=None ) :
-        if subrepo :
-            arch , comp = subrepo
-            return urllib2.urlparse.urljoin( self.repo_url , self.metadata_path() )
+    def base_url ( self ) :
         return self.repo_url
 
     def repo_path ( self ) :
@@ -480,7 +477,7 @@ class debian_repository ( abstract_repository ) :
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
                 localname = os.path.join( suite_path , _name )
-                url = urllib2.urlparse.urljoin( self.base_url(subrepo) , _name )
+                url = urllib2.urlparse.urljoin( urllib2.urlparse.urljoin( self.base_url() , self.metadata_path() ) , _name )
 
                 if self._retrieve_file( url , localname ) :
                     #
