@@ -276,6 +276,63 @@ class yast2_repository ( yum_repository ) :
             path += "repodata/"
         return path
 
+    def get_master_file ( self , params ) :
+
+        repomd_files = {}
+
+        for arch in self.architectures :
+
+            local_repomd = os.path.join( self.repo_path() , "%srepomd.xml" % self.metadata_path(arch,False) )
+
+            if params['usegpg'] :
+
+                repomd_gpg_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%srepomd.xml.asc" % self.metadata_path(arch,False) ) )
+
+                if not repomd_gpg_file :
+                    repoutils.show_error( "Signature file for version '%s' not found." % ( self.version ) )
+                    return
+
+                if os.path.isfile( local_repomd ) :
+                    errstr = repoutils.gpg_error( repomd_gpg_file , local_repomd )
+                    if errstr :
+                        repoutils.show_error( errstr , False )
+                        os.unlink( local_repomd )
+                    else :
+                        os.unlink( repomd_gpg_file )
+                        if params['mode'] == "update" :
+                            repoutils.show_error( "Release file unchanged, exiting" , False )
+                            continue
+                        repomd_files[arch] = local_repomd
+
+            else :
+                if os.path.isfile( local_repomd ) :
+                    os.unlink( local_repomd )
+
+            if not os.path.isfile( local_repomd ) :
+
+                repomd_files[arch] = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%srepomd.xml" % self.metadata_path(arch,False) ) )
+
+                if not repomd_files[arch] :
+                    repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
+                    if params['usegpg'] :
+                        os.unlink( repomd_gpg_file )
+                    for file in repomd_files.values :
+                        if os.path.isfile( file ) :
+                            os.unlink( file )
+                    return
+
+                if params['usegpg'] :
+                    errstr = repoutils.gpg_error( repomd_gpg_file , repomd_files[arch] )
+                    os.unlink( repomd_gpg_file )
+                    if errstr :
+                        repoutils.show_error( errstr )
+                        for file in repomd_files.values :
+                            if os.path.isfile( file ) :
+                                os.unlink( file )
+                        return
+
+        return repomd_files
+
 class yast2_update_repository ( yast2_repository ) :
 
     def base_url ( self ) :
