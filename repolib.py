@@ -41,6 +41,15 @@ class abstract_repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+    def build_local_tree( self ) :
+
+        suite_path = self.repo_path()
+
+        for subrepo in self.get_subrepos() :
+            packages_path = self.metadata_path( subrepo , False )
+            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
+                os.makedirs( os.path.join( suite_path , packages_path ) )
+
     def _retrieve_file ( self , location , localname=None ) :
 
         try :
@@ -85,15 +94,6 @@ class yum_repository ( abstract_repository ) :
                 return
 
         return repomd_files
-
-    def build_local_tree( self ) :
-
-        suite_path = self.repo_path()
-
-        for arch in self.architectures :
-            packages_path = self.metadata_path(arch,False)
-            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-                os.makedirs( os.path.join( suite_path , packages_path ) )
 
     def write_master_file ( self , repomd_file ) :
 
@@ -391,15 +391,6 @@ class debian_repository ( abstract_repository ) :
                 return
 
         return release_file
-
-    def build_local_tree( self ) :
-
-        suite_path = self.repo_path()
-
-        for subrepo in self.get_subrepos() :
-            packages_path = self.metadata_path( subrepo )
-            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-                os.makedirs( os.path.join( suite_path , packages_path ) )
 
     def write_master_file ( self , release_file ) :
 
