@@ -272,10 +272,11 @@ class debian_repository ( abstract_repository ) :
         return self.destdir
 
     def metadata_path ( self , subrepo=None ) :
+        path = "dists/%s/" % self.version
         if subrepo :
             arch , comp = subrepo
-            return "%s/binary-%s/" % ( comp , arch )
-        return "dists/%s/" % self.version
+            path += "%s/binary-%s/" % ( comp , arch )
+        return path
 
     def get_master_file ( self , params ) :
 
@@ -371,7 +372,7 @@ class debian_repository ( abstract_repository ) :
 
     def build_local_tree( self ) :
 
-        suite_path = os.path.join( self.repo_path() , self.metadata_path() )
+        suite_path = self.repo_path()
 
         for subrepo in self.get_subrepos() :
             packages_path = self.metadata_path( subrepo )
@@ -433,7 +434,8 @@ class debian_repository ( abstract_repository ) :
 
         for ( extension , read_handler ) in extensions.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
+            _full_name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
+            _name = _full_name[len(self.metadata_path()):]
             localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
@@ -475,7 +477,8 @@ class debian_repository ( abstract_repository ) :
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
-                _name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
+                _full_name = "%sPackages%s" % ( self.metadata_path(subrepo) , extension )
+                _name = _full_name[len(self.metadata_path()):]
                 localname = os.path.join( suite_path , _name )
                 url = urllib2.urlparse.urljoin( urllib2.urlparse.urljoin( self.base_url() , self.metadata_path() ) , _name )
 
