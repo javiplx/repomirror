@@ -167,7 +167,7 @@ class yum_repository ( abstract_repository ) :
     
             repoutils.show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
-            url = urllib2.urlparse.urljoin( self.base_url() , "%s/%s" % ( self.metadata_path(arch) , item['href'] ) )
+            url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
