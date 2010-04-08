@@ -19,6 +19,8 @@ def instantiate_repo ( config ) :
         repo = centos_update_repository( config )
     elif config['type'] == "deb" :
         repo = debian_repository( config )
+    elif config['type'] == "yast2" :
+        repo = yast2_repository( config )
     else :
         repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
     return repo
@@ -253,6 +255,21 @@ class centos_update_repository ( centos_repository ) :
         path = ""
         if subrepo :
             return "updates/%s/" % subrepo
+        if not partial :
+            path += "repodata/"
+        return path
+
+class yast2_repository ( yum_repository ) :
+
+    def base_url ( self ) :
+        return urllib2.urlparse.urljoin( self.repo_url , "%s/repo/oss/suse/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
+    def metadata_path ( self , subrepo=None , partial=True ) :
+        path = ""
+        # FIXME : No subrepos available for OpenSuSE
         if not partial :
             path += "repodata/"
         return path
