@@ -66,8 +66,8 @@ class abstract_repository :
                     os.unlink( signature_file )
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if params['mode'] == "update" :
-                        repoutils.show_error( "Release file unchanged, exiting" , False )
-                        return
+                        repoutils.show_error( "Metadata file unchanged, exiting" , False )
+                        return True
                     return local_file
 
         else :
@@ -83,7 +83,7 @@ class abstract_repository :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
                 if params['usegpg'] :
                     os.unlink( signature_file )
-                sys.exit(255)
+                return
 
             if params['usegpg'] :
                 errstr = repoutils.gpg_error( signature_file , release_file )
@@ -341,7 +341,8 @@ class yast2_repository ( yum_repository ) :
                     os.unlink( file )
                 return
 
-            repomd_files[arch] = metafile
+            if metafile is not True :
+                repomd_files[arch] = metafile
 
         return repomd_files
 
@@ -399,6 +400,13 @@ class debian_repository ( abstract_repository ) :
     def get_master_file ( self , params ) :
 
         release_file = self.get_signed_metafile ( params , self.release , "%s.gpg" % self.release )
+
+        if not release_file :
+            repoutils.show_error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
+            return
+
+        if release_file is True :
+            return
 
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
