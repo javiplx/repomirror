@@ -265,7 +265,7 @@ class fedora_update_repository ( yum_repository ) :
     def metadata_path ( self , subrepo=None , partial=True ) :
         path = ""
         if subrepo :
-            return "%s/" % subrepo
+            path += "%s/" % subrepo
         if not partial :
             path += "repodata/"
         return path
@@ -281,7 +281,7 @@ class centos_repository ( yum_repository ) :
     def metadata_path ( self , subrepo=None , partial=True ) :
         path = ""
         if subrepo :
-            return "os/%s/" % subrepo
+            path += "os/%s/" % subrepo
         if not partial :
             path += "repodata/"
         return path
@@ -291,7 +291,7 @@ class centos_update_repository ( centos_repository ) :
     def metadata_path ( self , subrepo=None , partial=True ) :
         path = ""
         if subrepo :
-            return "updates/%s/" % subrepo
+            path += "updates/%s/" % subrepo
         if not partial :
             path += "repodata/"
         return path
