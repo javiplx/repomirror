@@ -332,15 +332,16 @@ class yast2_repository ( yum_repository ) :
 
         for arch in self.architectures :
 
-            repomd_files[arch] = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) , "%srepomd.xml.asc" % self.metadata_path(arch,False) )
+            metafile = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) , "%srepomd.xml.asc" % self.metadata_path(arch,False) )
 
-            if not repomd_files[arch] :
+            if not metafile :
                 repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
                 # FIXME : here we could be removing files from their final locations
                 for file in repomd_files.values() :
-                    if os.path.isfile( file ) :
-                        os.unlink( file )
+                    os.unlink( file )
                 return
+
+            repomd_files[arch] = metafile
 
         return repomd_files
 
