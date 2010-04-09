@@ -407,6 +407,7 @@ class debian_repository ( abstract_repository ) :
                         repoutils.show_error( "Release file unchanged, exiting" , False )
                         return
                     os.unlink( release_pgp_file )
+                    release_file = local_release
 
         else :
             if os.path.isfile( local_release ) :
