@@ -76,7 +76,7 @@ class abstract_repository :
         # FIXME : produce error if we reach this point with existing local_file
         if not os.path.isfile( local_file ) :
 
-            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
+            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , meta_file ) )
 
             if not release_file :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
