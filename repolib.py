@@ -430,10 +430,9 @@ class debian_repository ( abstract_repository ) :
                     os.unlink( release_file )
                     return
 
+        if not os.path.isfile( local_release ) :
             release = debian_bundle.deb822.Release( sequence=open( release_file ) )
-
         else :
-
             release = debian_bundle.deb822.Release( sequence=open( local_release ) )
 
         if release['Suite'] !=  release['Codename'] :
