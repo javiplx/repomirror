@@ -45,6 +45,54 @@ class abstract_repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+    def get_signed_metafile ( self , params , local_file , sign_file ) :
+
+        if params['usegpg'] :
+
+            signature_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , sign_file ) )
+
+            if not signature_file :
+                repoutils.show_error( "Signature file for version '%s' not found." % ( self.version ) )
+                return
+
+            if os.path.isfile( local_file ) :
+                errstr = repoutils.gpg_error( signature_file , local_file )
+                if errstr :
+                    repoutils.show_error( errstr , False )
+                    os.unlink( local_file )
+                else :
+                    os.unlink( signature_file )
+                    # FIXME : If we consider that our mirror is complete, it is safe to exit here
+                    if params['mode'] == "update" :
+                        repoutils.show_error( "Release file unchanged, exiting" , False )
+                        return
+                    return local_file
+
+        else :
+            if os.path.isfile( local_file ) :
+                os.unlink( local_file )
+
+        # FIXME : produce error if we reach this point with existing local_file
+        if not os.path.isfile( local_file ) :
+
+            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
+
+            if not release_file :
+                repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
+                if params['usegpg'] :
+                    os.unlink( signature_file )
+                sys.exit(255)
+
+            if params['usegpg'] :
+                errstr = repoutils.gpg_error( signature_file , release_file )
+                os.unlink( signature_file )
+                if errstr :
+                    repoutils.show_error( errstr )
+                    os.unlink( release_file )
+                    return
+
+        return release_file
+
     def build_local_tree( self ) :
 
         suite_path = self.repo_path()
@@ -388,53 +436,9 @@ class debian_repository ( abstract_repository ) :
 
         local_release = os.path.join( self.repo_path() , self.release )
 
-        if params['usegpg'] :
+        release_file = self.get_signed_metafile ( params , local_release , "%s.gpg" % self.release )
 
-            release_pgp_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%s.gpg" % self.release ) )
-
-            if not release_pgp_file :
-                repoutils.show_error( "Release.gpg file for suite '%s' is not found." % ( self.version ) )
-                return
-
-            if os.path.isfile( local_release ) :
-                errstr = repoutils.gpg_error( release_pgp_file , local_release )
-                if errstr :
-                    repoutils.show_error( errstr , False )
-                    os.unlink( local_release )
-                else :
-                    # FIXME : If we consider that our mirror is complete, it is safe to exit here
-                    if params['mode'] == "update" :
-                        repoutils.show_error( "Release file unchanged, exiting" , False )
-                        return
-                    os.unlink( release_pgp_file )
-                    release_file = local_release
-
-        else :
-            if os.path.isfile( local_release ) :
-                os.unlink( local_release )
-
-        if not os.path.isfile( local_release ) :
-
-            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , self.release ) )
-
-            if not release_file :
-                repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
-                if params['usegpg'] :
-                    os.unlink( release_pgp_file )
-                sys.exit(255)
-
-            if params['usegpg'] :
-                errstr = repoutils.gpg_error( release_pgp_file , release_file )
-                os.unlink( release_pgp_file )
-                if errstr :
-                    repoutils.show_error( errstr )
-                    os.unlink( release_file )
-                    return
-
-        if not os.path.isfile( local_release ) :
-            release = debian_bundle.deb822.Release( sequence=open( release_file ) )
-        else :
-            release = debian_bundle.deb822.Release( sequence=open( local_release ) )
+        release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
         if release['Suite'] !=  release['Codename'] :
             if release['Suite'].lower() == self.version.lower() :
@@ -474,6 +478,9 @@ class debian_repository ( abstract_repository ) :
                 repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 return
 
+        print "We are returning",release_file
+        if os.path.isfile( local_release ) :
+            return local_release
         return release_file
 
     def write_master_file ( self , release_file ) :
