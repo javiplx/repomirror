@@ -45,13 +45,13 @@ class abstract_repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
-    def get_signed_metafile ( self , params , meta_file , sign_file ) :
+    def get_signed_metafile ( self , params , meta_file , sign_ext=".asc" ) :
 
         local_file = os.path.join( self.repo_path() , meta_file )
 
         if params['usegpg'] :
 
-            signature_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , sign_file ) )
+            signature_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , meta_file + sign_ext ) )
 
             if not signature_file :
                 repoutils.show_error( "Signature file for version '%s' not found." % ( self.version ) )
@@ -139,13 +139,17 @@ class yum_repository ( abstract_repository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            repomd_files[arch] = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , "%srepomd.xml" % self.metadata_path(arch,False) ) )
+            metafile = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) )
 
-            if not repomd_files[arch] :
+            if not metafile :
                 repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-                for file in repomd_files.values :
+                # FIXME : here we could be removing files from their final locations
+                for file in repomd_files.values() :
                     os.unlink( file )
                 return
+
+            if metafile is not True :
+                repomd_files[arch] = metafile
 
         return repomd_files
 
@@ -326,26 +330,6 @@ class yast2_repository ( yum_repository ) :
             path += "repodata/"
         return path
 
-    def get_master_file ( self , params ) :
-
-        repomd_files = {}
-
-        for arch in self.architectures :
-
-            metafile = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) , "%srepomd.xml.asc" % self.metadata_path(arch,False) )
-
-            if not metafile :
-                repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-                # FIXME : here we could be removing files from their final locations
-                for file in repomd_files.values() :
-                    os.unlink( file )
-                return
-
-            if metafile is not True :
-                repomd_files[arch] = metafile
-
-        return repomd_files
-
 class yast2_update_repository ( yast2_repository ) :
 
     def base_url ( self ) :
@@ -399,7 +383,7 @@ class debian_repository ( abstract_repository ) :
 
     def get_master_file ( self , params ) :
 
-        release_file = self.get_signed_metafile ( params , self.release , "%s.gpg" % self.release )
+        release_file = self.get_signed_metafile ( params , self.release , ".gpg" )
 
         if not release_file :
             repoutils.show_error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
