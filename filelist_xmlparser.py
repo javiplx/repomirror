@@ -1,5 +1,6 @@
 
 import xml.sax
+import xml.dom.minidom
 
 class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
 
@@ -47,4 +48,26 @@ def get_package_list ( fd ) :
     parser.parse( fd )
 
     return pkg_handler.pkgs
+
+def get_filelist ( metafile ) :
+
+    repodoc = xml.dom.minidom.parse( metafile )
+    doc = repodoc.documentElement
+
+    for node in doc.getElementsByTagName( "data" ) :
+        if node.getAttribute( "type" ) == "primary" :
+            location = node.getElementsByTagName( "location" )
+            if not location :
+                repoutils.show_error( "No location element within repomd file" )
+                continue
+            item = { 'href':location[0].getAttribute( "href" ) }
+            # FIXME : Produce an error if multiple locations ?
+            size = node.getElementsByTagName( "size" )
+            if size :
+                item['size'] = int(size[0].firstChild.nodeValue)
+            for _node in node.getElementsByTagName( "checksum" ) :
+                item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
+            return item
+
+    return
 

@@ -28,7 +28,6 @@ def instantiate_repo ( config ) :
     return repo
 
 import gzip
-import xml.dom.minidom
 import filelist_xmlparser
 
 class abstract_repository :
@@ -183,30 +182,12 @@ class yum_repository ( abstract_repository ) :
         download_size = 0
         download_pkgs = {}
 
-        item = False
+        item = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
-        repodoc = xml.dom.minidom.parse( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-        doc = repodoc.documentElement
-        for node in doc.getElementsByTagName( "data" ) :
-            if node.getAttribute( "type" ) == "primary" :
-                location = node.getElementsByTagName( "location" )
-                if not location :
-                    repoutils.show_error( "No location element within repomd file" )
-                    continue
-                item = { 'href':location[0].getAttribute( "href" ) }
-                # FIXME : Produce an error if multiple locations ?
-                size = node.getElementsByTagName( "size" )
-                if size :
-                    item['size'] = int(size[0].firstChild.nodeValue)
-                for _node in node.getElementsByTagName( "checksum" ) :
-                    item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
-                break
-        else :
+        if not item :
             repoutils.show_error( "No primary node within repomd file" )
             os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
             sys.exit(255)
-    
-        del repodoc
     
         # FIXME : On problems, exit or continue next arch ???
     
