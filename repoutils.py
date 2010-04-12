@@ -74,6 +74,12 @@ def read_config ( repo_name ) :
     if config.has_option( repo_name , "components" ) :
         conf['components'] = config.get( repo_name , "components" ).split()
 
+    conf['filters'] = {}
+    if config.has_option( repo_name , "filters" ) :
+        for subfilter in config.get( repo_name , "filters" ).split() :
+            if config.has_option( repo_name , subfilter ) :
+                conf['filters'][subfilter] = config.get( repo_name , subfilter ).split()
+
     return conf
 
 

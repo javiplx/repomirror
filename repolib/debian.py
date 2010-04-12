@@ -146,7 +146,7 @@ class debian_repository ( abstract_repository ) :
               subrepos.append( ( arch , comp ) )
         return subrepos
 
-    def get_package_list ( self , subrepo , suite_path , params , minor_filters ) :
+    def get_package_list ( self , subrepo , suite_path , params , filters ) :
 
         release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
 
@@ -256,11 +256,11 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                if minor_filters['sections'] and pkginfo['Section'] not in minor_filters['sections'] :
+                if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
                     continue
-                if minor_filters['priorities'] and pkginfo['Priority'] not in minor_filters['priorities'] :
+                if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
                     continue
-                if minor_filters['tags'] and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in minor_filters['tags'] :
+                if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
                     continue
 
                 pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )

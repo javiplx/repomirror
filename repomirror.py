@@ -2,11 +2,6 @@
 
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
-minor_filters = {}
-minor_filters['sections'] = []
-minor_filters['priorities'] = []
-minor_filters['tags'] = []
-
 params = {}
 # mode (update|init) - decides if we stop processing for unchanged metadata files
 params['mode'] = "update"
@@ -72,7 +67,7 @@ for subrepo in repo.get_subrepos() :
 
     print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , minor_filters )
+    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , config['filters'] )
     download_size += _size
     download_pkgs.update( _pkgs )
 
