@@ -96,7 +96,7 @@ for pkg in download_pkgs.values() :
 print
 print
 
-if sections : print "sections :",sections.keys()
-if priorities : print "priorities :",priorities.keys()
-if tags : print "tags :",map ( lambda x : "%s - %s" % ( x , tags[x].keys() ) , tags.keys() )
+if sections : print "sections : %s" % " ".join( map( lambda x : x.replace(" ","_") , sections.keys() ) )
+if priorities : print "priorities : %s" % " ".join( priorities.keys() )
+if tags : print "tags : %s" % " ".join( map ( lambda x : "%s - %s" % ( x , tags[x].keys() ) , tags.keys() ) )
 
