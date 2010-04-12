@@ -78,7 +78,7 @@ def read_config ( repo_name ) :
     if config.has_option( repo_name , "filters" ) :
         for subfilter in config.get( repo_name , "filters" ).split() :
             if config.has_option( repo_name , subfilter ) :
-                conf['filters'][subfilter] = config.get( repo_name , subfilter ).split()
+                conf['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( repo_name , subfilter ).split() )
 
     return conf
 

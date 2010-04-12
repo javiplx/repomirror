@@ -72,7 +72,7 @@ class yum_repository ( abstract_repository ) :
     def get_subrepos ( self ) :
         return self.architectures
 
-    def get_package_list ( self , arch , local_repodata , params , minor_filters ) :
+    def get_package_list ( self , arch , local_repodata , params , filters ) :
 
         download_size = 0
         download_pkgs = {}
@@ -116,15 +116,16 @@ class yum_repository ( abstract_repository ) :
         fd = gzip.open( localname )
         packages = filelist_xmlparser.get_package_list( fd )
     
-        repoutils.show_error( "Scanning available packages for minor filters (not implemented yet !!!)" , False )
-        # Most relevant for minor filter is   <format><rpm:group>...</rpm:group>
-    
+        repoutils.show_error( "Scanning available packages for minor filters" , False )
         for pkginfo in packages :
     
     # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
     #         Solution : Disable filtering on first approach
     #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
     
+            if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
+                continue
+
             name = pkginfo['name']
             _arch = pkginfo['arch']
             pkg_key = "%s-%s" % ( name , _arch )
@@ -135,7 +136,8 @@ class yum_repository ( abstract_repository ) :
                 href = pkginfo['href']
                 pkgdict = {
                     'Filename':os.path.join( self.metadata_path(arch) , href ) ,
-                    'size':pkginfo['size']
+                    'size':pkginfo['size'] ,
+                    'group':pkginfo['group']
                     }
                 download_pkgs[ pkg_key ] = pkgdict
                 # FIXME : This might cause a ValueError exception ??

@@ -8,6 +8,7 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
         self.pkgs = []
         self._key = None
         self._pkg = None
+        self._ns = ""
         
     def startElement ( self , name , attrs ) :
 
@@ -24,6 +25,10 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._pkg[ 'href' ] = str( attrs.get('href',"") )
         elif name == 'checksum':     
           self._key = str( attrs.get('sha256',"") )
+        elif name == 'format':     
+          self._ns = "rpm:"
+        elif name == self._ns + 'group':     
+          self._key = 'group'
         else :
           self._key = None
 
@@ -36,6 +41,8 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
         if name == 'package':
           self.pkgs.append( self._pkg )
           self._pkg = None
+        elif name == 'format':     
+          self._ns = ""
 
 
 def get_package_list ( fd ) :
