@@ -41,6 +41,8 @@ class abstract_repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+        self.params = config[ "params" ]
+
     def get_signed_metafile ( self , params , meta_file , sign_ext=".asc" ) :
 
         local_file = os.path.join( self.repo_path() , meta_file )

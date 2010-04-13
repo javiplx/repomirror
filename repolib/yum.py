@@ -28,7 +28,10 @@ class yum_repository ( abstract_repository ) :
             path += "repodata/"
         return path
 
-    def get_master_file ( self , params ) :
+    def get_master_file ( self , _params ) :
+
+        params = self.params
+        params.update( _params )
 
         repomd_files = {}
         for arch in self.architectures :
@@ -72,7 +75,10 @@ class yum_repository ( abstract_repository ) :
     def get_subrepos ( self ) :
         return self.architectures
 
-    def get_package_list ( self , arch , local_repodata , params , filters ) :
+    def get_package_list ( self , arch , local_repodata , _params , filters ) :
+
+        params = self.params
+        params.update( _params )
 
         download_size = 0
         download_pkgs = {}

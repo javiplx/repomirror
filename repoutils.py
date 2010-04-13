@@ -39,6 +39,18 @@ def downloadRawFile ( remote , local=None ) :
     return fname
 
 
+default_params = {}
+
+# mode (update|init) - decides if we stop processing for unchanged metadata files
+default_params['mode'] = "update"
+
+# usegpg. To disable verification of PGP signatures, and force the download of master file every run
+default_params['usegpg'] = True
+
+# usemd5. To disable size & checksums verification for broken repositories
+default_params['usemd5'] = True
+
+
 def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
@@ -79,6 +91,15 @@ def read_config ( repo_name ) :
         for subfilter in config.get( repo_name , "filters" ).split() :
             if config.has_option( repo_name , subfilter ) :
                 conf['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( repo_name , subfilter ).split() )
+
+    conf['params'] = {}
+    conf['params'].update( default_params )
+    for key in conf['params'].keys() :
+        if config.has_option( repo_name , key ) :
+            try :
+                conf['params'][ key ] = config.getboolean( repo_name , key )
+            except ValueError , ex :
+                conf['params'][ key ] = config.get( repo_name , key )
 
     return conf
 

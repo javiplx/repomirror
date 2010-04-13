@@ -3,16 +3,6 @@
 # FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
 
 params = {}
-# mode (update|init) - decides if we stop processing for unchanged metadata files
-params['mode'] = "update"
-
-# usegpg. To disable verification of PGP signatures. Forces the download of Release file every run
-# FIXME : Add an ignore all verifications? (pgp+md5)
-params['usegpg'] = False
-
-
-# usemd5. To disable size & checksums verification for broken repositories
-params['usemd5'] = False
 
 
 import urllib2

@@ -52,7 +52,10 @@ class debian_repository ( abstract_repository ) :
             path = "dists/%s/%s" % ( self.version , path )
         return path
 
-    def get_master_file ( self , params ) :
+    def get_master_file ( self , _params ) :
+
+        params = self.params
+        params.update( _params )
 
         release_file = self.get_signed_metafile ( params , self.release , ".gpg" )
 
@@ -146,7 +149,10 @@ class debian_repository ( abstract_repository ) :
               subrepos.append( ( arch , comp ) )
         return subrepos
 
-    def get_package_list ( self , subrepo , suite_path , params , filters ) :
+    def get_package_list ( self , subrepo , suite_path , _params , filters ) :
+
+        params = self.params
+        params.update( _params )
 
         release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
 
