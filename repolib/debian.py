@@ -159,7 +159,7 @@ class debian_repository ( abstract_repository ) :
         # NOTE : Downloading Package Release file is quite redundant
 
         download_size = 0
-        download_pkgs = {}
+        download_pkgs = []
 
         fd = False
         localname = None
@@ -272,43 +272,36 @@ class debian_repository ( abstract_repository ) :
 
         for pkg_key,pkginfo in all_pkgs.iteritems() :
 
-                if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
-                    continue
-                if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
-                    continue
-                if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
-                    continue
+            if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
+                continue
+            if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
+                continue
+            if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
+                continue
 
-                if pkg_key in download_pkgs.keys() :
+            download_pkgs.append( pkginfo )
+            # FIXME : This might cause a ValueError exception ??
+            download_size += int( pkginfo['Size'] )
+
+            if pkginfo.has_key( 'Depends' ) :
+                deplist = []
+                for depitem in pkginfo['Depends'].split(',') :
+                    # When we found 'or' in Depends, we download all of them
+                    for deppkg in depitem.split('|') :
+                        pkgname = deppkg.strip().split(None,1)
+                        deplist.append( pkgname[0] )
+                for deppkg in deplist :
+                    pkg_keys = [ "%s-%s" % ( deppkg , pkginfo['Architecture'] ) ]
                     if pkginfo['Architecture'] != "all" :
-                        repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
-                else :
-                    download_pkgs[ pkg_key ] = pkginfo
-                    # FIXME : This might cause a ValueError exception ??
-                    download_size += int( pkginfo['Size'] )
+                        pkg_keys.append( "%s-all" % deppkg )
+                    for _pkg_key in pkg_keys :
+                        if all_pkgs.has_key( _pkg_key ) :
+                            download_pkgs[ pkg_key ] = all_pkgs[ _pkg_key ]
+                            download_size += int( all_pkgs[_pkg_key]['Size'] )
+                            break
+                    else :
+                        print "Could not find provider for %s" % deppkg
 
-                    if pkginfo.has_key( 'Depends' ) :
-                        deplist = []
-                        for depitem in pkginfo['Depends'].split(',') :
-                            # When we found 'or' in Depends, we download all of them
-                            for deppkg in depitem.split('|') :
-                                pkgname = deppkg.strip().split(None,1)
-                                deplist.append( pkgname[0] )
-                        for deppkg in deplist :
-                            pkg_keys = [ "%s-%s" % ( deppkg , pkginfo['Architecture'] ) ]
-                            if pkginfo['Architecture'] != "all" :
-                                pkg_keys.append( "%s-all" % deppkg )
-                            for _pkg_key in pkg_keys :
-                                if not download_pkgs.has_key( _pkg_key ) :
-                                    if all_pkgs.has_key( _pkg_key ) :
-                                        download_pkgs[ pkg_key ] = all_pkgs[ _pkg_key ]
-                                        download_size += int( all_pkgs[_pkg_key]['Size'] )
-                                        break
-                                else :
-                                    break
-                            else :
-                                print "Could not find provider for %s" % deppkg
-
-        return download_size , download_pkgs.values()
+        return download_size , download_pkgs
 
 

@@ -81,7 +81,7 @@ class yum_repository ( abstract_repository ) :
         params.update( _params )
 
         download_size = 0
-        download_pkgs = {}
+        download_pkgs = []
 
         item = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
@@ -132,27 +132,19 @@ class yum_repository ( abstract_repository ) :
             if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
                 continue
 
-            name = pkginfo['name']
-            _arch = pkginfo['arch']
-            pkg_key = "%s-%s" % ( name , _arch )
-            if pkg_key in download_pkgs.keys() :
-                if _arch != "noarch" :
-                    repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( name , _arch ) , False )
-            else :
-                href = pkginfo['href']
-                pkgdict = {
-                    'Filename':os.path.join( self.metadata_path(arch) , href ) ,
-                    'size':pkginfo['size'] ,
-                    'group':pkginfo['group']
-                    }
-                download_pkgs[ pkg_key ] = pkgdict
-                # FIXME : This might cause a ValueError exception ??
-                download_size += pkgdict['size']
+            pkgdict = {
+                'Filename':os.path.join( self.metadata_path(arch) , pkginfo['href'] ) ,
+                'size':pkginfo['size'] ,
+                'group':pkginfo['group']
+                }
+            download_pkgs.append( pkgdict )
+            # FIXME : This might cause a ValueError exception ??
+            download_size += pkgdict['size']
     
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
         fd.close()
 
-        return download_size , download_pkgs.values()
+        return download_size , download_pkgs
 
 class fedora_update_repository ( yum_repository ) :
 
