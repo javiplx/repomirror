@@ -245,6 +245,8 @@ class debian_repository ( abstract_repository ) :
 
             fd = read_handler( localname )
 
+        all_pkgs = {}
+
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
 
@@ -262,6 +264,14 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
+                pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
+                all_pkgs[ pkg_key ] = pkginfo
+
+            fd.close()
+            del packages
+
+        for pkg_key,pkginfo in all_pkgs.iteritems() :
+
                 if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
                     continue
                 if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
@@ -269,7 +279,6 @@ class debian_repository ( abstract_repository ) :
                 if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
                     continue
 
-                pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
                 if pkg_key in download_pkgs.keys() :
                     if pkginfo['Architecture'] != "all" :
                         repoutils.show_error( "Package '%s - %s' is duplicated in repositories" % ( pkginfo['Package'] , pkginfo['Architecture'] ) , False )
@@ -278,8 +287,6 @@ class debian_repository ( abstract_repository ) :
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
-            repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
-            fd.close()
         return download_size , download_pkgs
 
 
