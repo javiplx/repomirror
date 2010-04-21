@@ -296,7 +296,7 @@ class debian_repository ( abstract_repository ) :
                         pkg_keys.append( "%s-all" % deppkg )
                     for _pkg_key in pkg_keys :
                         if all_pkgs.has_key( _pkg_key ) :
-                            download_pkgs[ pkg_key ] = all_pkgs[ _pkg_key ]
+                            download_pkgs.append( all_pkgs[ _pkg_key ] )
                             download_size += int( all_pkgs[_pkg_key]['Size'] )
                             break
                     else :
