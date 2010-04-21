@@ -287,6 +287,28 @@ class debian_repository ( abstract_repository ) :
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
+                    if pkginfo.has_key( 'Depends' ) :
+                        deplist = []
+                        for depitem in pkginfo['Depends'].split(',') :
+                            # When we found 'or' in Depends, we download all of them
+                            for deppkg in depitem.split('|') :
+                                pkgname = deppkg.strip().split(None,1)
+                                deplist.append( pkgname[0] )
+                        for deppkg in deplist :
+                            pkg_keys = [ "%s-%s" % ( deppkg , pkginfo['Architecture'] ) ]
+                            if pkginfo['Architecture'] != "all" :
+                                pkg_keys.append( "%s-all" % deppkg )
+                            for _pkg_key in pkg_keys :
+                                if not download_pkgs.has_key( _pkg_key ) :
+                                    if all_pkgs.has_key( _pkg_key ) :
+                                        download_pkgs[ pkg_key ] = all_pkgs[ _pkg_key ]
+                                        download_size += int( all_pkgs[_pkg_key]['Size'] )
+                                        break
+                                else :
+                                    break
+                            else :
+                                print "Could not find provider for %s" % deppkg
+
         return download_size , download_pkgs
 
 
