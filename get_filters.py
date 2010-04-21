@@ -50,7 +50,7 @@ local_repodata = repo.write_master_file( meta_files )
 print repo.info( local_repodata )
 
 
-download_pkgs = {}
+download_pkgs = []
 download_size = 0
 
 for subrepo in repo.get_subrepos() :
@@ -59,14 +59,14 @@ for subrepo in repo.get_subrepos() :
 
     _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , {} )
     download_size += _size
-    download_pkgs.update( _pkgs )
+    download_pkgs.extend( _pkgs )
 
 
 sections = {}
 priorities = {}
 tags = {}
 
-for pkg in download_pkgs.values() :
+for pkg in download_pkgs) :
 
     if pkg.has_key('Section') :
         sections[ pkg['Section'] ] = True

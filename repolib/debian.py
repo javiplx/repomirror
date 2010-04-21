@@ -309,6 +309,6 @@ class debian_repository ( abstract_repository ) :
                             else :
                                 print "Could not find provider for %s" % deppkg
 
-        return download_size , download_pkgs
+        return download_size , download_pkgs.values()
 
 

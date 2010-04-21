@@ -50,7 +50,7 @@ local_repodata = repo.write_master_file( meta_files )
 print repo.info( local_repodata )
 
 
-download_pkgs = {}
+download_pkgs = []
 download_size = 0
 
 for subrepo in repo.get_subrepos() :
@@ -59,7 +59,7 @@ for subrepo in repo.get_subrepos() :
 
     _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , config['filters'] )
     download_size += _size
-    download_pkgs.update( _pkgs )
+    download_pkgs.extend( _pkgs )
 
 
 _size = download_size / 1024 / 1024
@@ -68,7 +68,7 @@ if _size > 2048 :
 else :
     print "Total size to download : %.1f Mb" % ( _size )
 
-for pkg in download_pkgs.values() :
+for pkg in download_pkgs :
 
     destname = os.path.join( repo.repo_path() , pkg['Filename'] )
 

@@ -152,7 +152,7 @@ class yum_repository ( abstract_repository ) :
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
         fd.close()
 
-        return download_size , download_pkgs
+        return download_size , download_pkgs.values()
 
 class fedora_update_repository ( yum_repository ) :
 
