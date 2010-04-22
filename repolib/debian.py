@@ -266,7 +266,7 @@ class debian_repository ( abstract_repository ) :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 pkginfo['name'] = pkginfo['Package']
-                all_pkgs[ pkginfo['Package'] ] = pkginfo
+                all_pkgs[ pkginfo['name'] ] = pkginfo
 
             fd.close()
             del packages
