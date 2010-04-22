@@ -72,22 +72,25 @@ else :
 
 if missing_pkgs :
 
+    _missing = {}
+    for pkg in missing_pkgs :
+        _missing[ pkg ] = 1
+
     found_pkgs = {}
     for pkg in download_pkgs :
         # NOTE : We don't break the loop to ensure we get all the available archs
-        if pkg['name'] in missing_pkgs :
+        if pkg['name'] in _missing.keys() :
             # print "FOUND %s %s" % ( pkg['name'] , pkg )
             found_pkgs[ pkg['name'] ] = pkg
     # NOTE : extending here is safer
     download_pkgs.extend( found_pkgs.values() )
 
-    _missing = []
-    for pkg in missing_pkgs :
+    missing = []
+    for pkg in _missing.keys() :
         if not pkg in found_pkgs.keys() :
-            _missing.append( pkg )
-    if _missing :
-        _missing.sort()
-        print "There are missing requirements : %s" % _missing
+            missing.append( pkg )
+    if missing :
+        print "There are missing requirements : %s" % missing
 
 for pkg in download_pkgs :
 
