@@ -82,6 +82,7 @@ class yum_repository ( abstract_repository ) :
 
         download_size = 0
         download_pkgs = []
+        missing_pkgs = []
 
         item = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
@@ -144,7 +145,7 @@ class yum_repository ( abstract_repository ) :
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
         fd.close()
 
-        return download_size , download_pkgs
+        return download_size , download_pkgs , missing_pkgs
 
 class fedora_update_repository ( yum_repository ) :
 

@@ -160,6 +160,7 @@ class debian_repository ( abstract_repository ) :
 
         download_size = 0
         download_pkgs = []
+        missing_pkgs = []
 
         fd = False
         localname = None
@@ -300,8 +301,8 @@ class debian_repository ( abstract_repository ) :
                             download_size += int( all_pkgs[_pkg_key]['Size'] )
                             break
                     else :
-                        print "Could not find provider for %s" % deppkg
+                        missing_pkgs.append ( deppkg )
 
-        return download_size , download_pkgs
+        return download_size , download_pkgs , missing_pkgs
 
 

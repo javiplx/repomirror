@@ -52,14 +52,16 @@ print repo.info( local_repodata )
 
 download_pkgs = []
 download_size = 0
+missing_pkgs = []
 
 for subrepo in repo.get_subrepos() :
 
     print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs = repo.get_package_list( subrepo , local_repodata , params , config['filters'] )
+    _size , _pkgs , _missing = repo.get_package_list( subrepo , local_repodata , params , config['filters'] )
     download_size += _size
     download_pkgs.extend( _pkgs )
+    missing_pkgs.extend( _missing )
 
 
 _size = download_size / 1024 / 1024
@@ -67,6 +69,9 @@ if _size > 2048 :
     print "Total size to download : %.1f Gb" % ( _size / 1024 )
 else :
     print "Total size to download : %.1f Mb" % ( _size )
+
+if missing_pkgs :
+    print "There are missing requirements : %s" % missing_pkgs
 
 for pkg in download_pkgs :
 
