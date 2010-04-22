@@ -133,14 +133,10 @@ class yum_repository ( abstract_repository ) :
             if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
                 continue
 
-            pkgdict = {
-                'Filename':os.path.join( self.metadata_path(arch) , pkginfo['href'] ) ,
-                'size':pkginfo['size'] ,
-                'group':pkginfo['group']
-                }
-            download_pkgs.append( pkgdict )
+            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+            download_pkgs.append( pkginfo )
             # FIXME : This might cause a ValueError exception ??
-            download_size += pkgdict['size']
+            download_size += pkginfo['size']
     
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
         fd.close()
