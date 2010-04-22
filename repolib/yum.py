@@ -123,6 +123,9 @@ class yum_repository ( abstract_repository ) :
         fd = gzip.open( localname )
         packages = filelist_xmlparser.get_package_list( fd )
     
+        all_pkgs = {}
+        providers = {}
+
         repoutils.show_error( "Scanning available packages for minor filters" , False )
         for pkginfo in packages :
     
@@ -130,16 +133,36 @@ class yum_repository ( abstract_repository ) :
     #         Solution : Disable filtering on first approach
     #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
     
+            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+            all_pkgs[ pkginfo['name'] ] = pkginfo
+
+            for pkg in pkginfo['provides'] :
+                # There are multiple packages providing the same item, so we need lists
+                if not providers.has_key( pkg ) :
+                    providers[ pkg ] = []
+                providers[ pkg ].append( pkginfo['name'] )
+
+        fd.close()
+
+        for pkg_key,pkginfo in all_pkgs.iteritems() :
+
             if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
                 continue
 
-            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
             download_pkgs.append( pkginfo )
             # FIXME : This might cause a ValueError exception ??
             download_size += pkginfo['size']
     
+            if pkginfo.has_key( 'requires' ) :
+                for deppkg in pkginfo[ 'requires' ] :
+                    if all_pkgs.has_key( deppkg ) :
+                        download_pkgs.append( all_pkgs[ deppkg ] )
+                        download_size += int( all_pkgs[deppkg]['size'] )
+                        break
+                    else :
+                        missing_pkgs.append ( deppkg )
+
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
-        fd.close()
 
         return download_size , download_pkgs , missing_pkgs
 

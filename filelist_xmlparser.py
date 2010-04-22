@@ -7,6 +7,7 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
     def __init__ ( self ) :
         self.pkgs = []
         self._key = None
+        self._list = None
         self._pkg = None
         self._ns = ""
         
@@ -29,7 +30,17 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._ns = "rpm:"
         elif name == self._ns + 'group':     
           self._key = 'group'
+        elif name == self._ns + 'provides':     
+          self._list = 'provides'
+          self._pkg[ self._list ] = []
+        elif name == self._ns + 'requires':     
+          self._list = 'requires'
+          self._pkg[ self._list ] = []
+        elif name == self._ns + 'entry':     
+          if self._list :
+              self._pkg[ self._list ].append( attrs.get('name',""))
         else :
+          self._dict = None
           self._key = None
 
     def characters ( self , ch ) :
@@ -41,6 +52,10 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
         if name == 'package':
           self.pkgs.append( self._pkg )
           self._pkg = None
+        elif name == self._ns + 'provides':     
+          self._list = None
+        elif name == self._ns + 'requires':     
+          self._list = None
         elif name == 'format':     
           self._ns = ""
 
