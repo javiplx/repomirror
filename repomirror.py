@@ -71,7 +71,23 @@ else :
     print "Total size to download : %.1f Mb" % ( _size )
 
 if missing_pkgs :
-    print "There are missing requirements : %s" % missing_pkgs
+
+    found_pkgs = {}
+    for pkg in download_pkgs :
+        # NOTE : We don't break the loop to ensure we get all the available archs
+        if pkg['name'] in missing_pkgs :
+            # print "FOUND %s %s" % ( pkg['name'] , pkg )
+            found_pkgs[ pkg['name'] ] = pkg
+    # NOTE : extending here is safer
+    download_pkgs.extend( found_pkgs.values() )
+
+    _missing = []
+    for pkg in missing_pkgs :
+        if not pkg in found_pkgs.keys() :
+            _missing.append( pkg )
+    if _missing :
+        _missing.sort()
+        print "There are missing requirements : %s" % _missing
 
 for pkg in download_pkgs :
 

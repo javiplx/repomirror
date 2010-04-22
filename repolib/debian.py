@@ -265,6 +265,7 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
+                pkginfo['name'] = pkginfo['Package']
                 all_pkgs[ pkginfo['Package'] ] = pkginfo
 
             fd.close()
