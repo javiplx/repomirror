@@ -265,8 +265,7 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                pkg_key = "%s-%s" % ( pkginfo['Package'] , pkginfo['Architecture'] )
-                all_pkgs[ pkg_key ] = pkginfo
+                all_pkgs[ pkginfo['Package'] ] = pkginfo
 
             fd.close()
             del packages
@@ -292,14 +291,10 @@ class debian_repository ( abstract_repository ) :
                         pkgname = deppkg.strip().split(None,1)
                         deplist.append( pkgname[0] )
                 for deppkg in deplist :
-                    pkg_keys = [ "%s-%s" % ( deppkg , pkginfo['Architecture'] ) ]
-                    if pkginfo['Architecture'] != "all" :
-                        pkg_keys.append( "%s-all" % deppkg )
-                    for _pkg_key in pkg_keys :
-                        if all_pkgs.has_key( _pkg_key ) :
-                            download_pkgs.append( all_pkgs[ _pkg_key ] )
-                            download_size += int( all_pkgs[_pkg_key]['Size'] )
-                            break
+                    if all_pkgs.has_key( deppkg ) :
+                        download_pkgs.append( all_pkgs[ deppkg ] )
+                        download_size += int( all_pkgs[deppkg]['Size'] )
+                        break
                     else :
                         missing_pkgs.append ( deppkg )
 
