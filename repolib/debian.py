@@ -25,7 +25,7 @@ except :
     pass
 
 
-from repolib import abstract_repository
+from repolib import abstract_repository, abstract_build_repository
 
 
 class debian_repository ( abstract_repository ) :
@@ -300,5 +300,14 @@ class debian_repository ( abstract_repository ) :
                         missing_pkgs.append ( deppkg )
 
         return download_size , download_pkgs , missing_pkgs
+
+
+class debian_build_repository ( abstract_build_repository ) :
+
+    def __init__ ( self , config ) :
+
+        abstract_build_repository.__init__( self , config )
+
+        self.components = config.get( "components" , None )
 
 

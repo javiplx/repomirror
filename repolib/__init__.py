@@ -6,32 +6,36 @@ import urllib2
 import repoutils
 
 
-def instantiate_repo ( config ) :
+def instantiate_repo ( config , mirror_mode=True ) :
     repo = None
-    if config['type'] == "yum" :
-        repo = yum_repository( config )
-    elif config['type'] == "centos" :
-        repo = centos_repository( config )
-    elif config['type'] == "yum_upd" :
-        repo = fedora_update_repository( config )
-    elif config['type'] == "centos_upd" :
-        repo = centos_update_repository( config )
-    elif config['type'] == "deb" :
-        repo = debian_repository( config )
-    elif config['type'] == "yast2" :
-        repo = yast2_repository( config )
-    elif config['type'] == "yast2_update" :
-        repo = yast2_update_repository( config )
+    if mirror_mode :
+        if config['type'] == "yum" :
+            repo = yum_repository( config )
+        elif config['type'] == "centos" :
+            repo = centos_repository( config )
+        elif config['type'] == "yum_upd" :
+            repo = fedora_update_repository( config )
+        elif config['type'] == "centos_upd" :
+            repo = centos_update_repository( config )
+        elif config['type'] == "deb" :
+            repo = debian_repository( config )
+        elif config['type'] == "yast2" :
+            repo = yast2_repository( config )
+        elif config['type'] == "yast2_update" :
+            repo = yast2_update_repository( config )
+        else :
+            repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
     else :
-        repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
+        if config['type'] == "deb" :
+            repo = debian_build_repository( config )
+        else :
+            repoutils.show_error( "Unknown repository build type '%s'" % config['type'] )
     return repo
 
 
-class abstract_repository :
+class _repository :
 
     def __init__ ( self , config ) :
-
-        self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
 
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
@@ -41,7 +45,22 @@ class abstract_repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+
+class abstract_repository ( _repository ) :
+
+    def __init__ ( self , config ) :
+	_repository.__init__( self , config )
+        self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
         self.params = config[ "params" ]
+
+    def base_url ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+    def repo_path ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+    def metadata_path ( self , subrepo=None , partial=False ) :
+        raise Exception( "Calling an abstract method" )
 
     def get_signed_metafile ( self , params , meta_file , sign_ext=".asc" ) :
 
@@ -114,6 +133,12 @@ class abstract_repository :
             return
 
         return filename
+
+
+class abstract_build_repository ( _repository ) :
+
+    def __init__ ( self , config ) :
+	_repository.__init__( self , config )
 
 
 from yum import *
