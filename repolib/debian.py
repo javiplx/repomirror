@@ -277,6 +277,13 @@ class debian_repository ( abstract_repository ) :
                 pkginfo['name'] = pkginfo['Package']
                 all_pkgs[ pkginfo['name'] ] = pkginfo
 
+                if pkginfo.has_key( 'Depends' ) :
+                    pkginfo['requires'] = []
+                    for depitem in pkginfo['Depends'].split(',').split('|') :
+                        # When we found 'or' in Depends, we will download all of them
+                        pkgname = depitem.strip().split(None,1)
+                        pkginfo['requires'].append( pkgname[0] )
+
             fd.close()
             del packages
 
@@ -289,14 +296,8 @@ class debian_repository ( abstract_repository ) :
             # FIXME : This might cause a ValueError exception ??
             download_size += int( pkginfo['Size'] )
 
-            if pkginfo.has_key( 'Depends' ) :
-                deplist = []
-                for depitem in pkginfo['Depends'].split(',') :
-                    # When we found 'or' in Depends, we download all of them
-                    for deppkg in depitem.split('|') :
-                        pkgname = deppkg.strip().split(None,1)
-                        deplist.append( pkgname[0] )
-                for deppkg in deplist :
+            if pkginfo.has_key( 'requires' ) :
+                for deppkg in pkginfo['requires'] :
                     if all_pkgs.has_key( deppkg ) :
                         download_pkgs.append( all_pkgs[ deppkg ] )
                         download_size += int( all_pkgs[deppkg]['Size'] )
