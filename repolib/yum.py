@@ -89,7 +89,7 @@ class yum_repository ( abstract_repository ) :
         download_pkgs = []
         missing_pkgs = []
 
-        item = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
+        item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
         if not item :
             repoutils.show_error( "No primary node within repomd file" )
@@ -150,6 +150,49 @@ class yum_repository ( abstract_repository ) :
 
         fd.close()
 
+
+        if not filelist :
+            repoutils.show_error( "No filelists node within repomd file" )
+            os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
+            sys.exit(255)
+    
+        # FIXME : On problems, exit or continue next arch ???
+    
+        localname = os.path.join( local_repodata[arch] , filelist['href'] )
+    
+        if os.path.isfile( localname ) :
+            error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
+            if error :
+                repoutils.show_error( error , False )
+                os.unlink( localname )
+            else :
+                if params['mode'] == "update" :
+                    return 0 , {}
+    
+        if not os.path.isfile( localname ) :
+    
+            repoutils.show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+    
+            url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
+    
+            if self._retrieve_file( url , localname ) :
+                error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
+                if error :
+                    repoutils.show_error( error )
+                    os.unlink( localname )
+                    sys.exit(255)
+            else :
+                repoutils.show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                sys.exit(255)
+    
+        fd = gzip.open( localname )
+        files = filelist_xmlparser.get_files_list( fd )
+
+        for _file in files.keys() :
+            if not providers.has_key( _file ) :
+                providers[ _file ] = []
+            providers[ _file ].append( files[_file] )
+    
         for pkg_key,pkginfo in all_pkgs.iteritems() :
 
             if self.match_filters( pkginfo , filters ) :
@@ -165,7 +208,6 @@ class yum_repository ( abstract_repository ) :
                         download_pkgs.append( all_pkgs[ deppkg ] )
                         download_size += int( all_pkgs[deppkg]['size'] )
                     else :
-                        # File requirements are not fixed by this loop
                         if providers.has_key( deppkg ) :
                             for _pkg in providers[ deppkg ] :
                                 download_pkgs.append( all_pkgs[_pkg] )

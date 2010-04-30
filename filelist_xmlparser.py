@@ -60,6 +60,36 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._ns = ""
 
 
+class yum_files_handler ( xml.sax.handler.ContentHandler ) :
+
+    def __init__ ( self ) :
+        self.files = {}
+        self._pkg = None
+        self._key = False
+
+    def startElement ( self , name , attrs ) :
+
+        if name == 'package':     
+            self._pkg = attrs.get('name')
+        elif name == 'file' :     
+             # We only care about files, neither dirs nor ghosts
+             if attrs.get('type', "file") == "file" :
+                 self._key = True
+
+    def characters ( self , ch ) :
+        if self._key :
+            # FIXME : There are some issue that makes ch not arriving a proper node content, causing false duplicates on incomplete path names
+            #if self.files.has_key( ch ) :
+            #    print "Duplicated filename : %s" % ch
+            self.files[ ch ] = self._pkg
+
+    def endElement ( self , name ) :
+        if name == 'package':
+            self._pkg = None
+        elif name == 'file' :     
+            self._key = False
+
+
 def get_package_list ( fd ) :
 
     pkg_handler = yum_packages_handler()
@@ -71,10 +101,23 @@ def get_package_list ( fd ) :
 
     return pkg_handler.pkgs
 
+def get_files_list ( fd ) :
+
+    files_handler = yum_files_handler()
+
+    parser = xml.sax.make_parser()   
+    parser.setContentHandler( files_handler )
+
+    parser.parse( fd )
+
+    return files_handler.files
+
 def get_filelist ( metafile ) :
 
     repodoc = xml.dom.minidom.parse( metafile )
     doc = repodoc.documentElement
+
+    primary_item , filelist_item = None , None
 
     for node in doc.getElementsByTagName( "data" ) :
         if node.getAttribute( "type" ) == "primary" :
@@ -82,14 +125,25 @@ def get_filelist ( metafile ) :
             if not location :
                 repoutils.show_error( "No location element within repomd file" )
                 continue
-            item = { 'href':location[0].getAttribute( "href" ) }
+            primary_item = { 'href':location[0].getAttribute( "href" ) }
             # FIXME : Produce an error if multiple locations ?
             size = node.getElementsByTagName( "size" )
             if size :
-                item['size'] = int(size[0].firstChild.nodeValue)
+                primary_item['size'] = int(size[0].firstChild.nodeValue)
             for _node in node.getElementsByTagName( "checksum" ) :
-                item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
-            return item
+                primary_item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
+        elif node.getAttribute( "type" ) == "filelists" :
+            location = node.getElementsByTagName( "location" )
+            if not location :
+                repoutils.show_error( "No location element within repomd file" )
+                continue
+            filelist_item = { 'href':location[0].getAttribute( "href" ) }
+            # FIXME : Produce an error if multiple locations ?
+            size = node.getElementsByTagName( "size" )
+            if size :
+                filelist_item['size'] = int(size[0].firstChild.nodeValue)
+            for _node in node.getElementsByTagName( "checksum" ) :
+                filelist_item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
 
-    return
+    return primary_item , filelist_item
 
