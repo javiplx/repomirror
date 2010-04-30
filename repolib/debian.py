@@ -149,6 +149,15 @@ class debian_repository ( abstract_repository ) :
               subrepos.append( ( arch , comp ) )
         return subrepos
 
+    def match_filters( self , pkginfo , filters ) :
+        if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
+            return True
+        if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
+            return True
+        if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
+            return True
+        return False
+
     def get_package_list ( self , subrepo , suite_path , _params , filters ) :
 
         params = self.params
@@ -273,11 +282,7 @@ class debian_repository ( abstract_repository ) :
 
         for pkg_key,pkginfo in all_pkgs.iteritems() :
 
-            if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
-                continue
-            if filters.has_key('priorities') and pkginfo['Priority'] not in filters['priorities'] :
-                continue
-            if filters.has_key('tags') and 'Tag' in pkginfo.keys() and pkginfo['Tag'] not in filters['tags'] :
+            if self.match_filters( pkginfo , filters ) :
                 continue
 
             download_pkgs.append( pkginfo )

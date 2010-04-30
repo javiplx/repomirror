@@ -75,6 +75,11 @@ class yum_repository ( abstract_repository ) :
     def get_subrepos ( self ) :
         return self.architectures
 
+    def match_filters( self , pkginfo , filters ) :
+        if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
+            return True
+        return False
+
     def get_package_list ( self , arch , local_repodata , _params , filters ) :
 
         params = self.params
@@ -147,7 +152,7 @@ class yum_repository ( abstract_repository ) :
 
         for pkg_key,pkginfo in all_pkgs.iteritems() :
 
-            if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
+            if self.match_filters( pkginfo , filters ) :
                 continue
 
             download_pkgs.append( pkginfo )
