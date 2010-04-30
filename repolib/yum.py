@@ -136,11 +136,12 @@ class yum_repository ( abstract_repository ) :
             pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
             all_pkgs[ pkginfo['name'] ] = pkginfo
 
-            for pkg in pkginfo['provides'] :
-                # There are multiple packages providing the same item, so we need lists
-                if not providers.has_key( pkg ) :
-                    providers[ pkg ] = []
-                providers[ pkg ].append( pkginfo['name'] )
+            if pkginfo.has_key( 'provides' ) :
+                for pkg in pkginfo['provides'] :
+                    # There are multiple packages providing the same item, so we need lists
+                    if not providers.has_key( pkg ) :
+                        providers[ pkg ] = []
+                    providers[ pkg ].append( pkginfo['name'] )
 
         fd.close()
 
