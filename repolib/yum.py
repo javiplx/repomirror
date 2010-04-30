@@ -164,9 +164,14 @@ class yum_repository ( abstract_repository ) :
                     if all_pkgs.has_key( deppkg ) :
                         download_pkgs.append( all_pkgs[ deppkg ] )
                         download_size += int( all_pkgs[deppkg]['size'] )
-                        break
                     else :
-                        missing_pkgs.append ( deppkg )
+                        # File requirements are not fixed by this loop
+                        if providers.has_key( deppkg ) :
+                            for _pkg in providers[ deppkg ] :
+                                download_pkgs.append( all_pkgs[_pkg] )
+                                download_size += int( all_pkgs[_pkg]['size'] )
+                        else :
+                            missing_pkgs.append ( deppkg )
 
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
 
