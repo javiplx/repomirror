@@ -279,10 +279,11 @@ class debian_repository ( abstract_repository ) :
 
                 if pkginfo.has_key( 'Depends' ) :
                     pkginfo['requires'] = []
-                    for depitem in pkginfo['Depends'].split(',').split('|') :
+                    for deplist in pkginfo['Depends'].split(',') :                            
                         # When we found 'or' in Depends, we will download all of them
-                        pkgname = depitem.strip().split(None,1)
-                        pkginfo['requires'].append( pkgname[0] )
+                        for depitem in deplist.split('|') :
+                            pkgname = depitem.strip().split(None,1)
+                            pkginfo['requires'].append( pkgname[0] )
 
             fd.close()
             del packages
