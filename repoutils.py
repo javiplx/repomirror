@@ -5,11 +5,6 @@ import urllib2
 import tempfile
 import ConfigParser
 
-try :
-    import GnuPGInterface
-except :
-    usegpg = False
-
 
 def downloadRawFile ( remote , local=None ) :
     """Downloads a remote file to the local system.
@@ -46,6 +41,12 @@ default_params['mode'] = "update"
 
 # usegpg. To disable verification of PGP signatures, and force the download of master file every run
 default_params['usegpg'] = True
+try :
+    import GnuPGInterface
+    default_params['usegpg'] = True
+except :
+    default_params['usegpg'] = False
+
 
 # usemd5. To disable size & checksums verification for broken repositories
 default_params['usemd5'] = True
