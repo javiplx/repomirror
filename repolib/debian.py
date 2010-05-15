@@ -339,7 +339,7 @@ class debian_repository ( abstract_repository ) :
 
             for pkgname in all_requires.keys() :
                 if not all_pkgs.has_key( pkgname ) :
-                    missing_pkgs = []
+                    missing_pkgs.append( pkgname )
 
         download_pkgs = debian_bundle.debian_support.PackageFile( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
