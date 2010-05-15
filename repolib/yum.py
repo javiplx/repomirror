@@ -111,7 +111,7 @@ class yum_repository ( abstract_repository ) :
     
         if not os.path.isfile( localname ) :
     
-            repoutils.show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+            repoutils.show_error( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
             url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
@@ -131,7 +131,6 @@ class yum_repository ( abstract_repository ) :
         all_pkgs = {}
         providers = {}
 
-        repoutils.show_error( "Scanning available packages for minor filters" , False )
         for pkginfo in packages :
     
     # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
@@ -171,7 +170,7 @@ class yum_repository ( abstract_repository ) :
     
         if not os.path.isfile( localname ) :
     
-            repoutils.show_error( "No local Packages file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+            repoutils.show_error( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
             url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
     
@@ -193,6 +192,7 @@ class yum_repository ( abstract_repository ) :
                 providers[ _file ] = []
             providers[ _file ].append( files[_file] )
     
+        repoutils.show_error( "Scanning available packages for minor filters" , False )
         for pkg_key,pkginfo in all_pkgs.iteritems() :
 
             if not self.match_filters( pkginfo , filters ) :
