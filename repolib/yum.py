@@ -107,7 +107,7 @@ class yum_repository ( abstract_repository ) :
                 os.unlink( localname )
             else :
                 if params['mode'] == "update" :
-                    return 0 , {}
+                    return 0 , [] , []
     
         if not os.path.isfile( localname ) :
     
@@ -167,7 +167,7 @@ class yum_repository ( abstract_repository ) :
                 os.unlink( localname )
             else :
                 if params['mode'] == "update" :
-                    return 0 , {}
+                    return 0 , [] , []
     
         if not os.path.isfile( localname ) :
     
