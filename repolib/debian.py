@@ -293,11 +293,13 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                if self.match_filters( pkginfo , filters ) :
-                    all_pkgs[ pkginfo['Package'] ] = 1
-                    dump_package( pkginfo , outfd )
-                    # FIXME : This might cause a ValueError exception ??
-                    download_size += int( pkginfo['Size'] )
+                if not self.match_filters( pkginfo , filters ) :
+                    continue
+
+                all_pkgs[ pkginfo['Package'] ] = 1
+                dump_package( pkginfo , outfd )
+                # FIXME : This might cause a ValueError exception ??
+                download_size += int( pkginfo['Size'] )
 
                 if pkginfo.has_key( 'Depends' ) :
                     for deplist in pkginfo['Depends'].split(',') :                            
@@ -319,12 +321,25 @@ class debian_repository ( abstract_repository ) :
 
                 # FIXME : We made no attempt to go into a full depenceny loop
                 if all_requires.has_key( pkginfo['Package'] ) :
+                    all_pkgs[ pkginfo['Package'] ] = 1
                     dump_package( pkginfo , outfd )
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
+                    if pkginfo.has_key( 'Depends' ) :
+                        for deplist in pkginfo['Depends'].split(',') :                            
+                            # When we found 'or' in Depends, we will download all of them
+                            for depitem in deplist.split('|') :
+                                # We keep only the package name, more or less safer within a repository
+                                pkgname = depitem.strip().split(None,1)
+                                all_requires[ pkgname[0] ] = 1
+
             fd.close()
             del packages
+
+            for pkgname in all_requires.keys() :
+                if not all_pkgs.has_key( pkgname ) :
+                    missing_pkgs = []
 
         download_pkgs = debian_bundle.debian_support.PackageFile( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
