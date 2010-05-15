@@ -52,6 +52,10 @@ except :
 default_params['usemd5'] = True
 
 
+# pkgvflags. To specify special flags for verification of downloaded packages
+default_params['pkgvflags'] = "SKIP_NONE"
+
+
 def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
@@ -102,6 +106,8 @@ def read_config ( repo_name ) :
             except ValueError , ex :
                 conf['params'][ key ] = config.get( repo_name , key )
 
+    conf['params']['pkgvflags'] = eval( conf['params']['pkgvflags'] )
+
     return conf
 
 def read_build_config ( repo_name ) :
@@ -136,6 +142,7 @@ def read_build_config ( repo_name ) :
     return conf
 
 
+SKIP_NONE = 0
 SKIP_SIZE = 1
 SKIP_CKSUM = 2
 
