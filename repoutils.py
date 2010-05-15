@@ -100,6 +100,11 @@ def read_config ( repo_name ) :
     conf['params'] = {}
     conf['params'].update( default_params )
     for key in conf['params'].keys() :
+        if config.has_option( "global" , key ) :
+            try :
+                conf['params'][ key ] = config.getboolean( "global" , key )
+            except ValueError , ex :
+                conf['params'][ key ] = config.get( "global" , key )
         if config.has_option( repo_name , key ) :
             try :
                 conf['params'][ key ] = config.getboolean( repo_name , key )
