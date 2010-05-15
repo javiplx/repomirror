@@ -112,3 +112,6 @@ for pkg in download_pkgs :
     if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
         repoutils.show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
+if getattr( download_pkgs , 'close' , False ) :
+    download_pkgs.close()
+

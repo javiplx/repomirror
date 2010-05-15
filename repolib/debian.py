@@ -7,6 +7,7 @@ import errno , shutil
 import urllib2
 
 import os , sys
+import tempfile
 
 
 # FIXME : Include standard plain os.open??
@@ -27,6 +28,22 @@ except :
 
 from repolib import abstract_repository, abstract_build_repository
 
+
+# Derived from Deb822.dump()
+def dump_package(deb822 , fd):
+    _multivalued_fields = [ "Description" ]
+    for key, value in deb822.iteritems():
+        if not value or value[0] == '\n':
+            # Avoid trailing whitespace after "Field:" if it's on its own
+            # line or the value is empty
+            # XXX Uh, really print value if value == '\n'?
+            fd.write('%s:%s\n' % (key, value))
+        else :
+            values = value.split('\n')
+            fd.write('%s: %s\n' % (key, values.pop(0)))
+            for v in values:
+                fd.write(' %s\n' % values.pop(0))
+    fd.write('\n')
 
 class debian_repository ( abstract_repository ) :
 
@@ -168,7 +185,6 @@ class debian_repository ( abstract_repository ) :
         # NOTE : Downloading Package Release file is quite redundant
 
         download_size = 0
-        download_pkgs = []
         missing_pkgs = []
 
         fd = False
@@ -256,6 +272,9 @@ class debian_repository ( abstract_repository ) :
             fd = read_handler( localname )
 
         all_pkgs = {}
+        all_requires = {}
+
+        outfd = tempfile.NamedTemporaryFile()
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
@@ -274,38 +293,40 @@ class debian_repository ( abstract_repository ) :
                 if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                pkginfo['name'] = pkginfo['Package']
-                all_pkgs[ pkginfo['name'] ] = pkginfo
+                if self.match_filters( pkginfo , filters ) :
+                    all_pkgs[ pkginfo['Package'] ] = 1
+                    dump_package( pkginfo , outfd )
+                    # FIXME : This might cause a ValueError exception ??
+                    download_size += int( pkginfo['Size'] )
 
                 if pkginfo.has_key( 'Depends' ) :
-                    pkginfo['requires'] = []
                     for deplist in pkginfo['Depends'].split(',') :                            
                         # When we found 'or' in Depends, we will download all of them
                         for depitem in deplist.split('|') :
+                            # We keep only the package name, more or less safer within a repository
                             pkgname = depitem.strip().split(None,1)
-                            pkginfo['requires'].append( pkgname[0] )
+                            all_requires[ pkgname[0] ] = 1
+
+            # Rewind file
+            fd.seek(0)
+
+            packages = debian_bundle.debian_support.PackageFile( localname , fd )
+            for pkg in packages :
+                pkginfo =  debian_bundle.deb822.Deb822Dict( pkg )
+
+                if all_pkgs.has_key( pkginfo['Package'] ) :
+                    continue
+
+                # FIXME : We made no attempt to go into a full depenceny loop
+                if all_requires.has_key( pkginfo['Package'] ) :
+                    dump_package( pkginfo , outfd )
+                    # FIXME : This might cause a ValueError exception ??
+                    download_size += int( pkginfo['Size'] )
 
             fd.close()
             del packages
 
-        for pkg_key,pkginfo in all_pkgs.iteritems() :
-
-            if not self.match_filters( pkginfo , filters ) :
-                continue
-
-            download_pkgs.append( pkginfo )
-            # FIXME : This might cause a ValueError exception ??
-            download_size += int( pkginfo['Size'] )
-
-            if pkginfo.has_key( 'requires' ) :
-                for deppkg in pkginfo['requires'] :
-                    if all_pkgs.has_key( deppkg ) :
-                        download_pkgs.append( all_pkgs[ deppkg ] )
-                        download_size += int( all_pkgs[deppkg]['Size'] )
-                        break
-                    else :
-                        missing_pkgs.append ( deppkg )
-
+        download_pkgs = debian_bundle.debian_support.PackageFile( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
 
 
