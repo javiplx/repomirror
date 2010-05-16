@@ -37,16 +37,16 @@ def dump_package(deb822 , fd):
             # Avoid trailing whitespace after "Field:" if it's on its own
             # line or the value is empty
             # XXX Uh, really print value if value == '\n'?
-            fd.write('%s:%s\n' % (key, value))
+            fd.write('%s:%s\n' % (key, value.encode('utf-8')))
         else :
             values = value.split('\n')
-            fd.write('%s: %s\n' % (key, values.pop(0)))
+            fd.write('%s: %s\n' % (key, values.pop(0).encode('utf-8')))
             for v in values:
                 _v = values.pop(0)
                 if _v == '' :
                     fd.write(' .\n')
                 else :
-                    fd.write(' %s\n' % _v)
+                    fd.write(' %s\n' % _v.encode('utf-8'))
     fd.write('\n')
 
 class debian_repository ( abstract_repository ) :
