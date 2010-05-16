@@ -42,7 +42,11 @@ def dump_package(deb822 , fd):
             values = value.split('\n')
             fd.write('%s: %s\n' % (key, values.pop(0)))
             for v in values:
-                fd.write(' %s\n' % values.pop(0))
+                _v = values.pop(0)
+                if _v == '' :
+                    fd.write(' .\n')
+                else :
+                    fd.write(' %s\n' % _v)
     fd.write('\n')
 
 class debian_repository ( abstract_repository ) :
