@@ -32,6 +32,7 @@ from repolib import abstract_repository, abstract_build_repository
 # Derived from Deb822.dump()
 def dump_package(deb822 , fd):
     _multivalued_fields = [ "Description" ]
+    fd.write('%s:%s\n' % ('Name',deb822['Package'].encode('utf-8')))
     for key, value in deb822.iteritems():
         if not value or value[0] == '\n':
             # Avoid trailing whitespace after "Field:" if it's on its own
