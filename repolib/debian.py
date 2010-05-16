@@ -49,6 +49,16 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % _v.encode('utf-8'))
     fd.write('\n')
 
+class PackageList ( debian_bundle.debian_support.PackageFile ) :
+
+    def __iter__ ( self ) :
+        _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+        while _pkg :
+            pkg = debian_bundle.deb822.Deb822()
+            pkg.update( _pkg.next() )
+            yield pkg
+            _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+
 class debian_repository ( abstract_repository ) :
 
     def __init__ ( self , config ) :
@@ -346,7 +356,7 @@ class debian_repository ( abstract_repository ) :
                     missing_pkgs.append( pkgname )
 
         outfd.seek(0)
-        download_pkgs = debian_bundle.debian_support.PackageFile( outfd.name , outfd )
+        download_pkgs = PackageList( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
 
 
