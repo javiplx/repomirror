@@ -345,6 +345,7 @@ class debian_repository ( abstract_repository ) :
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
+        outfd.seek(0)
         download_pkgs = debian_bundle.debian_support.PackageFile( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
 
