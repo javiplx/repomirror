@@ -134,6 +134,9 @@ class abstract_repository ( _repository ) :
 
         return filename
 
+    def get_download_list( self ) :
+        return []
+
 
 class abstract_build_repository ( _repository ) :
 

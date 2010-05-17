@@ -50,7 +50,7 @@ local_repodata = repo.write_master_file( meta_files )
 print repo.info( local_repodata )
 
 
-download_pkgs = []
+download_pkgs = repo.get_download_list()
 download_size = 0
 missing_pkgs = []
 
