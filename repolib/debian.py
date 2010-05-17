@@ -52,13 +52,32 @@ def dump_package(deb822 , fd):
 
 class PackageList ( debian_bundle.debian_support.PackageFile ) :
 
+    def __init__ ( self , name=None , file_obj=None ) :
+        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+        self.pkgfd = None
+        if name is None:
+            if file_obj is None:
+                self.pkgfd = tempfile.NamedTemporaryFile()
+                name , file_obj = self.pkgfd.name , self.pkgfd
+        debian_bundle.debian_support.PackageFile.__init__( self , name , file_obj )
+
     def __iter__ ( self ) :
+        if self.pkgfd :
+            self.pkgfd.seek(0)
         _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
         while _pkg :
             pkg = debian_bundle.deb822.Deb822()
             pkg.update( _pkg.next() )
             yield pkg
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+
+    def extend ( self , values_list ) :
+        if not self.pkgfd :
+            raise Exception( "Underlying PackageFile cannot be extended" )
+        self.pkgfd.seek(0,2)
+        for pkg in values_list :
+            dump_package( pkg , self.pkgfd )
+
 
 class debian_repository ( abstract_repository ) :
 
@@ -359,6 +378,9 @@ class debian_repository ( abstract_repository ) :
         outfd.seek(0)
         download_pkgs = PackageList( outfd.name , outfd )
         return download_size , download_pkgs , missing_pkgs
+
+    def get_download_list( self ) :
+        return PackageList()
 
 
 class debian_build_repository ( abstract_build_repository ) :
