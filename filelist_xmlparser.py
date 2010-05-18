@@ -25,7 +25,7 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
         elif name == 'location':     
           self._pkg[ 'href' ] = str( attrs.get('href',"") )
         elif name == 'checksum':     
-          self._key = str( attrs.get('sha256',"") )
+          self._key = str( attrs.get('type',"") )
         elif name == 'format':     
           self._ns = "rpm:"
         elif name == self._ns + 'group':     
