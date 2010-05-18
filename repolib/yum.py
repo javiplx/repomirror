@@ -131,24 +131,25 @@ class yum_repository ( abstract_repository ) :
         all_pkgs = {}
         providers = {}
 
+        repoutils.show_error( "Scanning available packages for minor filters" , False )
         for pkginfo in packages :
     
-    # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
-    #         Solution : Disable filtering on first approach
-    #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
+# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
+#         Solution : Disable filtering on first approach
+#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
     
+            if not self.match_filters( pkginfo , filters ) :
+                continue
+
+            all_pkgs[ pkginfo['name'] ] = 1
             pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
-            all_pkgs[ pkginfo['name'] ] = pkginfo
+            download_pkgs.append( pkginfo )
+            # FIXME : This might cause a ValueError exception ??
+            download_size += pkginfo['size']
 
-            if pkginfo.has_key( 'provides' ) :
-                for pkg in pkginfo['provides'] :
-                    # There are multiple packages providing the same item, so we need lists
-                    if not providers.has_key( pkg ) :
-                        providers[ pkg ] = []
-                    providers[ pkg ].append( pkginfo['name'] )
-
-        fd.close()
-
+            if pkginfo.has_key( 'requires' ) :
+                for pkg in pkginfo['requires'] :
+                    providers[ pkg ] = 1
 
         if not filelist :
             repoutils.show_error( "No filelists node within repomd file" )
@@ -184,36 +185,54 @@ class yum_repository ( abstract_repository ) :
                 repoutils.show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
                 sys.exit(255)
     
-        fd = gzip.open( localname )
-        files = filelist_xmlparser.get_files_list( fd )
+        filesfd = gzip.open( localname )
 
+        # NOTE : We run over the filelists content, marking package owners for later addition
+        repoutils.show_error( "Scanning filelists.xml for file dependencies" , False )
+        files = filelist_xmlparser.get_files_list( filesfd )
         for _file in files.keys() :
-            if not providers.has_key( _file ) :
-                providers[ _file ] = []
-            providers[ _file ].append( files[_file] )
+            pkg = files[ _file ]
+            # There are multiple packages providing the same item, so we cannot break on matches
+            if providers.has_key( pkg ) :
+                if not all_pkgs.has_key( pkg ) :
+                    providers[ pkg ] = 1
     
-        repoutils.show_error( "Scanning available packages for minor filters" , False )
-        for pkg_key,pkginfo in all_pkgs.iteritems() :
+        filesfd.close()
+        
+        # Rewind file
+        fd.seek(0)
 
-            if not self.match_filters( pkginfo , filters ) :
+        repoutils.show_error( "Searching for missing dependencies" , False )
+        packages = filelist_xmlparser.get_package_list( fd )
+        for pkginfo in packages :
+        
+            if all_pkgs.has_key( pkginfo['name'] ) :
                 continue
 
-            download_pkgs.append( pkginfo )
-            # FIXME : This might cause a ValueError exception ??
-            download_size += pkginfo['size']
-    
-            if pkginfo.has_key( 'requires' ) :
-                for deppkg in pkginfo[ 'requires' ] :
-                    if all_pkgs.has_key( deppkg ) :
-                        download_pkgs.append( all_pkgs[ deppkg ] )
-                        download_size += int( all_pkgs[deppkg]['size'] )
-                    else :
-                        if providers.has_key( deppkg ) :
-                            for _pkg in providers[ deppkg ] :
-                                download_pkgs.append( all_pkgs[_pkg] )
-                                download_size += int( all_pkgs[_pkg]['size'] )
-                        else :
-                            missing_pkgs.append ( deppkg )
+            if pkginfo.has_key( 'provides' ) :
+                for pkg in pkginfo['provides'] :
+                    # There are multiple packages providing the same item, so we cannot break on matches
+
+                    # FIXME : We made no attempt to go into a full depenceny loop
+                    if providers.has_key( pkg ) :
+                    
+                        all_pkgs[ pkginfo['name'] ] = 1
+                        pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                        download_pkgs.append( pkginfo )
+                        # FIXME : This might cause a ValueError exception ??
+                        download_size += int( pkginfo['size'] )
+
+                        if pkginfo.has_key( 'requires' ) :
+                            for reqpkg in pkginfo['requires'] :
+                                providers[ reqpkg ] = 1
+
+        fd.close()
+        del packages
+
+
+        for pkgname in providers.keys() :
+            if not all_pkgs.has_key( pkgname ) :
+                missing_pkgs.append( pkgname )
 
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
 
