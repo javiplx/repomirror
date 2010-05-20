@@ -29,25 +29,32 @@ except :
 from repolib import abstract_repository, abstract_build_repository
 
 
+def safe_encode ( str ) :
+    try :
+        out = "%s" % str
+    except UnicodeDecodeError , ex :
+        out = "%s" % str.encode('utf-8')
+    return out
+
 # Derived from Deb822.dump()
 def dump_package(deb822 , fd):
     _multivalued_fields = [ "Description" ]
-    fd.write('%s:%s\n' % ('Name',deb822['Package'].encode('utf-8')))
+    fd.write('%s:%s\n' % ('Name',safe_encode(deb822['Package'])))
     for key, value in deb822.iteritems():
         if not value or value[0] == '\n':
             # Avoid trailing whitespace after "Field:" if it's on its own
             # line or the value is empty
             # XXX Uh, really print value if value == '\n'?
-            fd.write('%s:%s\n' % (key, value.encode('utf-8')))
+            fd.write('%s:%s\n' % (key, safe_encode(value)))
         else :
             values = value.split('\n')
-            fd.write('%s: %s\n' % (key, values.pop(0).encode('utf-8')))
+            fd.write('%s: %s\n' % (key, safe_encode(values.pop(0))))
             for v in values:
                 _v = values.pop(0)
                 if _v == '' :
                     fd.write(' .\n')
                 else :
-                    fd.write(' %s\n' % _v.encode('utf-8'))
+                    fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
 class PackageList ( debian_bundle.debian_support.PackageFile ) :
