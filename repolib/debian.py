@@ -85,6 +85,9 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
         for pkg in values_list :
             dump_package( pkg , self.pkgfd )
 
+    def flush ( self ) :
+        pass
+
 
 class debian_repository ( abstract_repository ) :
 
@@ -384,6 +387,8 @@ class debian_repository ( abstract_repository ) :
 
         outfd.seek(0)
         download_pkgs = PackageList( outfd.name , outfd )
+        download_pkgs.flush()
+
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :

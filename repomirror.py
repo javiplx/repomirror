@@ -92,6 +92,8 @@ if missing_pkgs :
     if missing :
         print "There are missing requirements : %s" % missing
 
+download_pkgs.flush()
+
 for pkg in download_pkgs :
 
     destname = os.path.join( repo.repo_path() , pkg['Filename'] )

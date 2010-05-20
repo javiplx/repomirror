@@ -8,8 +8,78 @@ import errno , shutil
 import gzip
 
 import os , sys
+import tempfile
 
 from repolib import abstract_repository
+
+
+class PackageList :
+
+    out_template = """name=%s
+sha256=%s
+size=%s
+href=%s
+Filename=%s
+
+"""
+
+    def __init__ ( self ) :
+        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+        self.pkgfd = tempfile.NamedTemporaryFile()
+
+    def __iter__ ( self ) :
+        if self.pkgfd :
+            self.pkgfd.seek(0)
+        _pkg = {}
+        line = self.pkgfd.readline()
+        while line :
+            if line == '\n' :
+                yield _pkg
+                _pkg = {}
+            else :
+                k,v = line[:-1].split('=',1)
+                _pkg[k] = v
+            line = self.pkgfd.readline()
+        if _pkg :
+            yield _pkg
+
+    def append ( self , pkg ) :
+        if not pkg.has_key('sha256') : print type(pkg),":",pkg
+        self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
+
+    def extend ( self , values_list ) :
+        self.pkgfd.seek(0,2)
+        for pkg in values_list :
+            self.append( pkg )
+
+    def flush ( self ) :
+        pass
+
+# NOTE : The xml version seems more attractive, but we cannot use it until
+#        we get a way to build an iterable XML parser, maybe availeble
+#        using xml.etree.ElementTree.iterparse
+class XMLPackageList ( PackageList ) :
+
+    out_template = """<package type="rpm">
+  <name>%s</name>
+  <checksum type="sha256" pkgid="YES">%s</checksum>
+  <size package="%s"/>
+  <location href="%s"/>
+  <poolfile href="%s"/>
+</package>
+"""
+
+    def __init__ ( self ) :
+        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+        PackageList.__init__( self )
+        self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
+        self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
+
+    def __iter__ ( self ) :
+        raise Exception( "Iterable parser not yet implemented" )
+
+    def flush ( self ) :
+        self.pkgfd.write( '</metadata>\n' )
 
 
 class yum_repository ( abstract_repository ) :
@@ -86,7 +156,7 @@ class yum_repository ( abstract_repository ) :
         params.update( _params )
 
         download_size = 0
-        download_pkgs = []
+        download_pkgs = PackageList()
         missing_pkgs = []
 
         item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
@@ -229,6 +299,7 @@ class yum_repository ( abstract_repository ) :
         fd.close()
         del packages
 
+        download_pkgs.flush()
 
         for pkgname in providers.keys() :
             if not all_pkgs.has_key( pkgname ) :
@@ -237,6 +308,9 @@ class yum_repository ( abstract_repository ) :
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
 
         return download_size , download_pkgs , missing_pkgs
+
+    def get_download_list( self ) :
+        return PackageList()
 
 class fedora_update_repository ( yum_repository ) :
 
