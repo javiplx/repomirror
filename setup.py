@@ -8,10 +8,12 @@ setup(
     description = 'Generic repository mirroring tool',
     author = 'Javier Palacios',
     author_email = 'javiplx@gmail.com',
+    license = 'GPLv2',
     url = 'http://github.com/javiplx/repomirror',
+    download_url = 'http://r26936.ovh.net/repomirror',
     scripts = [ 'repomirror.py' , 'get_filters.py' , 'buildrepo.py' ],
     data_files = [
-                 ( 'share/repomirror' , [ 'repomirror.conf' ] )
+                 ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] )
                  ],
     packages = [ 'repolib' ],
     py_modules = [ 'repoutils' , 'filelist_xmlparser' ]
