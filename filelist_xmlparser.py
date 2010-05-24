@@ -1,6 +1,7 @@
 
 import xml.sax
-import xml.dom.minidom
+import xml.dom.pulldom
+import repoutils
 
 class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
 
@@ -116,36 +117,35 @@ def get_files_list ( fd ) :
 
 def get_filelist ( metafile ) :
 
-    repodoc = xml.dom.minidom.parse( metafile )
-    doc = repodoc.documentElement
+    repodoc = xml.dom.pulldom.parse( metafile )
 
-    primary_item , filelist_item = None , None
+    _name , _item = None , {}
+    _key , _content = None , None
 
-    for node in doc.getElementsByTagName( "data" ) :
-        if node.getAttribute( "type" ) == "primary" :
-            location = node.getElementsByTagName( "location" )
-            if not location :
-                repoutils.show_error( "No location element within repomd file" )
-                continue
-            primary_item = { 'href':location[0].getAttribute( "href" ) }
-            # FIXME : Produce an error if multiple locations ?
-            size = node.getElementsByTagName( "size" )
-            if size :
-                primary_item['size'] = int(size[0].firstChild.nodeValue)
-            for _node in node.getElementsByTagName( "checksum" ) :
-                primary_item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
-        elif node.getAttribute( "type" ) == "filelists" :
-            location = node.getElementsByTagName( "location" )
-            if not location :
-                repoutils.show_error( "No location element within repomd file" )
-                continue
-            filelist_item = { 'href':location[0].getAttribute( "href" ) }
-            # FIXME : Produce an error if multiple locations ?
-            size = node.getElementsByTagName( "size" )
-            if size :
-                filelist_item['size'] = int(size[0].firstChild.nodeValue)
-            for _node in node.getElementsByTagName( "checksum" ) :
-                filelist_item[ _node.getAttribute( "type" ) ] = _node.firstChild.nodeValue
+    for event,node in repodoc :
+        if event == "START_ELEMENT" :
+            if node.nodeName == "data" :
+                _name = node.getAttribute( "type" )
+                _item[_name] = {}
+            if node.nodeName == "location" :
+                _item[_name]["href"] = node.getAttribute( "href" )
+            if node.nodeName == "size" :
+                _key = node.nodeName
+            if node.nodeName == "checksum" :
+                _key = node.getAttribute( "type" )
+        elif event == "END_ELEMENT" :
+            if node.nodeName == "data" :
+                if not _item[_name].has_key( "href" ) :
+                    repoutils.show_error( "No location element within repomd '%s' entry"  % _name )
+                _data = None
+            if node.nodeName == "size" :
+                _item[_name][_key] = int(_content)
+                _key , _content = None , None
+            if node.nodeName == "checksum" :
+                _item[_name][_key] = _content
+                _key , _content = None , None
+        elif event == "CHARACTERS" :
+            _content = node.nodeValue
 
-    return primary_item , filelist_item
+    return _item['primary'] , _item['filelists']
 
