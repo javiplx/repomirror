@@ -3,32 +3,70 @@ import xml.sax
 import xml.dom.pulldom
 import repoutils
 
-class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
+class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHandler ) :
 
-    def __init__ ( self ) :
-        self.pkgs = []
+    def __init__ ( self , stream , parser ) :
+        xml.dom.pulldom.DOMEventStream.__init__( self , stream , parser , parser._bufsize )
         self._key = None
         self._list = None
-        self._pkg = None
+        self._pkg = {}
         self._ns = ""
         
+    def erase ( self , node , attrs ) :
+        self._pkg.clear()
+
+    def expandNode ( self , node ) :
+        event = self.getEvent()
+        parents = [node]
+        while event:
+            token, cur_node = event
+            if cur_node is node:
+                return self._pkg
+            if token != xml.dom.pulldom.END_ELEMENT:
+                parents[-1].appendChild(cur_node)
+            if token == xml.dom.pulldom.START_ELEMENT:
+                self.startElement( cur_node.tagName , cur_node._get_attributes() )
+                parents.append(cur_node)
+            elif token == xml.dom.pulldom.END_ELEMENT:
+                self.endElement( cur_node.tagName )
+                del parents[-1]
+            elif token == xml.dom.pulldom.CHARACTERS:
+                self.characters( cur_node.nodeValue )
+            event = self.getEvent()
+
+    def next ( self ) :
+        event,node = xml.dom.pulldom.DOMEventStream.next( self )
+        if not event == "START_ELEMENT" or not node.tagName == "package" :
+            return self.next()
+        self.erase( node , node._get_attributes() )
+        self.expandNode( node )
+        return self._pkg
+
+
+class yum_packages_handler ( xml_handler ) :
+
     def startElement ( self , name , attrs ) :
 
-        if name == 'package':     
-          if attrs.get('type', False) :
-             self._pkg = {}
-        elif name == 'name' :     
+        if name == 'name' :     
              self._key = str(name)
         elif name == 'arch' :     
              self._key = str(name)
         elif name == 'size':     
-          self._pkg[ 'size' ] = int( attrs.get('package',"0") )
+          self._pkg['size'] = 0
+          if attrs.has_key('package') :
+              self._pkg['size'] = int( attrs['package'].nodeValue )
         elif name == 'location':     
-          self._pkg[ 'href' ] = str( attrs.get('href',"") )
+          self._pkg['href'] = ""
+          if attrs.has_key('href') :
+              self._pkg['href'] = str( attrs['href'].nodeValue )
         elif name == 'poolfile':     
-          self._pkg[ 'Filename' ] = str( attrs.get('href',"") )
+          self._pkg['Filename'] = ""
+          if attrs.has_key('href') :
+              self._pkg['Filename'] = str( attrs['href'].nodeValue )
         elif name == 'checksum':     
-          self._key = str( attrs.get('type',"") )
+          self.key = ""
+          if attrs.has_key('type') :
+              self._key = str( attrs['type'].nodeValue )
         elif name == 'format':     
           self._ns = "rpm:"
         elif name == self._ns + 'group':     
@@ -41,7 +79,10 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._pkg[ self._list ] = []
         elif name == self._ns + 'entry':     
           if self._list :
-              self._pkg[ self._list ].append( attrs.get('name',""))
+              if attrs.has_key('name') :
+                  self._pkg[ self._list ].append( attrs['name'].nodeValue )
+              if attrs.has_key('type') :
+                  self._pkg[ self._list ].append( "" )
         else :
           self._dict = None
           self._key = None
@@ -52,10 +93,7 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._key = None
 
     def endElement ( self , name ) :
-        if name == 'package':
-          self.pkgs.append( self._pkg )
-          self._pkg = None
-        elif name == self._ns + 'provides':     
+        if name == self._ns + 'provides':     
           self._list = None
         elif name == self._ns + 'requires':     
           self._list = None
@@ -63,57 +101,37 @@ class yum_packages_handler ( xml.sax.handler.ContentHandler ) :
           self._ns = ""
 
 
-class yum_files_handler ( xml.sax.handler.ContentHandler ) :
+class yum_files_handler ( xml_handler ) :                                                                                                     
 
-    def __init__ ( self ) :
-        self.files = {}
-        self._pkg = None
-        self._key = False
+    def erase ( self , node , attrs ) :
+        xml_handler.erase( self , node , attrs )
+        self._pkg['name'] = str( attrs['name'].nodeValue )
 
     def startElement ( self , name , attrs ) :
 
-        if name == 'package':     
-            self._pkg = attrs.get('name')
-        elif name == 'file' :     
+        if name == 'file' :     
              # We only care about files, neither dirs nor ghosts
              if attrs.get('type', "file") == "file" :
-                 self._key = True
+                 self._list = 'file'
 
     def characters ( self , ch ) :
-        if self._key :
+        if self._list :
             # FIXME : There are some issue that makes ch not arriving a proper node content, causing false duplicates on incomplete path names
-            #if self.files.has_key( ch ) :
-            #    print "Duplicated filename : %s" % ch
-            self.files[ ch ] = self._pkg
+            if not self._pkg.has_key( self._list ) :
+                self._pkg[ self._list ] = [ ch ]
+            else :
+                self._pkg[ self._list ].append( ch )
 
     def endElement ( self , name ) :
-        if name == 'package':
-            self._pkg = None
-        elif name == 'file' :     
-            self._key = False
+        if name == 'file' :     
+            self._list = False
 
 
 def get_package_list ( fd ) :
-
-    pkg_handler = yum_packages_handler()
-
-    parser = xml.sax.make_parser()   
-    parser.setContentHandler( pkg_handler )
-
-    parser.parse( fd )
-
-    return pkg_handler.pkgs
+    return yum_packages_handler( fd , xml.sax.make_parser() )
 
 def get_files_list ( fd ) :
-
-    files_handler = yum_files_handler()
-
-    parser = xml.sax.make_parser()   
-    parser.setContentHandler( files_handler )
-
-    parser.parse( fd )
-
-    return files_handler.files
+    return yum_files_handler( fd , xml.sax.make_parser() )
 
 def get_filelist ( metafile ) :
 

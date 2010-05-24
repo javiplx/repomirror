@@ -260,8 +260,8 @@ class yum_repository ( abstract_repository ) :
         # NOTE : We run over the filelists content, marking package owners for later addition
         repoutils.show_error( "Scanning filelists.xml for file dependencies" , False )
         files = filelist_xmlparser.get_files_list( filesfd )
-        for _file in files.keys() :
-            pkg = files[ _file ]
+        for fileinfo in files :
+            pkg = fileinfo[ 'name' ]
             # There are multiple packages providing the same item, so we cannot break on matches
             if providers.has_key( pkg ) :
                 if not all_pkgs.has_key( pkg ) :
