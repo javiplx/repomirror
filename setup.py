@@ -11,7 +11,7 @@ setup(
     license = 'GPLv2',
     url = 'http://github.com/javiplx/repomirror',
     download_url = 'http://r26936.ovh.net/repomirror',
-    scripts = [ 'repomirror.py' , 'get_filters.py' , 'buildrepo.py' ],
+    scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' ],
     data_files = [
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] )
                  ],
