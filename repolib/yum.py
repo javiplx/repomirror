@@ -281,7 +281,14 @@ class yum_repository ( abstract_repository ) :
             #if all_pkgs.has_key( pkginfo['name'] ) :
             #    continue
 
-            if pkginfo.has_key( 'provides' ) :
+            if providers.has_key( pkginfo['name'] ) :
+                all_pkgs[ pkginfo['name'] ] = 1
+                pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                download_pkgs.append( pkginfo )
+                # FIXME : This might cause a ValueError exception ??
+                download_size += int( pkginfo['size'] )
+
+            elif pkginfo.has_key( 'provides' ) :
                 for pkg in pkginfo['provides'] :
                     # There are multiple packages providing the same item, so we cannot break on matches
 
