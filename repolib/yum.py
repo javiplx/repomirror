@@ -261,6 +261,7 @@ class yum_repository ( abstract_repository ) :
         repoutils.show_error( "Scanning filelists.xml for file dependencies" , False )
         files = filelist_xmlparser.get_files_list( filesfd )
         for fileinfo in files :
+            if not fileinfo.has_key( 'file' ) : continue
             pkg = fileinfo[ 'name' ]
             # There are multiple packages providing the same item, so we cannot break on matches
             for file in fileinfo[ 'file' ] :
