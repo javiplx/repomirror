@@ -263,8 +263,8 @@ class yum_repository ( abstract_repository ) :
         for fileinfo in files :
             pkg = fileinfo[ 'name' ]
             # There are multiple packages providing the same item, so we cannot break on matches
-            if providers.has_key( pkg ) :
-                if not all_pkgs.has_key( pkg ) :
+            for file in fileinfo[ 'file' ] :
+                if providers.has_key( file ) :
                     providers[ pkg ] = 1
     
         filesfd.close()
