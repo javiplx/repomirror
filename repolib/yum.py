@@ -276,8 +276,9 @@ class yum_repository ( abstract_repository ) :
         packages = filelist_xmlparser.get_package_list( fd )
         for pkginfo in packages :
         
-            if all_pkgs.has_key( pkginfo['name'] ) :
-                continue
+            # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
+            #if all_pkgs.has_key( pkginfo['name'] ) :
+            #    continue
 
             if pkginfo.has_key( 'provides' ) :
                 for pkg in pkginfo['provides'] :
