@@ -7,10 +7,7 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
 
     def __init__ ( self , stream , parser ) :
         xml.dom.pulldom.DOMEventStream.__init__( self , stream , parser , parser._bufsize )
-        self._key = None
-        self._list = None
         self._pkg = {}
-        self._ns = ""
         
     def erase ( self , node , attrs ) :
         self._pkg.clear()
@@ -36,6 +33,7 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
 
     def next ( self ) :
         event,node = xml.dom.pulldom.DOMEventStream.next( self )
+        # NOTE : searching for 'package' as tagName is ok for primary and filelists, but maybe not for others
         if not event == "START_ELEMENT" or not node.tagName == "package" :
             return self.next()
         self.erase( node , node._get_attributes() )
@@ -44,6 +42,12 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
 
 
 class yum_packages_handler ( xml_handler ) :
+
+    def __init__ ( self , stream , parser ) :
+        xml_handler.__init__( self , stream , parser )
+        self._key = None
+        self._list = None
+        self._ns = ""
 
     def startElement ( self , name , attrs ) :
 
@@ -102,6 +106,10 @@ class yum_packages_handler ( xml_handler ) :
 
 
 class yum_files_handler ( xml_handler ) :                                                                                                     
+
+    def __init__ ( self , stream , parser ) :
+        xml_handler.__init__( self , stream , parser )
+        self._list = None
 
     def erase ( self , node , attrs ) :
         xml_handler.erase( self , node , attrs )
