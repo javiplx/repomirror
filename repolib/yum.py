@@ -301,12 +301,24 @@ class yum_repository ( abstract_repository ) :
                         download_pkgs.append( pkginfo )
                         # FIXME : This might cause a ValueError exception ??
                         download_size += int( pkginfo['size'] )
-                        providers.pop( pkginfo['name'] )
 
 #                        if pkginfo.has_key( 'requires' ) :
 #                            for reqpkg in pkginfo['requires'] :
 #                                providers[ reqpkg ] = 1
 
+        # Rewind file
+        fd.seek(0)
+
+        repoutils.show_error( "Running to filter out fixed dependencies" , False )
+        packages = filelist_xmlparser.get_package_list( fd )
+        for pkginfo in packages :
+            if not all_pkgs.has_key( pkginfo['name'] ) :
+                continue
+            if pkginfo.has_key( 'provides' ) :
+                for pkg in pkginfo['provides'] :
+                    if providers.has_key( pkg ) :
+                        providers.pop( pkg )
+        
         fd.close()
         del packages
 
