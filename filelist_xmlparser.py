@@ -18,7 +18,7 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
         while event:
             token, cur_node = event
             if cur_node is node:
-                return self._pkg
+                return
             if token != xml.dom.pulldom.END_ELEMENT:
                 parents[-1].appendChild(cur_node)
             if token == xml.dom.pulldom.START_ELEMENT:
@@ -38,6 +38,7 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
             return self.next()
         self.erase( node , node._get_attributes() )
         self.expandNode( node )
+        node.unlink()
         return self._pkg
 
 
