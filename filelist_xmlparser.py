@@ -14,19 +14,14 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
 
     def expandNode ( self , node ) :
         event = self.getEvent()
-        parents = [node]
         while event:
             token, cur_node = event
             if cur_node is node:
                 return
-            if token != xml.dom.pulldom.END_ELEMENT:
-                parents[-1].appendChild(cur_node)
             if token == xml.dom.pulldom.START_ELEMENT:
                 self.startElement( cur_node.tagName , cur_node._get_attributes() )
-                parents.append(cur_node)
             elif token == xml.dom.pulldom.END_ELEMENT:
                 self.endElement( cur_node.tagName )
-                del parents[-1]
             elif token == xml.dom.pulldom.CHARACTERS:
                 self.characters( cur_node.nodeValue )
             event = self.getEvent()
@@ -38,7 +33,6 @@ class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHand
             return self.next()
         self.erase( node , node._get_attributes() )
         self.expandNode( node )
-        node.unlink()
         return self._pkg
 
 
