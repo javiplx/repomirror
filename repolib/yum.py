@@ -27,9 +27,11 @@ Filename=%s
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
         self.pkgfd = tempfile.NamedTemporaryFile()
 
-    def __iter__ ( self ) :
+    def rewind ( self ) :
         if self.pkgfd :
             self.pkgfd.seek(0)
+
+    def __iter__ ( self ) :
         _pkg = {}
         line = self.pkgfd.readline()
         while line :
@@ -330,6 +332,7 @@ class yum_repository ( abstract_repository ) :
 
         repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
 
+        download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :

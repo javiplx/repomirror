@@ -77,6 +77,7 @@ if missing_pkgs :
         _missing[ pkg ] = 1
 
     found_pkgs = {}
+    download_pkgs.rewind()
     for pkg in download_pkgs :
         # NOTE : We don't break the loop to ensure we get all the available archs
         if pkg['name'] in _missing.keys() :
@@ -94,6 +95,7 @@ if missing_pkgs :
 
 download_pkgs.flush()
 
+download_pkgs.rewind()
 for pkg in download_pkgs :
 
     destname = os.path.join( repo.repo_path() , pkg['Filename'] )

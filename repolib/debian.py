@@ -68,9 +68,11 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
                 name , file_obj = self.pkgfd.name , self.pkgfd
         debian_bundle.debian_support.PackageFile.__init__( self , name , file_obj )
 
-    def __iter__ ( self ) :
+    def rewind ( self ) :
         if self.pkgfd :
             self.pkgfd.seek(0)
+
+    def __iter__ ( self ) :
         _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
         while _pkg :
             pkg = debian_bundle.deb822.Deb822()
