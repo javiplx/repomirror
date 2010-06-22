@@ -59,14 +59,10 @@ def dump_package(deb822 , fd):
 
 class PackageList ( debian_bundle.debian_support.PackageFile ) :
 
-    def __init__ ( self , name=None , file_obj=None ) :
+    def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        self.pkgfd = None
-        if name is None:
-            if file_obj is None:
-                self.pkgfd = tempfile.NamedTemporaryFile()
-                name , file_obj = self.pkgfd.name , self.pkgfd
-        debian_bundle.debian_support.PackageFile.__init__( self , name , file_obj )
+        self.pkgfd = tempfile.NamedTemporaryFile()
+        debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
 
     def rewind ( self ) :
         if self.pkgfd :
@@ -80,12 +76,15 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
             yield pkg
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
 
+    def append ( self , pkg ) :
+        dump_package( pkg , self.pkgfd )
+
     def extend ( self , values_list ) :
         if not self.pkgfd :
             raise Exception( "Underlying PackageFile cannot be extended" )
         self.pkgfd.seek(0,2)
         for pkg in values_list :
-            dump_package( pkg , self.pkgfd )
+            self.append( pkg )
 
     def flush ( self ) :
         pass
@@ -320,7 +319,7 @@ class debian_repository ( abstract_repository ) :
         all_pkgs = {}
         all_requires = {}
 
-        outfd = tempfile.NamedTemporaryFile()
+        download_pkgs = PackageList()
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
@@ -343,7 +342,7 @@ class debian_repository ( abstract_repository ) :
                     continue
 
                 all_pkgs[ pkginfo['Package'] ] = 1
-                dump_package( pkginfo , outfd )
+                download_pkgs.append( pkginfo )
                 # FIXME : This might cause a ValueError exception ??
                 download_size += int( pkginfo['Size'] )
 
@@ -368,7 +367,7 @@ class debian_repository ( abstract_repository ) :
                 # FIXME : We made no attempt to go into a full depenceny loop
                 if all_requires.has_key( pkginfo['Package'] ) :
                     all_pkgs[ pkginfo['Package'] ] = 1
-                    dump_package( pkginfo , outfd )
+                    download_pkgs.append( pkginfo )
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
@@ -387,10 +386,7 @@ class debian_repository ( abstract_repository ) :
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
-        outfd.seek(0)
-        download_pkgs = PackageList( outfd.name , outfd )
-        download_pkgs.flush()
-
+        download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
