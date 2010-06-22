@@ -23,8 +23,12 @@ Filename=%s
 
 """
 
-    def __init__ ( self ) :
+    def __init__ ( self , repo=None ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+        self.repo = repo
+        if self.repo :
+            self.download = repoutils.DownloadThread( repo )
+            self.download.start()
         self.pkgfd = tempfile.NamedTemporaryFile()
 
     def rewind ( self ) :
@@ -47,6 +51,8 @@ Filename=%s
 
     def append ( self , pkg ) :
         if not pkg.has_key('sha256') : print type(pkg),":",pkg
+        if self.repo :
+            self.download.append( pkg )
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
 
     def extend ( self , values_list ) :
@@ -71,9 +77,9 @@ class XMLPackageList ( PackageList ) :
 </package>
 """
 
-    def __init__ ( self ) :
+    def __init__ ( self , repo=None ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        PackageList.__init__( self )
+        PackageList.__init__( self , repo )
         self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
         self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
 
@@ -336,7 +342,7 @@ class yum_repository ( abstract_repository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList()
+        return PackageList( self )
 
 class fedora_update_repository ( yum_repository ) :
 
