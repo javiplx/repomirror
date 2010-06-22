@@ -236,3 +236,74 @@ def show_error( str , error=True ) :
         print "WARNING : %s" % str
 
 
+import threading
+
+class DownloadThread ( threading.Thread ) :
+    """File download thread. It is build around a threaded list where files
+are appended. Once inserted, the files are downloaded by the main loop"""
+
+    def __init__ ( self , repo ) :
+        self.repo = repo
+        # FIXME : Set to true when started, not during initialization
+        self.running = True
+        self.list=[]
+        self.cond = threading.Condition()
+        threading.Thread.__init__(self)
+
+    def download_pkg ( self , pkg ) :
+
+        destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
+
+        # FIXME : Perform this check while appending to download_pkgs ???
+        if os.path.isfile( destname ) :
+            error = md5_error( destname , pkg )
+            if error :
+                show_error( error , False )
+                os.unlink( destname )
+            else :
+                return
+        else :
+            path , name = os.path.split( destname )
+            if not os.path.exists( path ) :
+                os.makedirs( path )
+
+        if not downloadRawFile ( urllib2.urlparse.urljoin( self.repo.base_url() , pkg['Filename'] ) , destname ) :
+            show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
+
+    def run(self):
+        """Main thread loop. Runs over the item list, downloading every file"""
+
+        while self.running:
+            self.cond.acquire()
+            if not self.list :
+                self.cond.wait()
+            if self.running and self.list :
+                # FIXME : Is it not better to extract filename and release condition before downloading ???
+                self.download_pkg( self.list.pop(0) )
+            self.cond.release()
+
+        while self.list :
+            self.download_file( self.list.pop(0) )
+
+    def append ( self , item ) :
+        """Adds an item to the download queue"""
+        self.cond.acquire()
+        # FIXME : Raise exception if not running !!!
+        try:
+            if not self.list :
+                # FIXME : Notification takes effect now or after release ???
+                self.cond.notify()
+            self.list.append( item )
+        finally:
+            self.cond.release()
+
+    def destroy(self):
+        """Ends the main loop"""
+        self.cond.acquire()
+        try:
+            self.running=False
+            # FIXME : Notification takes effect now or after release ???
+            self.cond.notify()
+        finally:
+            self.cond.release()
+

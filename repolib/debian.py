@@ -59,8 +59,12 @@ def dump_package(deb822 , fd):
 
 class PackageList ( debian_bundle.debian_support.PackageFile ) :
 
-    def __init__ ( self ) :
+    def __init__ ( self , repo=None ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+        self.repo = repo
+        if self.repo :
+            self.download = repoutils.DownloadThread( repo )
+            self.download.start()
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
 
@@ -77,6 +81,8 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
 
     def append ( self , pkg ) :
+        if self.repo :
+            self.download.append( pkg )
         dump_package( pkg , self.pkgfd )
 
     def extend ( self , values_list ) :
@@ -390,7 +396,7 @@ class debian_repository ( abstract_repository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList()
+        return PackageList( self )
 
 
 class debian_build_repository ( abstract_build_repository ) :
