@@ -275,12 +275,14 @@ are appended. Once inserted, the files are downloaded by the main loop"""
 
         while self.running:
             self.cond.acquire()
+            pkginfo = None
             if not self.list :
                 self.cond.wait()
             if self.running and self.list :
-                # FIXME : Is it not better to extract filename and release condition before downloading ???
-                self.download_pkg( self.list.pop(0) )
+                pkginfo = self.list.pop(0)
             self.cond.release()
+            if pkginfo :
+                self.download_pkg( pkginfo )
 
         while self.list :
             self.download_file( self.list.pop(0) )
