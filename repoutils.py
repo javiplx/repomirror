@@ -293,7 +293,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             if not self.list :
                 # FIXME : Notification takes effect now or after release ???
                 self.cond.notify()
-            self.list.append( item )
+            self.list.append( item.copy() )
         finally:
             self.cond.release()
 
