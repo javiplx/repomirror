@@ -288,9 +288,6 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             if pkginfo :
                 self.download_pkg( pkginfo )
 
-        while self.list :
-            self.download_file( self.list.pop(0) )
-
     def append ( self , item ) :
         """Adds an item to the download queue"""
         self.cond.acquire()
