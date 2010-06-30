@@ -61,6 +61,8 @@ Filename=%s
             self.append( pkg )
 
     def flush ( self ) :
+        if self.repo :
+            self.download.destroy()
         pass
 
 # NOTE : The xml version seems more attractive, but we cannot use it until

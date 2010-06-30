@@ -246,6 +246,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
         self.repo = repo
         # FIXME : Set to true when started, not during initialization
         self.running = True
+        self.closed = False
         self.list=[]
         self.cond = threading.Condition()
         threading.Thread.__init__(self)
@@ -277,6 +278,9 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             self.cond.acquire()
             pkginfo = None
             if not self.list :
+                if self.closed :
+                   self.running = False
+                   continue
                 self.cond.wait()
             if self.running and self.list :
                 pkginfo = self.list.pop(0)
@@ -295,7 +299,10 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             if not self.list :
                 # FIXME : Notification takes effect now or after release ???
                 self.cond.notify()
-            self.list.append( item.copy() )
+            if self.closed :
+                show_error( "Trying to append file '%s' to a closed thread" % item['Filename'] , False )
+            else :
+                self.list.append( item.copy() )
         finally:
             self.cond.release()
 
@@ -303,7 +310,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
         """Ends the main loop"""
         self.cond.acquire()
         try:
-            self.running=False
+            self.closed=True
             # FIXME : Notification takes effect now or after release ???
             self.cond.notify()
         finally:
