@@ -1,6 +1,9 @@
 
 import os , sys
 
+import socket
+socket.setdefaulttimeout(5)
+
 import urllib2
 import tempfile
 import ConfigParser
