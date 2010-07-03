@@ -31,9 +31,9 @@ from repolib import abstract_repository, abstract_build_repository
 
 def safe_encode ( str ) :
     try :
-        out = "%s" % str
-    except UnicodeDecodeError , ex :
         out = "%s" % str.encode('utf-8')
+    except UnicodeDecodeError , ex :
+        out = "%s" % str
     return out
 
 # Derived from Deb822.dump()
