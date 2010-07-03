@@ -26,6 +26,10 @@ else :
 
 config = repoutils.read_config( repo_name )
 
+if not os.path.isdir( config['destdir'] ) :
+    print "Destination directory '%s' does not exits" % config['destdir']
+    sys.exit(2)
+
 repo = repolib.instantiate_repo( config )
 
 base_url = repo.base_url()
