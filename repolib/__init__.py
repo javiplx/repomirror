@@ -28,6 +28,8 @@ def instantiate_repo ( config , mirror_mode=True ) :
     else :
         if config['type'] == "deb" :
             repo = debian_build_repository( config )
+        elif config['type'] == "opkg" :
+            repo = feed_build_repository( config )
         else :
             repoutils.show_error( "Unknown repository build type '%s'" % config['type'] )
     return repo
@@ -147,4 +149,6 @@ class abstract_build_repository ( _repository ) :
 from yum import *
 
 from debian import *
+
+from feed import *
 

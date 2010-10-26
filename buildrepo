@@ -28,5 +28,5 @@ config = repoutils.read_build_config( repo_name )
 
 repo = repolib.instantiate_repo( config , False )
 
-print "Building configuration :",config
+repo.build()
 
