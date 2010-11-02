@@ -6,9 +6,9 @@ import urllib2
 import repoutils
 
 
-def instantiate_repo ( config , mirror_mode=True ) :
+def instantiate_repo ( config , name=False ) :
     repo = None
-    if mirror_mode :
+    if name is False :
         if config['type'] == "yum" :
             repo = yum_repository( config )
         elif config['type'] == "centos" :
@@ -29,7 +29,7 @@ def instantiate_repo ( config , mirror_mode=True ) :
         if config['type'] == "deb" :
             repo = debian_build_repository( config )
         elif config['type'] == "opkg" :
-            repo = feed_build_repository( config )
+            repo = feed_build_repository( config , name )
         else :
             repoutils.show_error( "Unknown repository build type '%s'" % config['type'] )
     return repo
@@ -47,6 +47,9 @@ class _repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+    def repo_path ( self ) :
+        raise Exception( "Calling an abstract method" )
+
 
 class abstract_repository ( _repository ) :
 
@@ -56,9 +59,6 @@ class abstract_repository ( _repository ) :
         self.params = config[ "params" ]
 
     def base_url ( self ) :
-        raise Exception( "Calling an abstract method" )
-
-    def repo_path ( self ) :
         raise Exception( "Calling an abstract method" )
 
     def metadata_path ( self , subrepo=None , partial=False ) :

@@ -26,7 +26,7 @@ else :
 
 config = repoutils.read_build_config( repo_name )
 
-repo = repolib.instantiate_repo( config , False )
+repo = repolib.instantiate_repo( config , repo_name )
 
 repo.build()
 
