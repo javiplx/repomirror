@@ -14,6 +14,7 @@ class feed_build_repository ( abstract_build_repository ) :
         abstract_build_repository.__init__( self , config )
 
         self.name = name
+        self.detached = config['detached']
         self.valid_extensions = ( ".opk" , ".ipk" )
 
 	if not os.path.isdir( self.repo_path() ) :
@@ -22,6 +23,8 @@ class feed_build_repository ( abstract_build_repository ) :
         self.components = config.get( "components" , None )
 
     def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
         return os.path.join( self.destdir , self.name )
 
     def build ( self ) :

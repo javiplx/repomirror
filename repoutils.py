@@ -125,20 +125,29 @@ def read_build_config ( repo_name ) :
         show_error( "Could not find a valid configuration file" )
         sys.exit(255)
 
-    if "global" not in config.sections() :
-        show_error( "Broken configuration, missing global section" )
-        sys.exit(255)
-
-    if not config.has_option( "global", "destdir" ) :
-        show_error( "Broken configuration, missing destination directory" )
-        sys.exit(255)
-
     if repo_name not in config.sections() :
         show_error( "Repository '%s' is not configured" % repo_name )
         sys.exit(255)
 
     conf = {}
-    conf['destdir'] = config.get( "global" , "destdir" )
+
+    if config.has_option( repo_name , "destdir" ) :
+
+        conf['destdir'] = config.get( repo_name , "destdir" )
+        conf['detached'] = True
+
+    else :
+
+        if "global" not in config.sections() :
+            show_error( "Broken configuration, missing global section" )
+            sys.exit(255)
+
+        if not config.has_option( "global", "destdir" ) :
+            show_error( "Broken configuration, missing destination directory" )
+            sys.exit(255)
+
+        conf['destdir'] = config.get( "global" , "destdir" )
+        conf['detached'] = False
 
     conf['type'] = config.get( repo_name , "type" )
 
