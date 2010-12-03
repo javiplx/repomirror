@@ -9,13 +9,13 @@ from repolib import abstract_build_repository
 
 class feed_build_repository ( abstract_build_repository ) :
 
-    def __init__ ( self , config , name ) :
+    def __init__ ( self , config , name , extensions=() ) :
 
         abstract_build_repository.__init__( self , config )
 
         self.name = name
         self.detached = config['detached']
-        self.valid_extensions = ( ".opk" , ".ipk" )
+        self.valid_extensions = extensions
 
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
@@ -36,6 +36,8 @@ class feed_build_repository ( abstract_build_repository ) :
             control = pkg.control.debcontrol()
             if not control.has_key("Filename") :
                 control["Filename"] = filename
+            if not control.has_key("Size") :
+                control["Size"] = "%s" % os.stat( os.path.join( self.repo_path() , filename ) ).st_size
             packages.write( "%s\n" % control )
 
         packages.close()
