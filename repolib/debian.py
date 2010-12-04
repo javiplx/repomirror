@@ -63,7 +63,6 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
         self.repo = repo
         if self.repo :
             self.download = repoutils.DownloadThread( repo )
-            self.download.start()
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
 
@@ -82,6 +81,7 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
     def append ( self , pkg ) :
         if self.repo :
             self.download.append( pkg )
+            self.download.start()
         dump_package( pkg , self.pkgfd )
 
     def extend ( self , values_list ) :

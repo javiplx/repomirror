@@ -27,7 +27,6 @@ Filename=%s
         self.repo = repo
         if self.repo :
             self.download = repoutils.DownloadThread( repo )
-            self.download.start()
         self.pkgfd = tempfile.NamedTemporaryFile()
 
     def rewind ( self ) :
@@ -52,6 +51,7 @@ Filename=%s
         if not pkg.has_key('sha256') : print type(pkg),":",pkg
         if self.repo :
             self.download.append( pkg )
+            self.download.start()
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
 
     def extend ( self , values_list ) :
