@@ -3,14 +3,13 @@ import filelist_xmlparser
 
 import repoutils
 
-import urllib2
 import errno , shutil
 import gzip
 
 import os , sys
 import tempfile
 
-from repolib import abstract_repository
+from repolib import abstract_repository , urljoin
 
 
 class PackageList :
@@ -95,7 +94,7 @@ class XMLPackageList ( PackageList ) :
 class yum_repository ( abstract_repository ) :
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "%s/Fedora/" % self.version )
+        return urljoin( self.repo_url , "%s/Fedora/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
@@ -193,7 +192,7 @@ class yum_repository ( abstract_repository ) :
     
             repoutils.show_error( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
-            url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
+            url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
@@ -253,7 +252,7 @@ class yum_repository ( abstract_repository ) :
     
             repoutils.show_error( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
     
-            url = urllib2.urlparse.urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
+            url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
     
             if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
@@ -352,7 +351,7 @@ class fedora_update_repository ( yum_repository ) :
         yum_repository.__init__( self , config )
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
+        return urljoin( self.repo_url , "%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -368,7 +367,7 @@ class fedora_update_repository ( yum_repository ) :
 class centos_repository ( yum_repository ) :
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "%s/" % self.version )
+        return urljoin( self.repo_url , "%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -394,7 +393,7 @@ class centos_update_repository ( centos_repository ) :
 class yast2_repository ( yum_repository ) :
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
+        return urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , "distribution/%s" % self.version )
@@ -409,7 +408,7 @@ class yast2_repository ( yum_repository ) :
 class yast2_update_repository ( yast2_repository ) :
 
     def base_url ( self ) :
-        return urllib2.urlparse.urljoin( self.repo_url , "update/%s/" % self.version )
+        return urljoin( self.repo_url , "update/%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , "update/%s" % self.version )

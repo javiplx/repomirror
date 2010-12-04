@@ -1,40 +1,9 @@
 
 import os , sys
 
-import socket
-socket.setdefaulttimeout(5)
-
-import urllib2
+import repolib
 import tempfile
 import ConfigParser
-
-
-def downloadRawFile ( remote , local=None ) :
-    """Downloads a remote file to the local system.
-
-    remote - URL
-    local - Optional local name for the file
-
-    Returns the local file name"""
-
-    if not local :
-        (handle, fname) = tempfile.mkstemp()
-    else :
-        fname = local
-        handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-    try:
-        response = urllib2.urlopen( remote )
-        data = response.read(256)
-        while data :
-            os.write(handle, data)
-            data = response.read(256)
-        os.close(handle)
-    except Exception ,ex :
-        print "Exception : %s" % ex
-        os.close(handle)
-        os.unlink(fname)
-        return None
-    return fname
 
 
 default_params = {}
@@ -88,7 +57,7 @@ def read_config ( repo_name ) :
         scheme = config.get( repo_name , "scheme" )
         server = config.get( repo_name , "server" )
         base_path = config.get( repo_name , "base_path" )
-        conf['url'] = urllib2.urlparse.urlunsplit( ( scheme , server , "%s/" % base_path , None , None ) )
+        conf['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
     conf['version'] = config.get( repo_name , "version" )
     conf['architectures'] = config.get( repo_name , "architectures" ).split()
     if config.has_option( repo_name , "components" ) :
@@ -280,7 +249,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             if not os.path.exists( path ) :
                 os.makedirs( path )
 
-        if not downloadRawFile ( urllib2.urlparse.urljoin( self.repo.base_url() , pkg['Filename'] ) , destname ) :
+        if not repolib.downloadRawFile ( pkg['Filename'] , destname , self.repo.base_url() ) :
             show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
     def run(self):

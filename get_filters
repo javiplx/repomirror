@@ -5,8 +5,6 @@
 params = { 'mode':"init" }
 
 
-import urllib2
-
 import os , sys
 
 

@@ -4,7 +4,6 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 import repoutils
 
 import errno , shutil
-import urllib2
 
 import os , sys
 import tempfile
@@ -26,7 +25,7 @@ except :
     pass
 
 
-from repolib import abstract_repository, abstract_build_repository
+from repolib import abstract_repository, abstract_build_repository , urljoin
 
 
 def safe_encode ( str ) :
@@ -287,7 +286,7 @@ class debian_repository ( abstract_repository ) :
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )
-                url = urllib2.urlparse.urljoin( urllib2.urlparse.urljoin( self.base_url() , self.metadata_path() ) , _name )
+                url = urljoin( urljoin( self.base_url() , self.metadata_path() ) , _name )
 
                 if self._retrieve_file( url , localname ) :
                     #

@@ -5,8 +5,6 @@
 params = {}
 
 
-import urllib2
-
 import os , sys
 
 
@@ -117,7 +115,7 @@ for pkg in download_pkgs :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not repoutils.downloadRawFile ( urllib2.urlparse.urljoin( base_url , pkg['Filename'] ) , destname ) :
+    if not repolib.downloadRawFile ( pkg['Filename'] , destname , base_url ) :
         repoutils.show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
 if getattr( download_pkgs , 'close' , False ) :

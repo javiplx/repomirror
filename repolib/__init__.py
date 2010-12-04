@@ -6,6 +6,46 @@ import urllib2
 import repoutils
 
 
+import socket
+socket.setdefaulttimeout(5)
+
+urljoin = urllib2.urlparse.urljoin
+
+def unsplit ( scheme , server , path ) :
+    urltuple = ( scheme , server , path , None , None )
+    return urllib2.urlparse.urlunsplit( urltuple )
+
+def downloadRawFile ( remote , local=None , base_url=None ) :
+    """Downloads a remote file to the local system.
+
+    remote - URL
+    local - Optional local name for the file
+
+    Returns the local file name"""
+
+    if base_url :
+        remote = urljoin( base_url , remote ) 
+
+    if not local :
+        (handle, fname) = tempfile.mkstemp()
+    else :
+        fname = local
+        handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
+    try:
+        response = urllib2.urlopen( remote )
+        data = response.read(256)
+        while data :
+            os.write(handle, data)
+            data = response.read(256)
+        os.close(handle)
+    except Exception ,ex :
+        print "Exception : %s" % ex
+        os.close(handle)
+        os.unlink(fname)
+        return None
+    return fname
+
+
 def instantiate_repo ( config , name=False ) :
     repo = None
     if name is False :
@@ -55,7 +95,7 @@ class abstract_repository ( _repository ) :
 
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
-        self.repo_url = urllib2.urlparse.urljoin( "%s/" % config[ "url" ] , "" )
+        self.repo_url = urljoin( "%s/" % config[ "url" ] , "" )
         self.params = config[ "params" ]
 
     def base_url ( self ) :
@@ -70,7 +110,7 @@ class abstract_repository ( _repository ) :
 
         if params['usegpg'] :
 
-            signature_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , meta_file + sign_ext ) )
+            signature_file = self._retrieve_file( urljoin( self.base_url() , meta_file + sign_ext ) )
 
             if not signature_file :
                 repoutils.show_error( "Signature file for version '%s' not found." % ( self.version ) )
@@ -96,7 +136,7 @@ class abstract_repository ( _repository ) :
         # FIXME : produce error if we reach this point with existing local_file
         if not os.path.isfile( local_file ) :
 
-            release_file = self._retrieve_file( urllib2.urlparse.urljoin( self.base_url() , meta_file ) )
+            release_file = self._retrieve_file( urljoin( self.base_url() , meta_file ) )
 
             if not release_file :
                 repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
@@ -126,7 +166,7 @@ class abstract_repository ( _repository ) :
     def _retrieve_file ( self , location , localname=None ) :
 
         try :
-            filename  = repoutils.downloadRawFile( location , localname )
+            filename  = downloadRawFile( location , localname )
         except urllib2.URLError , ex :
             repoutils.show_error( "Exception : %s" % ex )
             return
