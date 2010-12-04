@@ -1,5 +1,5 @@
 
-import os , sys
+import os
 
 import repolib
 import tempfile
@@ -32,20 +32,20 @@ def read_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        show_error( "Could not find a valid configuration file" )
-        sys.exit(255)
+        print "Could not find a valid configuration file"
+        return False
 
     if "global" not in config.sections() :
-        show_error( "Broken configuration, missing global section" )
-        sys.exit(255)
+        print "Broken configuration, missing global section"
+        return False
 
     if not config.has_option( "global", "destdir" ) :
-        show_error( "Broken configuration, missing destination directory" )
-        sys.exit(255)
+        print "Broken configuration, missing destination directory"
+        return False
 
     if repo_name not in config.sections() :
-        show_error( "Repository '%s' is not configured" % repo_name )
-        sys.exit(255)
+        print "Repository '%s' is not configured" % repo_name
+        return False
 
     conf = {}
     conf['destdir'] = config.get( "global" , "destdir" )
@@ -91,12 +91,12 @@ def read_build_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/buildrepo.conf" , os.path.expanduser("~/.buildrepo") ] ) :
-        show_error( "Could not find a valid configuration file" )
-        sys.exit(255)
+        print "Could not find a valid configuration file"
+        return False
 
     if repo_name not in config.sections() :
-        show_error( "Repository '%s' is not configured" % repo_name )
-        sys.exit(255)
+        print "Repository '%s' is not configured" % repo_name
+        return False
 
     conf = {}
 
@@ -108,12 +108,12 @@ def read_build_config ( repo_name ) :
     else :
 
         if "global" not in config.sections() :
-            show_error( "Broken configuration, missing global section" )
-            sys.exit(255)
+            print "Broken configuration, missing global section"
+            return False
 
         if not config.has_option( "global", "destdir" ) :
-            show_error( "Broken configuration, missing destination directory" )
-            sys.exit(255)
+            print "Broken configuration, missing destination directory"
+            return False
 
         conf['destdir'] = config.get( "global" , "destdir" )
         conf['detached'] = False

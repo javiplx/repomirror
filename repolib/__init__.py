@@ -46,6 +46,16 @@ def downloadRawFile ( remote , local=None , base_url=None ) :
     return fname
 
 
+import logging
+
+console = logging.StreamHandler()
+formatter = logging.Formatter("%(levelname)s : %(message)s")
+console.setFormatter(formatter)
+
+logger = logging.getLogger()
+logger.addHandler( console )
+
+
 def instantiate_repo ( config , name=False ) :
     repo = None
     if name is False :
@@ -64,14 +74,14 @@ def instantiate_repo ( config , name=False ) :
         elif config['type'] == "yast2_update" :
             repo = yast2_update_repository( config )
         else :
-            repoutils.show_error( "Unknown repository type '%s'" % config['type'] )
+            logger.error( "Unknown repository type '%s'" % config['type'] )
     else :
         if config['type'] == "deb" :
             repo = debian_build_repository( config )
-        elif config['type'] == "opkg" :
+        elif config['type'] == "feed" :
             repo = feed_build_repository( config , name )
         else :
-            repoutils.show_error( "Unknown repository build type '%s'" % config['type'] )
+            logger.error( "Unknown repository build type '%s'" % config['type'] )
     return repo
 
 
@@ -113,19 +123,19 @@ class abstract_repository ( _repository ) :
             signature_file = self._retrieve_file( urljoin( self.base_url() , meta_file + sign_ext ) )
 
             if not signature_file :
-                repoutils.show_error( "Signature file for version '%s' not found." % ( self.version ) )
+                logger.error( "Signature file for version '%s' not found." % ( self.version ) )
                 return
 
             if os.path.isfile( local_file ) :
                 errstr = repoutils.gpg_error( signature_file , local_file )
                 if errstr :
-                    repoutils.show_error( errstr , False )
+                    logger.warning( errstr )
                     os.unlink( local_file )
                 else :
                     os.unlink( signature_file )
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if params['mode'] == "update" :
-                        repoutils.show_error( "Metadata file unchanged, exiting" , False )
+                        logger.warning( "Metadata file unchanged, exiting" )
                         return True
                     return local_file
 
@@ -139,7 +149,7 @@ class abstract_repository ( _repository ) :
             release_file = self._retrieve_file( urljoin( self.base_url() , meta_file ) )
 
             if not release_file :
-                repoutils.show_error( "Release file for suite '%s' is not found." % ( self.version ) )
+                logger.error( "Release file for suite '%s' is not found." % ( self.version ) )
                 if params['usegpg'] :
                     os.unlink( signature_file )
                 return
@@ -148,7 +158,7 @@ class abstract_repository ( _repository ) :
                 errstr = repoutils.gpg_error( signature_file , release_file )
                 os.unlink( signature_file )
                 if errstr :
-                    repoutils.show_error( errstr )
+                    logger.error( errstr )
                     os.unlink( release_file )
                     return
 
@@ -168,10 +178,10 @@ class abstract_repository ( _repository ) :
         try :
             filename  = downloadRawFile( location , localname )
         except urllib2.URLError , ex :
-            repoutils.show_error( "Exception : %s" % ex )
+            logger.error( "Exception : %s" % ex )
             return
         except urllib2.HTTPError , ex :
-            repoutils.show_error( "Exception : %s" % ex )
+            logger.error( "Exception : %s" % ex )
             return
 
         return filename

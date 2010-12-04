@@ -1,7 +1,7 @@
 
 import xml.sax
 import xml.dom.pulldom
-import repoutils
+import repolib
 
 class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHandler ) :
 
@@ -157,7 +157,7 @@ def get_filelist ( metafile ) :
         elif event == "END_ELEMENT" :
             if node.nodeName == "data" :
                 if not _item[_name].has_key( "href" ) :
-                    repoutils.show_error( "No location element within repomd '%s' entry"  % _name )
+                    repolib.logger.error( "No location element within repomd '%s' entry"  % _name )
                 _data = None
             if node.nodeName == "size" :
                 _item[_name][_key] = int(_content)

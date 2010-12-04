@@ -9,7 +9,7 @@ import gzip
 import os , sys
 import tempfile
 
-from repolib import abstract_repository , urljoin
+from repolib import abstract_repository , urljoin , logger
 
 
 class PackageList :
@@ -118,7 +118,7 @@ class yum_repository ( abstract_repository ) :
             metafile = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) )
 
             if not metafile :
-                repoutils.show_error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
+                logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
                 # FIXME : here we could be removing files from their final locations
                 for file in repomd_files.values() :
                     os.unlink( file )
@@ -171,7 +171,7 @@ class yum_repository ( abstract_repository ) :
         item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
         if not item :
-            repoutils.show_error( "No primary node within repomd file" )
+            logger.error( "No primary node within repomd file" )
             os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
             sys.exit(255)
     
@@ -182,7 +182,7 @@ class yum_repository ( abstract_repository ) :
         if os.path.isfile( localname ) :
             error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
             if error :
-                repoutils.show_error( error , False )
+                logger.warning( error )
                 os.unlink( localname )
             else :
                 if params['mode'] == "update" :
@@ -190,18 +190,18 @@ class yum_repository ( abstract_repository ) :
     
         if not os.path.isfile( localname ) :
     
-            repoutils.show_error( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+            logger.warnin( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
                 if error :
-                    repoutils.show_error( error )
+                    logger.error( error )
                     os.unlink( localname )
                     sys.exit(255)
             else :
-                repoutils.show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
                 sys.exit(255)
     
         fd = gzip.open( localname )
@@ -210,7 +210,7 @@ class yum_repository ( abstract_repository ) :
         all_pkgs = {}
         providers = {}
 
-        repoutils.show_error( "Scanning available packages for minor filters" , False )
+        logger.warning( "Scanning available packages for minor filters" )
         for pkginfo in packages :
     
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
@@ -231,7 +231,7 @@ class yum_repository ( abstract_repository ) :
                     providers[ pkg ] = 1
 
         if not filelist :
-            repoutils.show_error( "No filelists node within repomd file" )
+            logger.error( "No filelists node within repomd file" )
             os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
             sys.exit(255)
     
@@ -242,7 +242,7 @@ class yum_repository ( abstract_repository ) :
         if os.path.isfile( localname ) :
             error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
             if error :
-                repoutils.show_error( error , False )
+                logger.warnig( error )
                 os.unlink( localname )
             else :
                 if params['mode'] == "update" :
@@ -250,24 +250,24 @@ class yum_repository ( abstract_repository ) :
     
         if not os.path.isfile( localname ) :
     
-            repoutils.show_error( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) , True )
+            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
     
             if self._retrieve_file( url , localname ) :
                 error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
                 if error :
-                    repoutils.show_error( error )
+                    logger.error( error )
                     os.unlink( localname )
                     sys.exit(255)
             else :
-                repoutils.show_error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
                 sys.exit(255)
     
         filesfd = gzip.open( localname )
 
         # NOTE : We run over the filelists content, marking package owners for later addition
-        repoutils.show_error( "Scanning filelists.xml for file dependencies" , False )
+        logger.warning( "Scanning filelists.xml for file dependencies" )
         files = filelist_xmlparser.get_files_list( filesfd )
         for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
@@ -282,7 +282,7 @@ class yum_repository ( abstract_repository ) :
         # Rewind file
         fd.seek(0)
 
-        repoutils.show_error( "Searching for missing dependencies" , False )
+        logger.warning( "Searching for missing dependencies" )
         packages = filelist_xmlparser.get_package_list( fd )
         for pkginfo in packages :
         
@@ -318,7 +318,7 @@ class yum_repository ( abstract_repository ) :
         # Rewind file
         fd.seek(0)
 
-        repoutils.show_error( "Running to filter out fixed dependencies" , False )
+        logger.warning( "Running to filter out fixed dependencies" )
         packages = filelist_xmlparser.get_package_list( fd )
         for pkginfo in packages :
             if not all_pkgs.has_key( pkginfo['name'] ) :
@@ -337,7 +337,7 @@ class yum_repository ( abstract_repository ) :
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
 
-        repoutils.show_error( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) , False )
+        logger.warnig( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
         download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs

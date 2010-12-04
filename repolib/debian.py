@@ -25,7 +25,7 @@ except :
     pass
 
 
-from repolib import abstract_repository, abstract_build_repository , urljoin
+from repolib import abstract_repository, abstract_build_repository , urljoin , logger
 
 
 def safe_encode ( str ) :
@@ -127,7 +127,7 @@ class debian_repository ( abstract_repository ) :
         release_file = self.get_signed_metafile ( params , self.release , ".gpg" )
 
         if not release_file :
-            repoutils.show_error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
+            logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
             return
 
         if release_file is True :
@@ -137,12 +137,12 @@ class debian_repository ( abstract_repository ) :
 
         if release['Suite'] !=  release['Codename'] :
             if release['Suite'].lower() == self.version.lower() :
-                repoutils.show_error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
+                logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
                 os.unlink( release_file )
                 return
 
         if release['Codename'].lower() != self.version.lower() :
-            repoutils.show_error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
+            logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
             os.unlink( release_file )
             return
 
@@ -153,24 +153,24 @@ class debian_repository ( abstract_repository ) :
             if self.components :
                 for comp in self.components :
                     if comp not in release_comps :
-                        repoutils.show_error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
+                        logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         return
             else :
-                repoutils.show_error( "No components specified, selected all components from Release file" , False )
+                logger.warning( "No components specified, selected all components from Release file" )
                 self.components = release_comps
 
         elif self.components :
-            repoutils.show_error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
+            logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
             return
         else :
             # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
-            repoutils.show_error( "Va que no, ni haskey, ni components" , False )
+            logger.warning( "Va que no, ni haskey, ni components" )
             self.components = ( "main" ,)
 
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
             if arch not in release_archs :
-                repoutils.show_error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
+                logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 return
 
         return release_file
@@ -262,25 +262,25 @@ class debian_repository ( abstract_repository ) :
                     if params['usemd5'] :
                         error = repoutils.md5_error( localname , _item )
                         if error :
-                            repoutils.show_error( error , False )
+                            logger.warning( error )
                             os.unlink( localname )
                             continue
 
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if params['mode'] == "update" :
-                        repoutils.show_error( "Local copy of '%s' is up-to-date, skipping." % _name , False )
+                        logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
                     else :
                         fd = read_handler( localname )
 
                     break
 
                 else :
-                    repoutils.show_error( "Checksum for file '%s' not found, go to next format." % _name , True )
+                    logger.warning( "Checksum for file '%s' not found, go to next format." % _name )
                     continue
 
         else :
 
-            repoutils.show_error( "No local Packages file exist for %s / %s. Downloading." % subrepo , True )
+            logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
 
             for ( extension , read_handler ) in extensions.iteritems() :
 
@@ -305,18 +305,18 @@ class debian_repository ( abstract_repository ) :
                         if params['usemd5'] :
                             error = repoutils.md5_error( localname , _item )
                             if error :
-                                repoutils.show_error( error , False )
+                                logger.warning( error )
                                 os.unlink( localname )
                                 continue
 
                         break
 
                     else :
-                        repoutils.show_error( "Checksum for file '%s' not found, exiting." % _name ) 
+                        logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
                         continue
 
             else :
-                repoutils.show_error( "No Valid Packages file found for %s / %s" % subrepo )
+                logger.error( "No Valid Packages file found for %s / %s" % subrepo )
                 sys.exit(0)
 
             fd = read_handler( localname )
@@ -333,7 +333,7 @@ class debian_repository ( abstract_repository ) :
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            repoutils.show_error( "Scanning available packages for minor filters" , False )
+            logger.warnign( "Scanning available packages for minor filters" )
             for pkg in packages :
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 

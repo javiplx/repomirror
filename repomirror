@@ -23,6 +23,8 @@ else :
     sys.exit(1)
 
 config = repoutils.read_config( repo_name )
+if not config :
+    sys.exit(255)
 
 if not os.path.isdir( config['destdir'] ) :
     print "Destination directory '%s' does not exits" % config['destdir']
@@ -38,7 +40,7 @@ meta_files = repo.get_master_file( params )
 # FIXME : debian - identify error from updated repositories
 # FIXME : yum - only errors produce empty output
 if not meta_files :
-    repoutils.show_error( "Cannot process, exiting" )
+    print "Cannot process, exiting"
     sys.exit(255)
 
 # After verify all the mirroring parameters, it is safe to create directory tree
@@ -106,7 +108,7 @@ for pkg in download_pkgs :
     if os.path.isfile( destname ) :
         error = repoutils.md5_error( destname , pkg )
         if error :
-            repoutils.show_error( error , False )
+            print "WARNING : %s" % error
             os.unlink( destname )
         else :
             continue
@@ -116,7 +118,7 @@ for pkg in download_pkgs :
             os.makedirs( path )
 
     if not repolib.downloadRawFile ( pkg['Filename'] , destname , base_url ) :
-        repoutils.show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
+        print "WARNING : Failure downloading file '%s'" % pkg['Filename']
 
 if getattr( download_pkgs , 'close' , False ) :
     download_pkgs.close()

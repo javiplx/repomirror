@@ -23,6 +23,8 @@ else :
     sys.exit(1)
 
 config = repoutils.read_build_config( repo_name )
+if not config :
+    sys.exit(255)
 
 repo = repolib.instantiate_repo( config , repo_name )
 
