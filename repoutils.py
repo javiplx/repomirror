@@ -82,7 +82,7 @@ def read_config ( repo_name ) :
             except ValueError , ex :
                 conf['params'][ key ] = config.get( repo_name , key )
 
-    conf['params']['pkgvflags'] = eval( conf['params']['pkgvflags'] )
+    conf['params']['pkgvflags'] = eval( "repolib.utils.%s" % conf['params']['pkgvflags'] )
 
     return conf
 

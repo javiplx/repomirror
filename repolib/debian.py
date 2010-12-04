@@ -333,7 +333,7 @@ class debian_repository ( abstract_repository ) :
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            logger.warnign( "Scanning available packages for minor filters" )
+            logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
