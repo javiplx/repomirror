@@ -3,7 +3,7 @@ import os
 
 import urllib2
 
-import repoutils
+import utils
 
 
 import socket
@@ -127,7 +127,7 @@ class abstract_repository ( _repository ) :
                 return
 
             if os.path.isfile( local_file ) :
-                errstr = repoutils.gpg_error( signature_file , local_file )
+                errstr = utils.gpg_error( signature_file , local_file )
                 if errstr :
                     logger.warning( errstr )
                     os.unlink( local_file )
@@ -155,7 +155,7 @@ class abstract_repository ( _repository ) :
                 return
 
             if params['usegpg'] :
-                errstr = repoutils.gpg_error( signature_file , release_file )
+                errstr = utils.gpg_error( signature_file , release_file )
                 os.unlink( signature_file )
                 if errstr :
                     logger.error( errstr )

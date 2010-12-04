@@ -8,7 +8,7 @@ params = {}
 import os , sys
 
 
-import repoutils
+import utils , repoutils
 
 import repolib
 
@@ -106,7 +106,7 @@ for pkg in download_pkgs :
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
-        error = repoutils.md5_error( destname , pkg )
+        error = utils.md5_error( destname , pkg )
         if error :
             print "WARNING : %s" % error
             os.unlink( destname )

@@ -1,7 +1,7 @@
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
-import repoutils
+import utils , repoutils
 
 import errno , shutil
 
@@ -260,7 +260,7 @@ class debian_repository ( abstract_repository ) :
                                 _item.update( item )
                 if _item :
                     if params['usemd5'] :
-                        error = repoutils.md5_error( localname , _item )
+                        error = utils.md5_error( localname , _item )
                         if error :
                             logger.warning( error )
                             os.unlink( localname )
@@ -303,7 +303,7 @@ class debian_repository ( abstract_repository ) :
                                     _item.update( item )
                     if _item :
                         if params['usemd5'] :
-                            error = repoutils.md5_error( localname , _item )
+                            error = utils.md5_error( localname , _item )
                             if error :
                                 logger.warning( error )
                                 os.unlink( localname )

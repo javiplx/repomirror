@@ -1,7 +1,7 @@
 
 import filelist_xmlparser
 
-import repoutils
+import utils , repoutils
 
 import errno , shutil
 import gzip
@@ -180,7 +180,7 @@ class yum_repository ( abstract_repository ) :
         localname = os.path.join( local_repodata[arch] , item['href'] )
     
         if os.path.isfile( localname ) :
-            error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
+            error = utils.md5_error( localname , item , item.has_key('size') | utils.SKIP_SIZE )
             if error :
                 logger.warning( error )
                 os.unlink( localname )
@@ -195,7 +195,7 @@ class yum_repository ( abstract_repository ) :
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
             if self._retrieve_file( url , localname ) :
-                error = repoutils.md5_error( localname , item , item.has_key('size') | repoutils.SKIP_SIZE )
+                error = utils.md5_error( localname , item , item.has_key('size') | utils.SKIP_SIZE )
                 if error :
                     logger.error( error )
                     os.unlink( localname )
@@ -240,7 +240,7 @@ class yum_repository ( abstract_repository ) :
         localname = os.path.join( local_repodata[arch] , filelist['href'] )
     
         if os.path.isfile( localname ) :
-            error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
+            error = utils.md5_error( localname , filelist , filelist.has_key('size') | utils.SKIP_SIZE )
             if error :
                 logger.warnig( error )
                 os.unlink( localname )
@@ -255,7 +255,7 @@ class yum_repository ( abstract_repository ) :
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
     
             if self._retrieve_file( url , localname ) :
-                error = repoutils.md5_error( localname , filelist , filelist.has_key('size') | repoutils.SKIP_SIZE )
+                error = utils.md5_error( localname , filelist , filelist.has_key('size') | utils.SKIP_SIZE )
                 if error :
                     logger.error( error )
                     os.unlink( localname )
