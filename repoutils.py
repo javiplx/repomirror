@@ -143,7 +143,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
     def __init__ ( self , repo ) :
         self.repo = repo
         # FIXME : Set to true when started, not during initialization
-        self.running = True
+        self.running = False
         self.closed = False
         self.list=[]
         self.cond = threading.Condition()
@@ -168,6 +168,11 @@ are appended. Once inserted, the files are downloaded by the main loop"""
 
         if not repolib.downloadRawFile ( pkg['Filename'] , destname , self.repo.base_url() ) :
             show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
+
+    def start(self):
+        if not self.running :                                                   
+            threading.Thread.start(self)
+            self.running = True
 
     def run(self):
         """Main thread loop. Runs over the item list, downloading every file"""
