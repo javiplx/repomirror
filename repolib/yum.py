@@ -190,7 +190,7 @@ class yum_repository ( abstract_repository ) :
     
         if not os.path.isfile( localname ) :
     
-            logger.warnin( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
@@ -242,7 +242,7 @@ class yum_repository ( abstract_repository ) :
         if os.path.isfile( localname ) :
             error = utils.md5_error( localname , filelist , filelist.has_key('size') | utils.SKIP_SIZE )
             if error :
-                logger.warnig( error )
+                logger.warning( error )
                 os.unlink( localname )
             else :
                 if params['mode'] == "update" :
