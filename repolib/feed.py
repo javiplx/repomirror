@@ -9,7 +9,7 @@ from repolib import abstract_build_repository
 
 class feed_build_repository ( abstract_build_repository ) :
 
-    def __init__ ( self , config , name , extensions=() ) :
+    def __init__ ( self , config , name , extensions=( ".opk" , ".ipk" ) ) :
 
         abstract_build_repository.__init__( self , config )
 
