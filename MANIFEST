@@ -1,7 +1,9 @@
 setup.py
 repomirror
 repolib/__init__.py
+repolib/utils.py
 repolib/debian.py
+repolib/feed.py
 repoutils.py
 get_filters
 repolib/yum.py
