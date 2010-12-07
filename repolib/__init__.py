@@ -89,6 +89,8 @@ class _repository :
 
     def __init__ ( self , config ) :
 
+	self.name = config[ "name" ]
+
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
 

@@ -47,6 +47,7 @@ def read_config ( repo_name ) :
         return False
 
     conf = {}
+    conf['name'] = repo_name
     conf['destdir'] = config.get( "global" , "destdir" )
 
     conf['type'] = config.get( repo_name , "type" )
@@ -98,6 +99,7 @@ def read_build_config ( repo_name ) :
         return False
 
     conf = {}
+    conf['name'] = repo_name
 
     if config.has_option( repo_name , "destdir" ) :
 
