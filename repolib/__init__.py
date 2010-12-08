@@ -89,7 +89,7 @@ class _repository :
 
     def __init__ ( self , config ) :
 
-	self.name = config[ "name" ]
+        self.name = config[ "name" ]
 
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
@@ -101,6 +101,18 @@ class _repository :
 
     def repo_path ( self ) :
         raise Exception( "Calling an abstract method" )
+
+    def get_download_list( self ) :
+        raise Exception( "Calling an abstract method" )
+
+
+class DownloadList ( list ) :
+
+    def rewind ( self ) :
+        pass
+
+    def flush ( self ) :
+        pass
 
 
 class abstract_repository ( _repository ) :
@@ -187,9 +199,6 @@ class abstract_repository ( _repository ) :
             return
 
         return filename
-
-    def get_download_list( self ) :
-        return []
 
 
 class abstract_build_repository ( _repository ) :

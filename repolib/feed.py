@@ -70,6 +70,9 @@ class feed_repository ( abstract_repository ) :
     def get_master_file ( self , _params ) :
         return True
 
+    def get_download_list( self ) :
+        return DownloadList()
+
     def get_subrepos ( self ) :
         return self.architectures
 
@@ -116,7 +119,7 @@ class feed_repository ( abstract_repository ) :
 
         else :
             logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
-                os.sys.exit(0)
+            os.sys.exit(0)
 
         fd = read_handler( localname )
 
