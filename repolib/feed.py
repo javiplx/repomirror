@@ -20,7 +20,7 @@ except :
     pass
 
 
-from repolib import abstract_repository, abstract_build_repository , urljoin , logger
+from repolib import abstract_repository, abstract_build_repository , urljoin , logger , DownloadList
 
 
 class feed_build_repository ( abstract_build_repository ) :
