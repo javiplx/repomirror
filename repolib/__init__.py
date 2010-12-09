@@ -39,6 +39,8 @@ def instantiate_repo ( config , name=False ) :
             repo = centos_update_repository( config )
         elif config['type'] == "deb" :
             repo = debian_repository( config )
+        elif config['type'] == "feed" :
+            repo = feed_repository( config )
         elif config['type'] == "yast2" :
             repo = yast2_repository( config )
         elif config['type'] == "yast2_update" :
@@ -177,7 +179,7 @@ class abstract_repository ( _repository ) :
                 data = response.read(256)
             os.close(handle)
         except Exception ,ex :
-            logger.error( "Exception dequesi on %s , %s : %s" % ( remote , local , ex ) )
+            logger.error( "Exception : %s" % ex )
             os.close(handle)
             os.unlink(fname)
             return False
