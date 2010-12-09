@@ -212,6 +212,32 @@ class debian_repository ( abstract_repository ) :
             return False
         return True
 
+    def verify( self , filename , _name , release , params ) :
+        #
+        # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
+        #
+        # FIXME : 'size' element should be a number !!!
+        #
+        _item = {}
+        for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+            if release.has_key(type) :
+                for item in release[type] :
+                    if item['name'] == _name :
+                        _item.update( item )
+        if _item :
+            if params['usemd5'] :
+                error = utils.md5_error( filename , _item )
+                if error :
+                    logger.warning( error )
+                    os.unlink( filename )
+                    return False
+
+            return True
+
+        else :
+            logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
+            return False
+
     def get_package_list ( self , subrepo , suite_path , _params , filters ) :
 
         params = self.params
@@ -233,37 +259,14 @@ class debian_repository ( abstract_repository ) :
             localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
-                #
-                # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
-                #
-                # FIXME : 'size' element should be a number !!!
-                #
-                # FIXME : What about other checksums (sha1, sha256)
-                _item = {}
-                for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
-                    if release.has_key(type) :
-                        for item in release[type] :
-                            if item['name'] == _name :
-                                _item.update( item )
-                if _item :
-                    if params['usemd5'] :
-                        error = utils.md5_error( localname , _item )
-                        if error :
-                            logger.warning( error )
-                            os.unlink( localname )
-                            continue
-
+                if self.verify( localname , _name , release , params ) :
                     # NOTE : force and unsync should behave different here? We could just force download if forced
                     if params['mode'] == "update" :
                         logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
                     else :
                         fd = read_handler( localname )
-
                     break
-
-                else :
-                    logger.warning( "Checksum for file '%s' not found, go to next format." % _name )
-                    continue
+                continue
 
         else :
 
@@ -276,31 +279,9 @@ class debian_repository ( abstract_repository ) :
                 url = urljoin( self.metadata_path() , _name )
 
                 if self.downloadRawFile( url , localname ) :
-                    #
-                    # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
-                    #
-                    # FIXME : 'size' element should be a number !!!
-                    #
-                    # FIXME : What about other checksums (sha1, sha256)
-                    _item = {}
-                    for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
-                        if release.has_key(type) :
-                            for item in release[type] :
-                                if item['name'] == _name :
-                                    _item.update( item )
-                    if _item :
-                        if params['usemd5'] :
-                            error = utils.md5_error( localname , _item )
-                            if error :
-                                logger.warning( error )
-                                os.unlink( localname )
-                                continue
-
+                    if self.verify( localname , _name , release , params ) :
                         break
-
-                    else :
-                        logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
-                        continue
+                    continue
 
             else :
                 logger.error( "No Valid Packages file found for %s / %s" % subrepo )
