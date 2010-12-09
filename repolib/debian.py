@@ -9,20 +9,7 @@ import os , sys
 import tempfile
 
 
-# FIXME : Include standard plain os.open??
-extensions = {}
-
-try :
-    import gzip
-    extensions['.gz'] = gzip.open
-except :
-    pass
-    
-try :
-    import bz2
-    extensions['.bz2'] = bz2.BZ2File
-except :
-    pass
+import config
 
 
 from repolib import abstract_repository, abstract_build_repository , urljoin , logger
@@ -240,7 +227,7 @@ class debian_repository ( abstract_repository ) :
         fd = False
         localname = None
 
-        for ( extension , read_handler ) in extensions.iteritems() :
+        for ( extension , read_handler ) in config.extensions.iteritems() :
 
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( suite_path , _name )
@@ -282,7 +269,7 @@ class debian_repository ( abstract_repository ) :
 
             logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
 
-            for ( extension , read_handler ) in extensions.iteritems() :
+            for ( extension , read_handler ) in config.extensions.iteritems() :
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )

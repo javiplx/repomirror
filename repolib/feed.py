@@ -4,20 +4,7 @@ import debian_bundle.debfile
 import os
 
 
-# FIXME : Include standard plain os.open??
-extensions = {}
-
-try :
-    import gzip
-    extensions['.gz'] = gzip.open
-except :
-    pass
-    
-try :
-    import bz2
-    extensions['.bz2'] = bz2.BZ2File
-except :
-    pass
+import config
 
 
 from repolib import abstract_repository, abstract_build_repository , urljoin , logger , DownloadList
@@ -108,7 +95,7 @@ class feed_repository ( abstract_repository ) :
         localname = None
 
         # As no verification is possible, we download files every time
-        for ( extension , read_handler ) in extensions.iteritems() :
+        for ( extension , read_handler ) in config.extensions.iteritems() :
 
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( suite_path , _name )
