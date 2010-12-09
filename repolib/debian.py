@@ -217,7 +217,7 @@ class debian_repository ( abstract_repository ) :
         return subrepos
 
     def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
+        if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
             return False
         if filters.has_key('priorities') and pkginfo.has_key('Priority') and pkginfo['Priority'] not in filters['priorities'] :
             return False
