@@ -8,8 +8,6 @@ params = {}
 import os , sys
 
 
-import repoutils
-
 import repolib
 
 if sys.argv[1:] :
@@ -22,7 +20,7 @@ else :
     print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
     sys.exit(1)
 
-config = repoutils.read_config( repo_name )
+config = repolib.config.read_mirror_config( repo_name )
 if not config :
     sys.exit(255)
 
