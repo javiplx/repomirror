@@ -166,6 +166,7 @@ class yum_repository ( abstract_repository ) :
 
         download_size = 0
         download_pkgs = PackageList()
+        rejected_pkgs = PackageList()
         missing_pkgs = []
 
         item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
@@ -218,6 +219,7 @@ class yum_repository ( abstract_repository ) :
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
     
             if not self.match_filters( pkginfo , filters ) :
+                rejected_pkgs.append( pkginfo )
                 continue
 
             all_pkgs[ pkginfo['name'] ] = 1
@@ -279,12 +281,11 @@ class yum_repository ( abstract_repository ) :
     
         filesfd.close()
         
-        # Rewind file
-        fd.seek(0)
+        # Rewind list
+        rejected_pkgs.rewind()
 
         logger.warning( "Searching for missing dependencies" )
-        packages = filelist_xmlparser.get_package_list( fd )
-        for pkginfo in packages :
+        for pkginfo in rejected_pkgs :
         
             # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
             #if all_pkgs.has_key( pkginfo['name'] ) :

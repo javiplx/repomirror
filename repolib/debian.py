@@ -325,6 +325,7 @@ class debian_repository ( abstract_repository ) :
         all_requires = {}
 
         download_pkgs = PackageList()
+        rejected_pkgs = PackageList()
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
@@ -344,6 +345,7 @@ class debian_repository ( abstract_repository ) :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 if not self.match_filters( pkginfo , filters ) :
+                    rejected_pkgs.append( pkginfo )
                     continue
 
                 all_pkgs[ pkginfo['Package'] ] = 1
@@ -359,15 +361,13 @@ class debian_repository ( abstract_repository ) :
                             pkgname = depitem.strip().split(None,1)
                             all_requires[ pkgname[0] ] = 1
 
-            # Rewind file
-            fd.seek(0)
+            fd.close()
+            del packages
 
-            packages = debian_bundle.debian_support.PackageFile( localname , fd )
-            for pkg in packages :
-                pkginfo =  debian_bundle.deb822.Deb822Dict( pkg )
+            # Rewind list
+            rejected_pkgs.rewind()
 
-                if all_pkgs.has_key( pkginfo['Package'] ) :
-                    continue
+            for pkginfo in rejected_pkgs :
 
                 # FIXME : We made no attempt to go into a full depenceny loop
                 if all_requires.has_key( pkginfo['Package'] ) :
@@ -383,9 +383,6 @@ class debian_repository ( abstract_repository ) :
                                 # We keep only the package name, more or less safer within a repository
                                 pkgname = depitem.strip().split(None,1)
                                 all_requires[ pkgname[0] ] = 1
-
-            fd.close()
-            del packages
 
             for pkgname in all_requires.keys() :
                 if not all_pkgs.has_key( pkgname ) :
