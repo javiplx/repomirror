@@ -168,7 +168,7 @@ are appended. Once inserted, the files are downloaded by the main loop"""
             if not os.path.exists( path ) :
                 os.makedirs( path )
 
-        if not repolib.downloadRawFile ( pkg['Filename'] , destname , self.repo.base_url() ) :
+        if not repolib.downloadRawFile ( pkg['Filename'] , destname ) :
             show_error( "Failure downloading file '%s'" % ( pkg['Filename'] ) , False )
 
     def start(self):

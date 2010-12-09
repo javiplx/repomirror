@@ -15,36 +15,6 @@ def unsplit ( scheme , server , path ) :
     urltuple = ( scheme , server , path , None , None )
     return urllib2.urlparse.urlunsplit( urltuple )
 
-def downloadRawFile ( remote , local=None , base_url=None ) :
-    """Downloads a remote file to the local system.
-
-    remote - URL
-    local - Optional local name for the file
-
-    Returns the local file name"""
-
-    if base_url :
-        remote = urljoin( base_url , remote ) 
-
-    if not local :
-        (handle, fname) = tempfile.mkstemp()
-    else :
-        fname = local
-        handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-    try:
-        response = urllib2.urlopen( remote )
-        data = response.read(256)
-        while data :
-            os.write(handle, data)
-            data = response.read(256)
-        os.close(handle)
-    except Exception ,ex :
-        logger.error( "Exception : %s" % ex )
-        os.close(handle)
-        os.unlink(fname)
-        return False
-    return fname
-
 
 import logging
 
@@ -134,7 +104,7 @@ class abstract_repository ( _repository ) :
 
         if params['usegpg'] :
 
-            signature_file = self.downloadRawFile( urljoin( self.base_url() , meta_file + sign_ext ) )
+            signature_file = self.downloadRawFile( meta_file + sign_ext )
 
             if not signature_file :
                 logger.error( "Signature file for version '%s' not found." % ( self.version ) )
@@ -158,7 +128,7 @@ class abstract_repository ( _repository ) :
 
         if not os.path.isfile( release_file ) :
 
-            release_file = self.downloadRawFile( urljoin( self.base_url() , meta_file ) )
+            release_file = self.downloadRawFile( meta_file )
 
             if release_file :
                 if params['usegpg'] :
@@ -183,6 +153,35 @@ class abstract_repository ( _repository ) :
             packages_path = self.metadata_path( subrepo , False )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
+
+    def downloadRawFile ( self , remote , local=None ) :
+        """Downloads a remote file to the local system.
+
+        remote - path relative to repository base
+        local - Optional local name for the file
+
+        Returns the local file name"""
+
+        remote = urljoin( self.base_url() , remote ) 
+
+        if not local :
+            (handle, fname) = tempfile.mkstemp()
+        else :
+            fname = local
+            handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
+        try:
+            response = urllib2.urlopen( remote )
+            data = response.read(256)
+            while data :
+                os.write(handle, data)
+                data = response.read(256)
+            os.close(handle)
+        except Exception ,ex :
+            logger.error( "Exception dequesi on %s , %s : %s" % ( remote , local , ex ) )
+            os.close(handle)
+            os.unlink(fname)
+            return False
+        return fname
 
 
 class abstract_build_repository ( _repository ) :

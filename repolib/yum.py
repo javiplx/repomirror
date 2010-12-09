@@ -193,7 +193,7 @@ class yum_repository ( abstract_repository ) :
     
             logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
+            url = urljoin( self.metadata_path(arch) , item['href'] )
     
             if self.downloadRawFile( url , localname ) :
                 error = utils.md5_error( localname , item , item.has_key('size') | utils.SKIP_SIZE )
@@ -254,7 +254,7 @@ class yum_repository ( abstract_repository ) :
     
             logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
+            url = urljoin( self.metadata_path(arch) , filelist['href'] )
     
             if self.downloadRawFile( url , localname ) :
                 error = utils.md5_error( localname , filelist , filelist.has_key('size') | utils.SKIP_SIZE )
@@ -338,7 +338,7 @@ class yum_repository ( abstract_repository ) :
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
 
-        logger.warnig( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
+        logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
         download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs

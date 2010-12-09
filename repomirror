@@ -32,8 +32,6 @@ if not os.path.isdir( config['destdir'] ) :
 
 repo = repolib.instantiate_repo( config )
 
-base_url = repo.base_url()
-
 
 meta_files = repo.get_master_file( params )
 
@@ -117,7 +115,7 @@ for pkg in download_pkgs :
         if not os.path.exists( path ) :
             os.makedirs( path )
 
-    if not repolib.downloadRawFile ( pkg['Filename'] , destname , base_url ) :
+    if not repo.downloadRawFile ( pkg['Filename'] , destname ) :
         print "WARNING : Failure downloading file '%s'" % pkg['Filename']
 
 if getattr( download_pkgs , 'close' , False ) :

@@ -286,7 +286,7 @@ class debian_repository ( abstract_repository ) :
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )
-                url = urljoin( urljoin( self.base_url() , self.metadata_path() ) , _name )
+                url = urljoin( self.metadata_path() , _name )
 
                 if self.downloadRawFile( url , localname ) :
                     #

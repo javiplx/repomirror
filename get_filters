@@ -28,8 +28,6 @@ if not config :
 
 repo = repolib.instantiate_repo( config )
 
-base_url = repo.base_url()
-
 
 meta_files = repo.get_master_file( params )
 
