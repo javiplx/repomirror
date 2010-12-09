@@ -195,7 +195,7 @@ class yum_repository ( abstract_repository ) :
     
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , item['href'] ) )
     
-            if self._retrieve_file( url , localname ) :
+            if self.downloadRawFile( url , localname ) :
                 error = utils.md5_error( localname , item , item.has_key('size') | utils.SKIP_SIZE )
                 if error :
                     logger.error( error )
@@ -256,7 +256,7 @@ class yum_repository ( abstract_repository ) :
     
             url = urljoin( self.base_url() , "%s%s" % ( self.metadata_path(arch) , filelist['href'] ) )
     
-            if self._retrieve_file( url , localname ) :
+            if self.downloadRawFile( url , localname ) :
                 error = utils.md5_error( localname , filelist , filelist.has_key('size') | utils.SKIP_SIZE )
                 if error :
                     logger.error( error )

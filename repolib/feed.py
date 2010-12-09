@@ -114,7 +114,7 @@ class feed_repository ( abstract_repository ) :
             localname = os.path.join( suite_path , _name )
             url = urljoin( urljoin( self.base_url() , self.metadata_path() ) , _name )
 
-            if self._retrieve_file( url , localname ) :
+            if self.downloadRawFile( url , localname ) :
                     break
 
         else :

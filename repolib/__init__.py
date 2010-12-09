@@ -39,10 +39,10 @@ def downloadRawFile ( remote , local=None , base_url=None ) :
             data = response.read(256)
         os.close(handle)
     except Exception ,ex :
-        print "Exception : %s" % ex
+        logger.error( "Exception : %s" % ex )
         os.close(handle)
         os.unlink(fname)
-        return None
+        return False
     return fname
 
 
@@ -134,7 +134,7 @@ class abstract_repository ( _repository ) :
 
         if params['usegpg'] :
 
-            signature_file = self._retrieve_file( urljoin( self.base_url() , meta_file + sign_ext ) )
+            signature_file = self.downloadRawFile( urljoin( self.base_url() , meta_file + sign_ext ) )
 
             if not signature_file :
                 logger.error( "Signature file for version '%s' not found." % ( self.version ) )
@@ -158,7 +158,7 @@ class abstract_repository ( _repository ) :
 
         if not os.path.isfile( release_file ) :
 
-            release_file = self._retrieve_file( urljoin( self.base_url() , meta_file ) )
+            release_file = self.downloadRawFile( urljoin( self.base_url() , meta_file ) )
 
             if release_file :
                 if params['usegpg'] :
@@ -183,19 +183,6 @@ class abstract_repository ( _repository ) :
             packages_path = self.metadata_path( subrepo , False )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
-
-    def _retrieve_file ( self , location , localname=None ) :
-
-        try :
-            filename  = downloadRawFile( location , localname )
-        except urllib2.URLError , ex :
-            logger.error( "Exception : %s" % ex )
-            return False
-        except urllib2.HTTPError , ex :
-            logger.error( "Exception : %s" % ex )
-            return False
-
-        return filename
 
 
 class abstract_build_repository ( _repository ) :
