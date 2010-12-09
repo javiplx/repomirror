@@ -43,20 +43,7 @@ default_params['usemd5'] = True
 default_params['pkgvflags'] = "SKIP_NONE"
 
 
-def read_mirror_config ( repo_name ) :
-
-    config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        print "Could not find a valid configuration file"
-        return False
-
-    if "global" not in config.sections() :
-        print "Broken configuration, missing global section"
-        return False
-
-    if not config.has_option( "global", "destdir" ) :
-        print "Broken configuration, missing destination directory"
-        return False
+def __config ( repo_name , config ) :
 
     if repo_name not in config.sections() :
         print "Repository '%s' is not configured" % repo_name
@@ -64,9 +51,44 @@ def read_mirror_config ( repo_name ) :
 
     conf = {}
     conf['name'] = repo_name
-    conf['destdir'] = config.get( "global" , "destdir" )
+
+    if config.has_option( repo_name , "destdir" ) :
+
+        conf['destdir'] = config.get( repo_name , "destdir" )
+        conf['detached'] = True
+
+    else :
+
+        if "global" not in config.sections() :
+            print "Broken configuration, missing global section"
+            return False
+
+        if not config.has_option( "global", "destdir" ) :
+            print "Broken configuration, missing destination directory"
+            return False
+
+        conf['destdir'] = config.get( "global" , "destdir" )
+        conf['detached'] = False
 
     conf['type'] = config.get( repo_name , "type" )
+
+    conf['version'] = config.get( repo_name , "version" )
+    conf['architectures'] = config.get( repo_name , "architectures" ).split()
+    if config.has_option( repo_name , "components" ) :
+        conf['components'] = config.get( repo_name , "components" ).split()
+
+    return conf
+
+
+def read_mirror_config ( repo_name ) :
+
+    config = ConfigParser.RawConfigParser()
+    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
+        print "Could not find a valid configuration file"
+        return False
+
+    conf = __config( repo_name , config )
+
     if config.has_option ( repo_name , "url" ) :
         conf['url'] = config.get( repo_name , "url" )
     else :
@@ -74,10 +96,6 @@ def read_mirror_config ( repo_name ) :
         server = config.get( repo_name , "server" )
         base_path = config.get( repo_name , "base_path" )
         conf['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
-    conf['version'] = config.get( repo_name , "version" )
-    conf['architectures'] = config.get( repo_name , "architectures" ).split()
-    if config.has_option( repo_name , "components" ) :
-        conf['components'] = config.get( repo_name , "components" ).split()
 
     conf['filters'] = {}
     if config.has_option( repo_name , "filters" ) :
@@ -114,33 +132,7 @@ def read_build_config ( repo_name ) :
         print "Repository '%s' is not configured" % repo_name
         return False
 
-    conf = {}
-    conf['name'] = repo_name
-
-    if config.has_option( repo_name , "destdir" ) :
-
-        conf['destdir'] = config.get( repo_name , "destdir" )
-        conf['detached'] = True
-
-    else :
-
-        if "global" not in config.sections() :
-            print "Broken configuration, missing global section"
-            return False
-
-        if not config.has_option( "global", "destdir" ) :
-            print "Broken configuration, missing destination directory"
-            return False
-
-        conf['destdir'] = config.get( "global" , "destdir" )
-        conf['detached'] = False
-
-    conf['type'] = config.get( repo_name , "type" )
-
-    conf['version'] = config.get( repo_name , "version" )
-    conf['architectures'] = config.get( repo_name , "architectures" ).split()
-    if config.has_option( repo_name , "components" ) :
-        conf['components'] = config.get( repo_name , "components" ).split()
+    conf = __config( repo_name , config )
 
     return conf
 
