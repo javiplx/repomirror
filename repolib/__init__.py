@@ -130,7 +130,7 @@ class abstract_repository ( _repository ) :
 
     def get_signed_metafile ( self , params , meta_file , sign_ext=".asc" ) :
 
-        local_file = os.path.join( self.repo_path() , meta_file )
+        release_file = os.path.join( self.repo_path() , meta_file )
 
         if params['usegpg'] :
 
@@ -140,41 +140,38 @@ class abstract_repository ( _repository ) :
                 logger.error( "Signature file for version '%s' not found." % ( self.version ) )
                 return
 
-            if os.path.isfile( local_file ) :
-                errstr = utils.gpg_error( signature_file , local_file )
+            if os.path.isfile( release_file ) :
+                errstr = utils.gpg_error( signature_file , release_file )
                 if errstr :
                     logger.warning( errstr )
-                    os.unlink( local_file )
+                    os.unlink( release_file )
                 else :
-                    os.unlink( signature_file )
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if params['mode'] == "update" :
                         logger.warning( "Metadata file unchanged, exiting" )
+                        os.unlink( signature_file )
                         return True
-                    return local_file
 
         else :
-            if os.path.isfile( local_file ) :
-                os.unlink( local_file )
+            if os.path.isfile( release_file ) :
+                os.unlink( release_file )
 
-        # FIXME : produce error if we reach this point with existing local_file
-        if not os.path.isfile( local_file ) :
+        if not os.path.isfile( release_file ) :
 
             release_file = self._retrieve_file( urljoin( self.base_url() , meta_file ) )
 
-            if not release_file :
-                logger.error( "Release file for suite '%s' is not found." % ( self.version ) )
+            if release_file :
                 if params['usegpg'] :
-                    os.unlink( signature_file )
-                return
+                    errstr = utils.gpg_error( signature_file , release_file )
+                    if errstr :
+                        logger.error( errstr )
+                        os.unlink( release_file )
+                        release_file = False
+            else :
+                logger.error( "Release file for suite '%s' is not found." % ( self.version ) )
 
-            if params['usegpg'] :
-                errstr = utils.gpg_error( signature_file , release_file )
-                os.unlink( signature_file )
-                if errstr :
-                    logger.error( errstr )
-                    os.unlink( release_file )
-                    return
+        if params['usegpg'] :
+            os.unlink( signature_file )
 
         return release_file
 
@@ -193,10 +190,10 @@ class abstract_repository ( _repository ) :
             filename  = downloadRawFile( location , localname )
         except urllib2.URLError , ex :
             logger.error( "Exception : %s" % ex )
-            return
+            return False
         except urllib2.HTTPError , ex :
             logger.error( "Exception : %s" % ex )
-            return
+            return False
 
         return filename
 
