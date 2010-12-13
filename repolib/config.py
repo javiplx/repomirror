@@ -134,5 +134,8 @@ def read_build_config ( repo_name ) :
 
     conf = __config( repo_name , config )
 
+    if config.has_option( repo_name , "extensions" ) :
+        conf['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( repo_name , "extensions" ).split() )
+
     return conf
 
