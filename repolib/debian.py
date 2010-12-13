@@ -12,7 +12,8 @@ import tempfile
 import config
 
 
-from repolib import abstract_repository, abstract_build_repository , urljoin , logger
+import repolib
+from repolib import urljoin , logger
 
 
 def safe_encode ( str ) :
@@ -82,10 +83,10 @@ class PackageList ( debian_bundle.debian_support.PackageFile ) :
         pass
 
 
-class debian_repository ( abstract_repository ) :
+class debian_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
-        abstract_repository.__init__( self , config )
+        repolib.MirrorRepository.__init__( self , config )
 
         self.components = config.get( "components" , None )
 
@@ -363,11 +364,11 @@ class debian_repository ( abstract_repository ) :
         return PackageList( self )
 
 
-class debian_build_repository ( abstract_build_repository ) :
+class debian_build_repository ( repolib.BuildRepository ) :
 
     def __init__ ( self , config ) :
 
-        abstract_build_repository.__init__( self , config )
+        repolib.BuildRepository.__init__( self , config )
 
         self.components = config.get( "components" , None )
 

@@ -19,11 +19,11 @@ else :
     print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
     sys.exit(1)
 
-config = repolib.config.read_build_config( repo_name )
-if not config :
+try :
+    repo = repolib.BuildRepository.new( repo_name )
+except Exception , ex :
+    print "Exception : %s" % ex
     sys.exit(255)
-
-repo = repolib.instantiate_repo( config , repo_name )
 
 repo.build()
 

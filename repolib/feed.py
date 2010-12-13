@@ -4,17 +4,18 @@ import debian_bundle.debfile
 import os
 
 
-import config
+import config , utils
 
 
-from repolib import abstract_repository, abstract_build_repository , urljoin , logger , DownloadList
+import repolib
+from repolib import urljoin , logger , DownloadList
 
 
-class feed_build_repository ( abstract_build_repository ) :
+class feed_build_repository ( repolib.BuildRepository ) :
 
     def __init__ ( self , config , name , extensions=( ".opk" , ".ipk" ) ) :
 
-        abstract_build_repository.__init__( self , config )
+        repolib.BuildRepository.__init__( self , config )
 
         self.name = name
         self.detached = config['detached']
@@ -46,7 +47,7 @@ class feed_build_repository ( abstract_build_repository ) :
         packages.close()
 
 
-class feed_repository ( abstract_repository ) :
+class feed_repository ( repolib.MirrorRepository ) :
 
     def base_url ( self ) :
         return self.repo_url

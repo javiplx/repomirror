@@ -9,7 +9,8 @@ import gzip
 import os , sys
 import tempfile
 
-from repolib import abstract_repository , urljoin , logger
+import repolib
+from repolib import urljoin , logger
 
 
 class PackageList :
@@ -91,7 +92,7 @@ class XMLPackageList ( PackageList ) :
         self.pkgfd.write( '</metadata>\n' )
 
 
-class yum_repository ( abstract_repository ) :
+class yum_repository ( repolib.MirrorRepository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/Fedora/" % self.version )

@@ -3,7 +3,7 @@ import os
 
 import urllib2
 
-import utils
+import config , utils
 
 
 import socket
@@ -26,38 +26,10 @@ logger = logging.getLogger()
 logger.addHandler( console )
 
 
-def instantiate_repo ( config , name=False ) :
-    repo = None
-    if name is False :
-        if config['type'] == "yum" :
-            repo = yum_repository( config )
-        elif config['type'] == "centos" :
-            repo = centos_repository( config )
-        elif config['type'] == "yum_upd" :
-            repo = fedora_update_repository( config )
-        elif config['type'] == "centos_upd" :
-            repo = centos_update_repository( config )
-        elif config['type'] == "deb" :
-            repo = debian_repository( config )
-        elif config['type'] == "feed" :
-            repo = feed_repository( config )
-        elif config['type'] == "yast2" :
-            repo = yast2_repository( config )
-        elif config['type'] == "yast2_update" :
-            repo = yast2_update_repository( config )
-        else :
-            logger.error( "Unknown repository type '%s'" % config['type'] )
-    else :
-        if config['type'] == "deb" :
-            repo = debian_build_repository( config )
-        elif config['type'] == "feed" :
-            repo = feed_build_repository( config , name )
-        else :
-            logger.error( "Unknown repository build type '%s'" % config['type'] )
-    return repo
-
-
 class _repository :
+
+    def new ( name ) :
+        raise Exception( "Calling an abstract method" )
 
     def __init__ ( self , config ) :
 
@@ -87,12 +59,35 @@ class DownloadList ( list ) :
         pass
 
 
-class abstract_repository ( _repository ) :
+class MirrorRepository ( _repository ) :
+
+    def new ( name ) :
+        _config = config.read_mirror_config( name )
+        if _config['type'] == "yum" :
+            return yum_repository( _config )
+        elif _config['type'] == "centos" :
+            return centos_repository( _config )
+        elif _config['type'] == "yum_upd" :
+            return fedora_update_repository( _config )
+        elif _config['type'] == "centos_upd" :
+            return centos_update_repository( _config )
+        elif _config['type'] == "deb" :
+            return debian_repository( _config )
+        elif _config['type'] == "feed" :
+            return feed_repository( _config )
+        elif _config['type'] == "yast2" :
+            return yast2_repository( _config )
+        elif _config['type'] == "yast2_update" :
+            return yast2_update_repository( _config )
+        else :
+            Exception( "Unknown repository type '%s'" % _config['type'] )
+    new = staticmethod( new )
 
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
         self.repo_url = urljoin( "%s/" % config[ "url" ] , "" )
         self.params = config[ "params" ]
+        self.filters = config[ "filters" ]
 
     def base_url ( self ) :
         raise Exception( "Calling an abstract method" )
@@ -186,7 +181,17 @@ class abstract_repository ( _repository ) :
         return fname
 
 
-class abstract_build_repository ( _repository ) :
+class BuildRepository ( _repository ) :
+
+    def new ( name ) :
+        _config = config.read_build_config( name )
+        if _config['type'] == "deb" :
+            return debian_build_repository( _config )
+        elif _config['type'] == "feed" :
+            return feed_build_repository( _config , name )
+        else :
+            Exception( "Unknown repository build type '%s'" % _config['type'] )
+    new = staticmethod( new )
 
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
