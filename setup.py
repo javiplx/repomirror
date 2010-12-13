@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name = 'repomirror',
-    version = '1.2',
+    version = '1.3',
     description = 'Generic repository mirroring tool',
     author = 'Javier Palacios',
     author_email = 'javiplx@gmail.com',
