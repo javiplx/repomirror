@@ -43,8 +43,11 @@ class feed_build_repository ( repolib.BuildRepository ) :
             control = pkg.control.debcontrol()
             if not control.has_key("Filename") :
                 control["Filename"] = filename
+            fullpath = os.path.join( self.repo_path() , filename )
             if not control.has_key("Size") :
-                control["Size"] = "%s" % os.stat( os.path.join( self.repo_path() , filename ) ).st_size
+                control["Size"] = "%s" % os.stat( fullpath ).st_size
+            for type in ( 'MD5sum' ,) :
+                control[type] = utils.cksum_handles[type.lower()]( fullpath )
             packages.write( "%s\n" % control )
 
         packages.close()
