@@ -16,17 +16,24 @@ def index ( request ) :
     sections = config.sections()
     if config.has_section( "global" ) :
         sections.pop( sections.index( "global" ) )
-        response.write( "<h3>global</h3>\n" )
-        response.write( "<ul>\n" )
-        for item in config.items('global') :
-            response.write( "<li><b>%s</b> - %s\n" % item )
-        response.write( "</ul>\n" )
+    keylist =  ( 'type' , 'version' , 'architectures' )
+    response.write( "<table>\n" )
+    response.write( "<thead>\n" )
+    response.write( "<tr>\n" )
+    response.write( "<th>Name</th>\n" )
+    for key in keylist :
+        response.write( "<th>%s</th>\n" % key )
+    response.write( "</tr>\n" )
+    response.write( "</thead>\n" )
+    response.write( "<tbody>\n" )
     for section in sections :
-        response.write( "<h3><a href=%s>%s</a></h3>\n" % ( section , section ) )
-        response.write( "<ul>\n" )
-        for item in config.items( section ) :
-            response.write( "<li><b>%s</b> - %s\n" % item )
-        response.write( "</ul>\n" )
+        response.write( "<tr>\n" )
+        response.write( "<td><a href=%s>%s</a></td>\n" % ( section , section ) )
+        for key in keylist :
+            response.write( "<td>%s</td>\n" % config.get( section , key ) )
+        response.write( "</tr>\n" )
+    response.write( "</tbody>\n" )
+    response.write( "</table>\n" )
 
     return response
 
