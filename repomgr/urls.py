@@ -1,6 +1,8 @@
 
 from django.conf.urls.defaults import *
 
+import repolib.config
+
 from django.http import HttpResponse
 
 import ConfigParser
@@ -16,7 +18,7 @@ def index ( request ) :
     sections = config.sections()
     if config.has_section( "global" ) :
         sections.pop( sections.index( "global" ) )
-    keylist =  ( 'type' , 'version' , 'architectures' )
+    keylist =  ( 'type' , 'url' , 'version' , 'architectures' )
     response.write( "<table>\n" )
     response.write( "<thead>\n" )
     response.write( "<tr>\n" )
@@ -27,10 +29,18 @@ def index ( request ) :
     response.write( "</thead>\n" )
     response.write( "<tbody>\n" )
     for section in sections :
+        repo = repolib.config.__config( section , repolib.config.MirrorConf , config )
+        if config.has_option ( section , "url" ) :
+            repo['url'] = config.get( section , "url" )
+        else :
+            scheme = config.get( section , "scheme" )
+            server = config.get( section , "server" )
+            base_path = config.get( section , "base_path" )
+            repo.set_url( scheme , server , base_path )
         response.write( "<tr>\n" )
-        response.write( "<td><a href=%s>%s</a></td>\n" % ( section , section ) )
+        response.write( "<td><a href=%s>%s</a></td>\n" % ( section , repo.__name__ ) )
         for key in keylist :
-            response.write( "<td>%s</td>\n" % config.get( section , key ) )
+            response.write( "<td>%s</td>\n" % repo[key] )
         response.write( "</tr>\n" )
     response.write( "</tbody>\n" )
     response.write( "</table>\n" )

@@ -24,7 +24,7 @@ except :
 default_params = {}
 
 # mode (update|init) - decides if we stop processing for unchanged metadata files
-default_params['mode'] = "update"
+default_mode = "update"
 
 # usegpg. To disable verification of PGP signatures, and force the download of master file every run
 default_params['usegpg'] = True
@@ -43,14 +43,26 @@ default_params['usemd5'] = True
 default_params['pkgvflags'] = "SKIP_NONE"
 
 
-def __config ( repo_name , config ) :
+class _conf ( dict ) :
+
+    def __init__ ( self , reponame , filename=None ) :
+        self.__file__ = filename
+        self.__name__ = reponame
+        dict.__init__( self )
+        self['type'] = None
+        self['destdir'] = None
+        self['detached'] = None
+        self['version'] = None
+        self['architectures'] = None
+        self['components'] = None
+
+def __config ( repo_name , object , config ) :
 
     if repo_name not in config.sections() :
         print "Repository '%s' is not configured" % repo_name
         return False
 
-    conf = {}
-    conf['name'] = repo_name
+    conf = object( repo_name )
 
     if config.has_option( repo_name , "destdir" ) :
 
@@ -80,6 +92,21 @@ def __config ( repo_name , config ) :
     return conf
 
 
+class MirrorConf ( _conf ) :
+
+    def __init__ ( self , reponame , filename=None ) :
+        _conf.__init__( self , reponame , filename )
+        self['url'] = None
+        self.url_parts = None
+        self['mode'] = default_mode
+        self['filters'] = {}
+        self['params'] = {}
+        self['params'].update( default_params )
+
+    def set_url ( self , scheme , server , base_path ) :
+        self.url_parts = ( scheme , server , base_path )
+        self['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
+
 def read_mirror_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
@@ -87,7 +114,10 @@ def read_mirror_config ( repo_name ) :
         print "Could not find a valid configuration file"
         return False
 
-    conf = __config( repo_name , config )
+    conf = __config( repo_name , MirrorConf , config )
+
+    if config.has_option ( repo_name , "mode" ) :
+        conf['mode'] = config.get( repo_name , "mode" )
 
     if config.has_option ( repo_name , "url" ) :
         conf['url'] = config.get( repo_name , "url" )
@@ -95,16 +125,13 @@ def read_mirror_config ( repo_name ) :
         scheme = config.get( repo_name , "scheme" )
         server = config.get( repo_name , "server" )
         base_path = config.get( repo_name , "base_path" )
-        conf['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
+        conf.set_url( scheme , server , base_path )
 
-    conf['filters'] = {}
     if config.has_option( repo_name , "filters" ) :
         for subfilter in config.get( repo_name , "filters" ).split() :
             if config.has_option( repo_name , subfilter ) :
                 conf['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( repo_name , subfilter ).split() )
 
-    conf['params'] = {}
-    conf['params'].update( default_params )
     for key in conf['params'].keys() :
         if config.has_option( "global" , key ) :
             try :
@@ -121,6 +148,13 @@ def read_mirror_config ( repo_name ) :
 
     return conf
 
+
+class BuildConf ( _conf ) :
+
+    def __init__ ( self , reponame , filename=None ) :
+        _conf.__init__( self , reponame , filename )
+        self['extensions'] = None
+
 def read_build_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
@@ -132,7 +166,7 @@ def read_build_config ( repo_name ) :
         print "Repository '%s' is not configured" % repo_name
         return False
 
-    conf = __config( repo_name , config )
+    conf = __config( repo_name , BuildConf , config )
 
     if config.has_option( repo_name , "extensions" ) :
         conf['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( repo_name , "extensions" ).split() )

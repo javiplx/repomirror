@@ -33,7 +33,7 @@ class _repository :
 
     def __init__ ( self , config ) :
 
-        self.name = config[ "name" ]
+        self.name = config.__name__
 
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
@@ -120,6 +120,7 @@ class MirrorRepository ( _repository ) :
                         return True
 
         else :
+            # If gpg is not enabled, the metafile is removed to force fresh download
             if os.path.isfile( release_file ) :
                 os.unlink( release_file )
 
