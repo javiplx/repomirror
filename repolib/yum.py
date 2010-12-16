@@ -187,7 +187,7 @@ class yum_repository ( repolib.MirrorRepository ) :
                 logger.warning( error )
                 os.unlink( localname )
             else :
-                if params['mode'] == "update" :
+                if self.mode == "update" :
                     return 0 , [] , []
     
         if not os.path.isfile( localname ) :
@@ -248,7 +248,7 @@ class yum_repository ( repolib.MirrorRepository ) :
                 logger.warning( error )
                 os.unlink( localname )
             else :
-                if params['mode'] == "update" :
+                if self.mode == "update" :
                     return 0 , [] , []
     
         if not os.path.isfile( localname ) :

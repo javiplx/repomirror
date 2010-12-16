@@ -262,7 +262,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             if os.path.isfile( localname ) :
                 if self.verify( localname , _name , release , params ) :
                     # NOTE : force and unsync should behave different here? We could just force download if forced
-                    if params['mode'] == "update" :
+                    if self.mode == "update" :
                         logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
                     else :
                         fd = read_handler( localname )

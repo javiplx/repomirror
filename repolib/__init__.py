@@ -86,6 +86,7 @@ class MirrorRepository ( _repository ) :
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
         self.repo_url = urljoin( "%s/" % config[ "url" ] , "" )
+        self.mode = config[ "mode" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
 
@@ -114,7 +115,7 @@ class MirrorRepository ( _repository ) :
                     os.unlink( release_file )
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
-                    if params['mode'] == "update" :
+                    if self.mode == "update" :
                         logger.warning( "Metadata file unchanged, exiting" )
                         os.unlink( signature_file )
                         return True
