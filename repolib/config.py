@@ -43,7 +43,7 @@ default_params['usemd5'] = True
 default_params['pkgvflags'] = "SKIP_NONE"
 
 
-class _conf ( dict ) :
+class RepoConf ( dict ) :
 
     def __init__ ( self , reponame , filename=None ) :
         self.__file__ = filename
@@ -56,46 +56,39 @@ class _conf ( dict ) :
         self['architectures'] = None
         self['components'] = None
 
-def __config ( repo_name , object , config ) :
+    def read ( self , config ) :
 
-    if repo_name not in config.sections() :
-        print "Repository '%s' is not configured" % repo_name
-        return False
+        if self.__name__ not in config.sections() :
+            raise Exception( "Repository '%s' is not configured" % self.__name__ )
 
-    conf = object( repo_name )
+        if config.has_option( self.__name__ , "destdir" ) :
 
-    if config.has_option( repo_name , "destdir" ) :
+            self['destdir'] = config.get( self.__name__ , "destdir" )
+            self['detached'] = True
 
-        conf['destdir'] = config.get( repo_name , "destdir" )
-        conf['detached'] = True
+        else :
 
-    else :
+            if "global" not in config.sections() :
+                raise Exception( "Broken configuration, missing global section" )
 
-        if "global" not in config.sections() :
-            print "Broken configuration, missing global section"
-            return False
+            if not config.has_option( "global", "destdir" ) :
+                raise Exception( "Broken configuration, missing destination directory" )
 
-        if not config.has_option( "global", "destdir" ) :
-            print "Broken configuration, missing destination directory"
-            return False
+            self['destdir'] = config.get( "global" , "destdir" )
+            self['detached'] = False
 
-        conf['destdir'] = config.get( "global" , "destdir" )
-        conf['detached'] = False
+        self['type'] = config.get( self.__name__ , "type" )
 
-    conf['type'] = config.get( repo_name , "type" )
-
-    conf['version'] = config.get( repo_name , "version" )
-    conf['architectures'] = config.get( repo_name , "architectures" ).split()
-    if config.has_option( repo_name , "components" ) :
-        conf['components'] = config.get( repo_name , "components" ).split()
-
-    return conf
+        self['version'] = config.get( self.__name__ , "version" )
+        self['architectures'] = config.get( self.__name__ , "architectures" ).split()
+        if config.has_option( self.__name__ , "components" ) :
+            self['components'] = config.get( self.__name__ , "components" ).split()
 
 
-class MirrorConf ( _conf ) :
+class MirrorConf ( RepoConf ) :
 
     def __init__ ( self , reponame , filename=None ) :
-        _conf.__init__( self , reponame , filename )
+        RepoConf.__init__( self , reponame , filename )
         self['url'] = None
         self.url_parts = None
         self['mode'] = default_mode
@@ -107,6 +100,39 @@ class MirrorConf ( _conf ) :
         self.url_parts = ( scheme , server , base_path )
         self['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
 
+    def read ( self , config ) :
+        RepoConf.read( self , config )
+
+        if config.has_option ( self.__name__ , "mode" ) :
+            self['mode'] = config.get( self.__name__ , "mode" )
+
+        if config.has_option ( self.__name__ , "url" ) :
+            self['url'] = config.get( self.__name__ , "url" )
+        else :
+            scheme = config.get( self.__name__ , "scheme" )
+            server = config.get( self.__name__ , "server" )
+            base_path = config.get( self.__name__ , "base_path" )
+            self.set_url( scheme , server , base_path )
+
+        if config.has_option( self.__name__ , "filters" ) :
+            for subfilter in config.get( self.__name__ , "filters" ).split() :
+                if config.has_option( self.__name__ , subfilter ) :
+                    self['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( self.__name__ , subfilter ).split() )
+
+        for key in self['params'].keys() :
+            if config.has_option( "global" , key ) :
+                try :
+                    self['params'][ key ] = config.getboolean( "global" , key )
+                except ValueError , ex :
+                    self['params'][ key ] = config.get( "global" , key )
+            if config.has_option( self.__name__ , key ) :
+                try :
+                    self['params'][ key ] = config.getboolean( self.__name__ , key )
+                except ValueError , ex :
+                    self['params'][ key ] = config.get( self.__name__ , key )
+
+        self['params']['pkgvflags'] = eval( "utils.%s" % self['params']['pkgvflags'] )
+
 def read_mirror_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
@@ -114,46 +140,27 @@ def read_mirror_config ( repo_name ) :
         print "Could not find a valid configuration file"
         return False
 
-    conf = __config( repo_name , MirrorConf , config )
-
-    if config.has_option ( repo_name , "mode" ) :
-        conf['mode'] = config.get( repo_name , "mode" )
-
-    if config.has_option ( repo_name , "url" ) :
-        conf['url'] = config.get( repo_name , "url" )
-    else :
-        scheme = config.get( repo_name , "scheme" )
-        server = config.get( repo_name , "server" )
-        base_path = config.get( repo_name , "base_path" )
-        conf.set_url( scheme , server , base_path )
-
-    if config.has_option( repo_name , "filters" ) :
-        for subfilter in config.get( repo_name , "filters" ).split() :
-            if config.has_option( repo_name , subfilter ) :
-                conf['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( repo_name , subfilter ).split() )
-
-    for key in conf['params'].keys() :
-        if config.has_option( "global" , key ) :
-            try :
-                conf['params'][ key ] = config.getboolean( "global" , key )
-            except ValueError , ex :
-                conf['params'][ key ] = config.get( "global" , key )
-        if config.has_option( repo_name , key ) :
-            try :
-                conf['params'][ key ] = config.getboolean( repo_name , key )
-            except ValueError , ex :
-                conf['params'][ key ] = config.get( repo_name , key )
-
-    conf['params']['pkgvflags'] = eval( "utils.%s" % conf['params']['pkgvflags'] )
+    conf = MirrorConf( repo_name )
+    try :
+        conf.read( config )
+    except Exception , ex :
+        print "ERROR : %s" % ex
+        return False
 
     return conf
 
 
-class BuildConf ( _conf ) :
+class BuildConf ( RepoConf ) :
 
     def __init__ ( self , reponame , filename=None ) :
-        _conf.__init__( self , reponame , filename )
+        RepoConf.__init__( self , reponame , filename )
         self['extensions'] = None
+
+    def read ( self , config ) :
+        RepoConf.read( self , config )
+
+        if config.has_option( self.__name__ , "extensions" ) :
+            self['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( self.__name__ , "extensions" ).split() )
 
 def read_build_config ( repo_name ) :
 
@@ -162,14 +169,12 @@ def read_build_config ( repo_name ) :
         print "Could not find a valid configuration file"
         return False
 
-    if repo_name not in config.sections() :
-        print "Repository '%s' is not configured" % repo_name
+    conf = BuildConf( repo_name )
+    try :
+        conf.read( config )
+    except Exception , ex :
+        print "ERROR : %s" % ex
         return False
-
-    conf = __config( repo_name , BuildConf , config )
-
-    if config.has_option( repo_name , "extensions" ) :
-        conf['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( repo_name , "extensions" ).split() )
 
     return conf
 
