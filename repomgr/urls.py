@@ -49,17 +49,32 @@ def detail ( request , repo_name ) :
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
         response.write( "Server Error\n" )
         return response
-    if not config.has_section( repo_name ) :
-        response.write( "Repository '%s' does not exists\n" % repo_name )
-        return response
-    _global = []
-    if config.has_section( "global" ) :
-        _global = map( lambda x : "%s:%s" % x , config.items('global') )
-    repo = map( lambda x : "%s:%s" % x , config.items(repo_name) )
-    response.write( "<h3>%s</h3>\n" % repo_name )
+    repo = MirrorConf( repo_name )
+    repo.read( config )
+    response.write( "<h3>%s</h3>\n" % repo.__name__ )
     response.write( "<ul>\n" )
-    for item in config.items( repo_name ) :
-        response.write( "<li><b>%s</b> - %s\n" % item )
+    keys = [ 'type' , 'mode' ]
+    if repo['detached'] :
+        keys.extend( ( 'detached' , 'destdir' ) )
+    keys.extend( ( 'version' , 'architectures' , 'components' ) )
+    for key in keys :
+        response.write( "<li><b>%s</b> - %s\n" % ( key , repo[key] ) )
+    extra = ""
+    if repo.url_parts :
+        _keys = ( 'scheme' , 'server' , 'base_path' )
+        for i in range(3) :
+            response.write( "<li><b>%s</b> - %s\n" % ( _keys[i] , repo.url_parts[i] ) )
+        extra = " (ro) "
+    response.write( "<li><b>url%s</b> - %s\n" % ( extra , repo['url'] ) )
+    keys.append( 'url' )
+    if not repo['detached'] :
+        keys.extend( ( 'detached' , 'destdir' ) )
+    response.write( "</ul>\n" )
+    response.write( "<h4>Extra values</h4>\n" )
+    response.write( "<ul>\n" )
+    for key in repo.keys() :
+        if key not in keys :
+            response.write( "<li><b>%s</b> - %s\n" % ( key , repo[key] ) )
     response.write( "</ul>\n" )
 
     response.write( "<a href=./>Go to main page</a>\n" )
