@@ -44,13 +44,10 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class PackageList ( DownloadListInterface , debian_bundle.debian_support.PackageFile ) :
+class PackageList ( debian_bundle.debian_support.PackageFile , DownloadListInterface ) :
 
-    def __init__ ( self , repo=None ) :
+    def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        self.repo = repo
-        if self.repo :
-            self.download = repoutils.DownloadThread( repo )
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
 
@@ -67,9 +64,6 @@ class PackageList ( DownloadListInterface , debian_bundle.debian_support.Package
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
 
     def append ( self , pkg ) :
-        if self.repo :
-            self.download.append( pkg )
-            self.download.start()
         dump_package( pkg , self.pkgfd )
 
     def extend ( self , values_list ) :

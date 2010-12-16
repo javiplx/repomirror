@@ -23,11 +23,8 @@ Filename=%s
 
 """
 
-    def __init__ ( self , repo=None ) :
+    def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        self.repo = repo
-        if self.repo :
-            self.download = repoutils.DownloadThread( repo )
         self.pkgfd = tempfile.NamedTemporaryFile()
 
     def rewind ( self ) :
@@ -49,21 +46,12 @@ Filename=%s
             yield _pkg
 
     def append ( self , pkg ) :
-        if not pkg.has_key('sha256') : print type(pkg),":",pkg
-        if self.repo :
-            self.download.append( pkg )
-            self.download.start()
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
-
-    def flush ( self ) :
-        if self.repo :
-            self.download.destroy()
-        pass
 
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
@@ -81,7 +69,7 @@ class XMLPackageList ( PackageList ) :
 
     def __init__ ( self , repo=None ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        PackageList.__init__( self , repo )
+        PackageList.__init__( self )
         self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
         self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
 
@@ -345,7 +333,7 @@ class yum_repository ( repolib.MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList( self )
+        return PackageList()
 
 class fedora_update_repository ( yum_repository ) :
 
