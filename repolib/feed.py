@@ -8,7 +8,7 @@ import config , utils
 
 
 import repolib
-from repolib import urljoin , logger , DownloadList
+from repolib import urljoin , logger
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -63,9 +63,6 @@ class feed_repository ( repolib.MirrorRepository ) :
 
     def get_master_file ( self , _params ) :
         return True
-
-    def get_download_list( self ) :
-        return DownloadList()
 
     def get_subrepos ( self ) :
         return self.architectures

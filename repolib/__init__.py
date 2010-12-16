@@ -46,17 +46,24 @@ class _repository :
     def repo_path ( self ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_download_list( self ) :
-        raise Exception( "Calling an abstract method" )
 
-
-class DownloadList ( list ) :
+class DownloadListInterface :
 
     def rewind ( self ) :
         pass
 
     def flush ( self ) :
         pass
+
+    def append ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+    def extend ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+class DownloadList ( list , DownloadListInterface ) :
+
+    pass
 
 
 class MirrorRepository ( _repository ) :
@@ -152,6 +159,9 @@ class MirrorRepository ( _repository ) :
             packages_path = self.metadata_path( subrepo , False )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
+
+    def get_download_list( self ) :
+        return DownloadList()
 
     def downloadRawFile ( self , remote , local=None ) :
         """Downloads a remote file to the local system.

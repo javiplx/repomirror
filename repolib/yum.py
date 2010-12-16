@@ -10,10 +10,10 @@ import os , sys
 import tempfile
 
 import repolib
-from repolib import urljoin , logger
+from repolib import urljoin , logger , DownloadListInterface
 
 
-class PackageList :
+class PackageList ( DownloadListInterface ) :
 
     out_template = """name=%s
 sha256=%s

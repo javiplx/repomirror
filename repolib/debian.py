@@ -13,7 +13,7 @@ import config
 
 
 import repolib
-from repolib import urljoin , logger
+from repolib import urljoin , logger , DownloadListInterface
 
 
 def safe_encode ( str ) :
@@ -44,7 +44,7 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class PackageList ( debian_bundle.debian_support.PackageFile ) :
+class PackageList ( DownloadListInterface , debian_bundle.debian_support.PackageFile ) :
 
     def __init__ ( self , repo=None ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
@@ -361,7 +361,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList( self )
+        return PackageList()
 
 
 class debian_build_repository ( repolib.BuildRepository ) :
