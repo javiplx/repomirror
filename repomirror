@@ -47,7 +47,9 @@ repo.build_local_tree()
 
 local_repodata = repo.write_master_file( meta_files )
 
-print repo.info( local_repodata )
+repolib.logger.setLevel( repolib.logging.INFO )
+
+map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
 
 
 download_pkgs = repo.get_download_list()
@@ -56,7 +58,7 @@ missing_pkgs = []
 
 for subrepo in repo.get_subrepos() :
 
-    print "Scanning %s" % ( subrepo , )
+    repolib.logger.info( "Scanning %s" % ( subrepo , ) )
 
     _size , _pkgs , _missing = repo.get_package_list( subrepo , local_repodata , params , repo.filters )
     download_size += _size
@@ -66,9 +68,9 @@ for subrepo in repo.get_subrepos() :
 
 _size = download_size / 1024 / 1024
 if _size > 2048 :
-    print "Total size to download : %.1f Gb" % ( _size / 1024 )
+    repolib.logger.info( "Total size to download : %.1f Gb" % _size / 1024 )
 else :
-    print "Total size to download : %.1f Mb" % ( _size )
+    repolib.logger.info( "Total size to download : %.1f Mb" % _size )
 
 if missing_pkgs :
 
@@ -91,7 +93,7 @@ if missing_pkgs :
         if not pkg in found_pkgs.keys() :
             missing.append( pkg )
     if missing :
-        print "There are missing requirements : %s" % missing
+        repolib.logger.info( "There are %d missing requirements" % len(missing) )
 
 download_pkgs.flush()
 
@@ -102,9 +104,9 @@ for pkg in download_pkgs :
 
     # FIXME : Perform this check while appending to download_pkgs ???
     if os.path.isfile( destname ) :
-        error = utils.md5_error( destname , pkg )
+        error = repolib.utils.md5_error( destname , pkg )
         if error :
-            print "WARNING : %s" % error
+            repolib.logger.warning( error )
             os.unlink( destname )
         else :
             continue
@@ -114,7 +116,7 @@ for pkg in download_pkgs :
             os.makedirs( path )
 
     if not repo.downloadRawFile ( pkg['Filename'] , destname ) :
-        print "WARNING : Failure downloading file '%s'" % pkg['Filename']
+        repolib.logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
 
 if getattr( download_pkgs , 'close' , False ) :
     download_pkgs.close()
