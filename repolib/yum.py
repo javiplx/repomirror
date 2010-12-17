@@ -10,10 +10,10 @@ import os , sys
 import tempfile
 
 import repolib
-from repolib import urljoin , logger , DownloadListInterface
+from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
-class PackageList ( DownloadListInterface ) :
+class YumPackageList ( PackageListInterface ) :
 
     out_template = """name=%s
 sha256=%s
@@ -26,10 +26,6 @@ Filename=%s
     def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
         self.pkgfd = tempfile.NamedTemporaryFile()
-
-    def rewind ( self ) :
-        if self.pkgfd :
-            self.pkgfd.seek(0)
 
     def __iter__ ( self ) :
         _pkg = {}
@@ -45,6 +41,10 @@ Filename=%s
         if _pkg :
             yield _pkg
 
+    def rewind ( self ) :
+        if self.pkgfd :
+            self.pkgfd.seek(0)
+
     def append ( self , pkg ) :
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
 
@@ -53,10 +53,16 @@ Filename=%s
         for pkg in values_list :
             self.append( pkg )
 
+class YumDownloadList ( YumPackageList , AbstractDownloadList ) :
+
+    def __init__ ( self , repo ) :
+        YumPackageList.__init__( self )
+        AbstractDownloadList.__init__( self , repo )
+
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
 #        using xml.etree.ElementTree.iterparse
-class XMLPackageList ( PackageList ) :
+class YumXMLPackageList ( YumPackageList ) :
 
     out_template = """<package type="rpm">
   <name>%s</name>
@@ -67,9 +73,9 @@ class XMLPackageList ( PackageList ) :
 </package>
 """
 
-    def __init__ ( self , repo=None ) :
+    def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        PackageList.__init__( self )
+        YumPackageList.__init__( self )
         self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
         self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
 
@@ -154,8 +160,8 @@ class yum_repository ( repolib.MirrorRepository ) :
         params.update( _params )
 
         download_size = 0
-        download_pkgs = PackageList()
-        rejected_pkgs = PackageList()
+        download_pkgs = YumPackageList()
+        rejected_pkgs = YumPackageList()
         missing_pkgs = []
 
         item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
@@ -333,7 +339,7 @@ class yum_repository ( repolib.MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList()
+        return YumDownloadList( self )
 
 class fedora_update_repository ( yum_repository ) :
 

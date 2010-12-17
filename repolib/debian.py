@@ -13,7 +13,7 @@ import config
 
 
 import repolib
-from repolib import urljoin , logger , DownloadListInterface
+from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
 def safe_encode ( str ) :
@@ -44,16 +44,12 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class PackageList ( debian_bundle.debian_support.PackageFile , DownloadListInterface ) :
+class DebianPackageList ( debian_bundle.debian_support.PackageFile , PackageListInterface ) :
 
     def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
-
-    def rewind ( self ) :
-        if self.pkgfd :
-            self.pkgfd.seek(0)
 
     def __iter__ ( self ) :
         _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
@@ -62,6 +58,13 @@ class PackageList ( debian_bundle.debian_support.PackageFile , DownloadListInter
             pkg.update( _pkg.next() )
             yield pkg
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+
+    def rewind ( self ) :
+        if self.pkgfd :
+            self.pkgfd.seek(0)
+
+    def flush ( self ) :
+        pass
 
     def append ( self , pkg ) :
         dump_package( pkg , self.pkgfd )
@@ -73,8 +76,11 @@ class PackageList ( debian_bundle.debian_support.PackageFile , DownloadListInter
         for pkg in values_list :
             self.append( pkg )
 
-    def flush ( self ) :
-        pass
+class DebianDownloadList ( DebianPackageList , AbstractDownloadList ) :
+
+    def __init__ ( self , repo ) :
+        DebianPackageList.__init__( self )
+        AbstractDownloadList.__init__( self , repo )
 
 
 class debian_repository ( repolib.MirrorRepository ) :
@@ -287,8 +293,8 @@ class debian_repository ( repolib.MirrorRepository ) :
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = PackageList()
-        rejected_pkgs = PackageList()
+        download_pkgs = DebianPackageList()
+        rejected_pkgs = DebianPackageList()
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
@@ -355,7 +361,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return PackageList()
+        return DebianDownloadList( self )
 
 
 class debian_build_repository ( repolib.BuildRepository ) :

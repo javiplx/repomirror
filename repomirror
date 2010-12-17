@@ -68,7 +68,7 @@ for subrepo in repo.get_subrepos() :
 
 _size = download_size / 1024 / 1024
 if _size > 2048 :
-    repolib.logger.info( "Total size to download : %.1f Gb" % _size / 1024 )
+    repolib.logger.info( "Total size to download : %.1f Gb" % ( _size / 1024 ) )
 else :
     repolib.logger.info( "Total size to download : %.1f Mb" % _size )
 
@@ -95,29 +95,5 @@ if missing_pkgs :
     if missing :
         repolib.logger.info( "There are %d missing requirements" % len(missing) )
 
-download_pkgs.flush()
-
-download_pkgs.rewind()
-for pkg in download_pkgs :
-
-    destname = os.path.join( repo.repo_path() , pkg['Filename'] )
-
-    # FIXME : Perform this check while appending to download_pkgs ???
-    if os.path.isfile( destname ) :
-        error = repolib.utils.md5_error( destname , pkg )
-        if error :
-            repolib.logger.warning( error )
-            os.unlink( destname )
-        else :
-            continue
-    else :
-        path , name = os.path.split( destname )
-        if not os.path.exists( path ) :
-            os.makedirs( path )
-
-    if not repo.downloadRawFile ( pkg['Filename'] , destname ) :
-        repolib.logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
-
-if getattr( download_pkgs , 'close' , False ) :
-    download_pkgs.close()
+download_pkgs.start()
 

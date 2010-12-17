@@ -47,7 +47,7 @@ class _repository :
         raise Exception( "Calling an abstract method" )
 
 
-class DownloadListInterface :
+class PackageListInterface :
 
     def rewind ( self ) :
         pass
@@ -61,9 +61,49 @@ class DownloadListInterface :
     def extend ( self ) :
         raise Exception( "Calling an abstract method" )
 
-class DownloadList ( list , DownloadListInterface ) :
+class PackageList ( list , PackageListInterface ) :
 
     pass
+
+class AbstractDownloadList :
+
+    def __init__ ( self , repo ) :
+        self.repo = repo
+
+    def start ( self ) :
+
+        self.flush()
+        self.rewind()
+
+        __cnt = 0
+        for pkg in self :
+
+            destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
+
+            # FIXME : Perform this check while appending to download_pkgs ???
+            if os.path.isfile( destname ) :
+                error = utils.md5_error( destname , pkg )
+                if error :
+                    logger.warning( error )
+                    os.unlink( destname )
+                else :
+                    continue
+            else :
+                path , name = os.path.split( destname )
+                if not os.path.exists( path ) :
+                    os.makedirs( path )
+
+#            if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
+#                logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
+            if __cnt < 10 :
+                logger.warning( "Downloading file '%s'" % pkg['Filename'] )
+            __cnt += 1
+
+class DownloadList ( list , AbstractDownloadList , PackageListInterface ) :
+
+    def __init__ ( self , repo ) :
+        list.__init__( self )
+        AbstractDownloadList.__init__( self , repo )
 
 
 class MirrorRepository ( _repository ) :
@@ -161,7 +201,7 @@ class MirrorRepository ( _repository ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
 
     def get_download_list( self ) :
-        return DownloadList()
+        return DownloadList( self )
 
     def downloadRawFile ( self , remote , local=None ) :
         """Downloads a remote file to the local system.
