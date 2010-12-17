@@ -75,7 +75,6 @@ class AbstractDownloadList :
         self.flush()
         self.rewind()
 
-        __cnt = 0
         for pkg in self :
 
             destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
@@ -93,11 +92,11 @@ class AbstractDownloadList :
                 if not os.path.exists( path ) :
                     os.makedirs( path )
 
-#            if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-#                logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
-            if __cnt < 10 :
-                logger.warning( "Downloading file '%s'" % pkg['Filename'] )
-            __cnt += 1
+            if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
+                logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
+
+    def finish ( self ) :
+        pass
 
 class DownloadList ( list , AbstractDownloadList , PackageListInterface ) :
 

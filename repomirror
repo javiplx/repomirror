@@ -96,4 +96,5 @@ if missing_pkgs :
         repolib.logger.info( "There are %d missing requirements" % len(missing) )
 
 download_pkgs.start()
+download_pkgs.finish()
 
