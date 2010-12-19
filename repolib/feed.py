@@ -8,7 +8,7 @@ import config , utils
 
 
 import repolib
-from repolib import urljoin , logger
+from repolib import urljoin , logger , PackageList
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -117,8 +117,8 @@ class feed_repository ( repolib.MirrorRepository ) :
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = []
-        rejected_pkgs = [] 
+        download_pkgs = PackageList()
+        rejected_pkgs = PackageList() 
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( localname , fd )
@@ -165,9 +165,6 @@ class feed_repository ( repolib.MirrorRepository ) :
             fd.close()
             del packages
 
-       #     # Rewind list
-       #     rejected_pkgs.rewind()
-
             for pkginfo in rejected_pkgs :
 
                 # FIXME : We made no attempt to go into a full depenceny loop
@@ -189,7 +186,6 @@ class feed_repository ( repolib.MirrorRepository ) :
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
-    #    download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs
 
 
