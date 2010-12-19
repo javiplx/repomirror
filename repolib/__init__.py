@@ -257,6 +257,8 @@ are appended. Once the thread starts, the actual file download begins"""
             if self.closed :
                 raise Exception( "Trying to append file '%s' to a closed thread" % os.path.basename(item['Filename']) )
             else :
+                if self.closed :
+                    raise Exception( "Trying to append to a closed list" )
                 list.append( self , item )
         finally:
             self.cond.release()
