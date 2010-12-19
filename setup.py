@@ -16,6 +16,6 @@ setup(
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] )
                  ],
     packages = [ 'repolib' , 'repomgr' ],
-    py_modules = [ 'repoutils' , 'filelist_xmlparser' ]
+    py_modules = [ 'filelist_xmlparser' ]
     )
 
