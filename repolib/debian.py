@@ -101,11 +101,6 @@ class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
         AbstractDownloadThread.__init__( self , repo )
         DebianPackageFile.__init__( self )
 
-    def start ( self ) :
-        logger.info( "Starting thread on %s %s" % ( self , self.started ) )
-        AbstractDownloadThread.start( self )
-        logger.info( "Starting thread on %s %s" % ( self , self.started ) )
-
     def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
