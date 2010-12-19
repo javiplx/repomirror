@@ -49,6 +49,10 @@ Input uses a list interface, and output a sequence interface taken from original
     def __init__ ( self ) :
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
+        self.__cnt = 0
+
+    def __len__ ( self ) :
+        return self.__cnt
 
     def __iter__ ( self ) :
         self.rewind()
@@ -66,6 +70,7 @@ Input uses a list interface, and output a sequence interface taken from original
 
     def append ( self , pkg ) :
         dump_package( pkg , self.pkgfd )
+        self.__cnt += 1
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
@@ -96,10 +101,6 @@ class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
     def __init__ ( self , repo=None ) :
         AbstractDownloadThread.__init__( self , repo )
         DebianPackageFile.__init__( self )
-        self.__my_cnt = 0
-
-    def __len__ ( self ) :
-        return self.__my_cnt
 
     def start ( self ) :
         logger.info( "Starting thread on %s %s" % ( self , self.started ) )
@@ -128,7 +129,6 @@ class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
                 if self.closed :
                     raise Exception( "Trying to append to a closed list" )
                 DebianPackageFile.append( self , item )
-                self.__my_cnt += 1
         finally:
             self.cond.release()
 

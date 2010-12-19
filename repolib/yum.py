@@ -26,6 +26,10 @@ Filename=%s
 
     def __init__ ( self ) :
         self.pkgfd = tempfile.NamedTemporaryFile()
+        self.__cnt = 0
+
+    def __len__ ( self ) :
+        return self.__cnt
 
     def __iter__ ( self ) :
         _pkg = {}
@@ -48,6 +52,7 @@ Filename=%s
 
     def append ( self , pkg ) :
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
+        self.__cnt += 1
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
@@ -67,10 +72,6 @@ class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
     def __init__ ( self , repo ) :
         YumPackageFile.__init__( self )
         AbstractDownloadThread.__init__( self , repo )
-        self.__cnt = 0
-
-    def __len__ ( self ) :
-        return self.__cnt
 
     def __iter__ ( self ) :
         if self.started :
@@ -92,7 +93,6 @@ class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
                 if self.closed :
                     raise Exception( "Trying to append to a closed list" )
                 YumPackageFile.append( self , item )
-                self.__cnt += 1
         finally:
             self.cond.release()
 
