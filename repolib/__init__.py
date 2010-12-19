@@ -63,7 +63,11 @@ as root for inheritance tree"""
     def __iter__ ( self ) :
         raise Exception( "Calling abstract PackageListInterface.__iter__ on %s" % self )
 
-class PackageList ( list , PackageListInterface ) : pass
+class PackageList ( list , PackageListInterface ) :
+
+    # Avoid representation of full list
+    def __repr__ ( self ) :
+        return "<PackageList items:%d>" % len(self)
 
 
 class DownloadInterface ( PackageListInterface ) :
