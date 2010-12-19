@@ -83,7 +83,7 @@ class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
         AbstractDownloadList.__init__( self , repo )
 
     def rewind ( self ) :
-        if self.running :
+        if self.started :
             raise Exception( "Trying to iterate over a running list" )
         DebianPackageFile.rewind( self )
 

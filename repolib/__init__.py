@@ -72,7 +72,7 @@ by allowing appending during iteration"""
 
     def __init__ ( self , repo ) :
         self.repo = repo
-        self.running = False
+        self.started = False
         self.closed = False
 
     def start ( self ) :
@@ -107,7 +107,7 @@ class AbstractDownloadList ( DownloadInterface ) :
     def start ( self ) :
 
         for pkg in self :
-            self.running = True
+            self.started = True
 
             destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
 
@@ -151,7 +151,7 @@ class DownloadList ( list , AbstractDownloadList ) :
             self.append( item )
 
     def __iter__ ( self ) :
-        if self.running :
+        if self.started :
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
@@ -184,15 +184,15 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
 
         pkginfo = None
         __iter = self.__iter__()
-        self.running = True
-        while self.running:
+        self.started = True
+        while self.started:
             self.cond.acquire()
             if not self :
                 if self.closed :
-                   self.running = False
+                   self.started = False
                    continue
                 self.cond.wait()
-            elif self.running :
+            elif self.started :
                 pkginfo = __iter.next()
             self.cond.release()
             if pkginfo :
@@ -236,7 +236,7 @@ are appended. Once the thread starts, the actual file download begins"""
         AbstractDownloadThread.__init__( self , repo )
 
     def __iter__ ( self ) :
-        if self.running :
+        if self.started :
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
