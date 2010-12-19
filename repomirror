@@ -79,11 +79,10 @@ if missing_pkgs :
         _missing[ pkg ] = 1
 
     found_pkgs = {}
-    download_pkgs.rewind()
     for pkg in download_pkgs :
         # NOTE : We don't break the loop to ensure we get all the available archs
         if pkg['name'] in _missing.keys() :
-            # print "FOUND %s %s" % ( pkg['name'] , pkg )
+            # repolib.logger.info( "FOUND %s" % pkg['name'] )
             found_pkgs[ pkg['name'] ] = pkg
     # NOTE : extending here is safer
     download_pkgs.extend( found_pkgs.values() )
@@ -93,7 +92,7 @@ if missing_pkgs :
         if not pkg in found_pkgs.keys() :
             missing.append( pkg )
     if missing :
-        repolib.logger.info( "There are %d missing requirements" % len(missing) )
+        repolib.logger.warning( "There are %d missing requirements : %s " % ( len(missing) , missing[:5] ) )
 
 download_pkgs.start()
 download_pkgs.finish()

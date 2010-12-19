@@ -13,7 +13,10 @@ import repolib
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
-class YumPackageList ( PackageListInterface ) :
+class YumPackageFile :
+    """This pretends to be a file base storage for package lists, to reduce memory footprint.
+Is an actual complete implementation of PackageListInterface, but it is not declared
+to avoid inheritance problems"""
 
     out_template = """name=%s
 sha256=%s
@@ -24,11 +27,11 @@ Filename=%s
 """
 
     def __init__ ( self ) :
-        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
         self.pkgfd = tempfile.NamedTemporaryFile()
 
     def __iter__ ( self ) :
         _pkg = {}
+        self.rewind()
         line = self.pkgfd.readline()
         while line :
             if line == '\n' :
@@ -53,16 +56,18 @@ Filename=%s
         for pkg in values_list :
             self.append( pkg )
 
-class YumDownloadList ( YumPackageList , AbstractDownloadList ) :
+class YumPackageList ( YumPackageFile , PackageListInterface ) : pass
+
+class YumDownloadList ( YumPackageFile , AbstractDownloadList ) :
 
     def __init__ ( self , repo ) :
-        YumPackageList.__init__( self )
+        YumPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
 #        using xml.etree.ElementTree.iterparse
-class YumXMLPackageList ( YumPackageList ) :
+class YumXMLPackageList ( YumPackageFile ) :
 
     out_template = """<package type="rpm">
   <name>%s</name>
@@ -75,13 +80,14 @@ class YumXMLPackageList ( YumPackageList ) :
 
     def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        YumPackageList.__init__( self )
+        YumPackageFile.__init__( self )
         self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
         self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
 
     def __iter__ ( self ) :
         raise Exception( "Iterable parser not yet implemented" )
 
+    # NOTE : The flush methods move this object somewhat between a simple and a download list
     def flush ( self ) :
         self.pkgfd.write( '</metadata>\n' )
 
@@ -276,9 +282,6 @@ class yum_repository ( repolib.MirrorRepository ) :
     
         filesfd.close()
         
-        # Rewind list
-        rejected_pkgs.rewind()
-
         logger.warning( "Searching for missing dependencies" )
         for pkginfo in rejected_pkgs :
         
@@ -327,15 +330,12 @@ class yum_repository ( repolib.MirrorRepository ) :
         fd.close()
         del packages
 
-        download_pkgs.flush()
-
         for pkgname in providers.keys() :
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
 
         logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
-        download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :

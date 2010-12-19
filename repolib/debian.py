@@ -44,14 +44,16 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class DebianPackageList ( debian_bundle.debian_support.PackageFile , PackageListInterface ) :
+class DebianPackageFile ( debian_bundle.debian_support.PackageFile ) :
+    """This implements a read & write PackageFile.
+Input uses a list interface, and output a sequence interface taken from original PackageFile"""
 
     def __init__ ( self ) :
-        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
 
     def __iter__ ( self ) :
+        self.rewind()
         _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
         while _pkg :
             pkg = debian_bundle.deb822.Deb822()
@@ -63,24 +65,32 @@ class DebianPackageList ( debian_bundle.debian_support.PackageFile , PackageList
         if self.pkgfd :
             self.pkgfd.seek(0)
 
-    def flush ( self ) :
-        pass
-
     def append ( self , pkg ) :
         dump_package( pkg , self.pkgfd )
 
     def extend ( self , values_list ) :
-        if not self.pkgfd :
-            raise Exception( "Underlying PackageFile cannot be extended" )
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
 
-class DebianDownloadList ( DebianPackageList , AbstractDownloadList ) :
+class DebianPackageList ( DebianPackageFile , PackageListInterface ) :
+    """This is an empty class required to avoid double inheritance"""
+
+class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
 
     def __init__ ( self , repo ) :
-        DebianPackageList.__init__( self )
+        DebianPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
+
+    def rewind ( self ) :
+        if self.running :
+            raise Exception( "Trying to iterate over a running list" )
+        DebianPackageFile.rewind( self )
+
+    def append ( self , pkg ) :
+        if self.closed :
+            raise Exception( "Trying to append to a closed list" )
+        DebianPackageFile.append( self , pkg )
 
 
 class debian_repository ( repolib.MirrorRepository ) :
@@ -333,9 +343,6 @@ class debian_repository ( repolib.MirrorRepository ) :
             fd.close()
             del packages
 
-            # Rewind list
-            rejected_pkgs.rewind()
-
             for pkginfo in rejected_pkgs :
 
                 # FIXME : We made no attempt to go into a full depenceny loop
@@ -357,7 +364,6 @@ class debian_repository ( repolib.MirrorRepository ) :
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
-        download_pkgs.rewind()
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
