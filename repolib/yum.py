@@ -7,7 +7,7 @@ import gzip
 import os , sys
 import tempfile
 
-from repolib import utils , MirrorRepository
+from repolib import utils , MirrorRepository , AbstractDownloadThread
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
@@ -61,6 +61,40 @@ class YumDownloadList ( YumPackageFile , AbstractDownloadList ) :
     def __init__ ( self , repo ) :
         YumPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
+
+class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
+
+    def __init__ ( self , repo ) :
+        YumPackageFile.__init__( self )
+        AbstractDownloadThread.__init__( self , repo )
+        self.__cnt = 0
+
+    def __len__ ( self ) :
+        return self.__cnt
+
+    def __iter__ ( self ) :
+        if self.started :
+            raise Exception( "Trying to iterate over a running list" )
+        return YumPackageFile.__iter__( self )
+
+    def __nonzero__ ( self ) :
+        return self.index != len(self)
+
+    def append ( self , item ) :
+        self.cond.acquire()
+        try:
+            if not self :
+                # FIXME : Notification takes effect now or after release ???
+                self.cond.notify()
+            if self.closed :
+                raise Exception( "Trying to append file '%s' to a closed thread" % item['Filename'] )
+            else :
+                if self.closed :
+                    raise Exception( "Trying to append to a closed list" )
+                YumPackageFile.append( self , item )
+                self.__cnt += 1
+        finally:
+            self.cond.release()
 
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
@@ -337,7 +371,7 @@ class yum_repository ( MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return YumDownloadList( self )
+        return YumDownloadThread( self )
 
 class fedora_update_repository ( yum_repository ) :
 
