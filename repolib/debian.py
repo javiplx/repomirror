@@ -59,6 +59,7 @@ Input uses a list interface, and output a sequence interface taken from original
             yield pkg
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
 
+    # This is a final method, not overridable
     def rewind ( self ) :
         if self.pkgfd :
             self.pkgfd.seek(0)
@@ -80,10 +81,10 @@ class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
         DebianPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
-    def rewind ( self ) :
+    def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
-        DebianPackageFile.rewind( self )
+        return DebianPackageFile.__iter__( self )
 
     def append ( self , pkg ) :
         if self.closed :
