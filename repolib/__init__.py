@@ -129,7 +129,7 @@ class AbstractDownloadList ( DownloadInterface ) :
                     os.makedirs( path )
 
             if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-                logger.warning( "Failure downloading file '%s'" % pkg['Filename'] )
+                logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
     def finish ( self ) :
         self.closed = True
@@ -222,7 +222,7 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
                 os.makedirs( path )
 
         if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-            logger.warning( "Failure downloading file '%s'" % ( pkg['Filename'] ) )
+            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
 class DownloadThread ( list , AbstractDownloadThread ) :
     """File download thread. It is build around a threaded list where files
@@ -255,7 +255,7 @@ are appended. Once the thread starts, the actual file download begins"""
         #        # FIXME : Notification takes effect now or after release ???
         #        self.cond.notify()
             if self.closed :
-                raise Exception( "Trying to append file '%s' to a closed thread" % item['Filename'] )
+                raise Exception( "Trying to append file '%s' to a closed thread" % os.path.basename(item['Filename']) )
             else :
                 list.append( self , item )
         finally:
