@@ -10,7 +10,7 @@ import tempfile
 import config , utils
 
 
-from repolib import MirrorRepository , BuildRepository
+from repolib import MirrorRepository , BuildRepository , AbstractDownloadThread
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
@@ -89,6 +89,47 @@ class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
         if self.closed :
             raise Exception( "Trying to append to a closed list" )
         DebianPackageFile.append( self , pkg )
+
+class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
+ 
+    def __init__ ( self , repo=None ) :
+        AbstractDownloadThread.__init__( self , repo )
+        DebianPackageFile.__init__( self )
+        self.__my_cnt = 0
+
+    def __len__ ( self ) :
+        return self.__my_cnt
+
+    def start ( self ) :
+        logger.info( "Starting thread on %s %s" % ( self , self.started ) )
+        AbstractDownloadThread.start( self )
+        logger.info( "Starting thread on %s %s" % ( self , self.started ) )
+
+    def __iter__ ( self ) :
+        if self.started :
+            raise Exception( "Trying to iterate over a running list" )
+        return DebianPackageFile.__iter__( self )
+
+    def __nonzero__ ( self ) :
+        return self.index != len(self)
+
+    def append ( self , item ) :
+        """Adds an item to the download queue"""
+        self.cond.acquire()
+        try:
+            if not self :
+                # FIXME : Notification takes effect now or after release ???
+                self.cond.notify()
+            if self.closed :
+                raise Exception( "Trying to append file '%s' to a closed thread" % item['Filename'] )
+            else :
+                # FIXME : this append could happen with a closed list ??
+                if self.closed :
+                    raise Exception( "Trying to append to a closed list" )
+                DebianPackageFile.append( self , item )
+                self.__my_cnt += 1
+        finally:
+            self.cond.release()
 
 
 class debian_repository ( MirrorRepository ) :
@@ -365,7 +406,7 @@ class debian_repository ( MirrorRepository ) :
         return download_size , download_pkgs , missing_pkgs
 
     def get_download_list( self ) :
-        return DebianDownloadList( self )
+        return DebianDownloadThread( self )
 
 
 class debian_build_repository ( BuildRepository ) :
