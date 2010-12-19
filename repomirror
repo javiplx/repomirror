@@ -62,7 +62,7 @@ for subrepo in repo.get_subrepos() :
 
     _size , _pkgs , _missing = repo.get_package_list( subrepo , local_repodata , params , repo.filters )
     download_size += _size
-    download_pkgs.extend( _pkgs )
+    download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )
 
 
@@ -85,7 +85,7 @@ if missing_pkgs :
             # repolib.logger.info( "FOUND %s" % pkg['name'] )
             found_pkgs[ pkg['name'] ] = pkg
     # NOTE : extending here is safer
-    download_pkgs.extend( found_pkgs.values() )
+    download_pkgs.queue( found_pkgs.values() )
 
     missing = []
     for pkg in _missing.keys() :
