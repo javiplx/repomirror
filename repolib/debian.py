@@ -1,18 +1,16 @@
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
-import utils , repoutils
-
 import errno , shutil
 
 import os , sys
 import tempfile
 
 
-import config
+import config , utils
 
 
-import repolib
+from repolib import MirrorRepository , BuildRepository
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
@@ -93,10 +91,10 @@ class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
         DebianPackageFile.append( self , pkg )
 
 
-class debian_repository ( repolib.MirrorRepository ) :
+class debian_repository ( MirrorRepository ) :
 
     def __init__ ( self , config ) :
-        repolib.MirrorRepository.__init__( self , config )
+        MirrorRepository.__init__( self , config )
 
         self.components = config.get( "components" , None )
 
@@ -370,11 +368,11 @@ class debian_repository ( repolib.MirrorRepository ) :
         return DebianDownloadList( self )
 
 
-class debian_build_repository ( repolib.BuildRepository ) :
+class debian_build_repository ( BuildRepository ) :
 
     def __init__ ( self , config ) :
 
-        repolib.BuildRepository.__init__( self , config )
+        BuildRepository.__init__( self , config )
 
         self.components = config.get( "components" , None )
 

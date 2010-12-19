@@ -1,15 +1,13 @@
 
 import filelist_xmlparser
 
-import utils , repoutils
-
 import errno , shutil
 import gzip
 
 import os , sys
 import tempfile
 
-import repolib
+from repolib import utils , MirrorRepository
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
@@ -92,7 +90,7 @@ class YumXMLPackageList ( YumPackageFile ) :
         self.pkgfd.write( '</metadata>\n' )
 
 
-class yum_repository ( repolib.MirrorRepository ) :
+class yum_repository ( MirrorRepository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/Fedora/" % self.version )
