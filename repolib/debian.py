@@ -72,13 +72,12 @@ Input uses a list interface, and output a sequence interface taken from original
         dump_package( pkg , self.pkgfd )
         self.__cnt += 1
 
+class DebianPackageList ( DebianPackageFile , PackageListInterface ) :
+
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
-
-class DebianPackageList ( DebianPackageFile , PackageListInterface ) :
-    """This is an empty class required to avoid double inheritance"""
 
 class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
 
@@ -91,9 +90,9 @@ class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
             raise Exception( "Trying to iterate over a running list" )
         return DebianPackageFile.__iter__( self )
 
-    def append ( self , pkg ) :
+    def push ( self , pkg ) :
         if self.closed :
-            raise Exception( "Trying to append to a closed list" )
+            raise Exception( "Trying to push into a closed queue" )
         DebianPackageFile.append( self , pkg )
 
 class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
@@ -111,26 +110,6 @@ class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
         return DebianPackageFile.__iter__( self )
-
-    def __nonzero__ ( self ) :
-        return self.index != len(self)
-
-    def append ( self , item ) :
-        """Adds an item to the download queue"""
-        self.cond.acquire()
-        try:
-            if not self :
-                # FIXME : Notification takes effect now or after release ???
-                self.cond.notify()
-            if self.closed :
-                raise Exception( "Trying to append file '%s' to a closed thread" % item['Filename'] )
-            else :
-                # FIXME : this append could happen with a closed list ??
-                if self.closed :
-                    raise Exception( "Trying to append to a closed list" )
-                DebianPackageFile.append( self , item )
-        finally:
-            self.cond.release()
 
 
 class debian_repository ( MirrorRepository ) :

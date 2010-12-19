@@ -51,12 +51,10 @@ class PackageListInterface :
     """This Interface is just a partial defintion of a list. It is included
 as root for inheritance tree"""
 
-    # FIXME : do we actually use this method directly ?
-    #         Seems only on strict implementations of this interface on simple lists
     def append ( self , item ) :
         raise Exception( "Calling abstract PackageListInterface.append on %s" % self )
 
-    # NOTE : This massive append is usually called from complex implementations through DownloadInterface
+    # NOTE : In a strict sense, this method is not required for list interface, and is actually not used anywhere
     def extend ( self , itemlist ) :
         raise Exception( "Calling abstract PackageListInterface.extend on %s" % self )
 
@@ -89,19 +87,20 @@ It requires an explicit check on iterator/generator instantiation"""
 It requires an explicit check on append/extend methods"""
         raise Exception( "Calling abstract DownloadInterface.finish on %s" % self )
 
+    # This is a final method
+    def queue ( self , itemlist ) :
+        for item in itemlist :
+            self.push( item )
+
+    def push ( self , item ) :
+        raise Exception( "Calling abstract DownloadInterface.push on %s" % self )
+
     def __nonzero__ ( self ) :
         """Method to evaluate in boolean context the existence of available items.
 Used in while loop context to enable element extraction"""
         raise Exception( "Calling abstract DownloadInterface.__nonzero_ on %s" % self )
 
-    # Methods below are redefinition of those in PackageListInterface, to stress requirement of specific implemenation
-
-    def append ( self , item ) :
-        raise Exception( "Calling abstract DownloadInterface.append on %s" % self )
-
-    def extend ( self , itemlist ) :
-        raise Exception( "Calling abstract DownloadInterface.extend on %s" % self )
-
+    # This is a redefinition of PackageListInterface, to stress requirement of specific implemenation
     def __iter__ ( self ) :
         raise Exception( "Calling abstract DownloadInterface.__iter__ on %s" % self )
 
@@ -144,15 +143,10 @@ class DownloadList ( list , AbstractDownloadList ) :
         list.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
-    def append ( self , item ) :
+    def push ( self , item ) :
         if self.closed :
-            raise Exception( "Trying to append to a closed list" )
+            raise Exception( "Trying to push into a closed queue" )
         list.append( self , item )
-
-    # NOTE : specific extend is required to force the use of any the overloaded append
-    def extend ( self , itemlist ) :
-        for item in itemlist :
-            self.append( item )
 
     def __iter__ ( self ) :
         if self.started :
@@ -165,6 +159,9 @@ import threading
 class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
 
     def __init__ ( self , repo ) :
+        # Check for methods required on the underlying container
+        if not 'append' in dir(self) or not '__len__' in dir(self) :
+            raise Exception ("Implementation of AbstractDownloadThread required sized objects with append method")
         self.cond = threading.Condition()
         threading.Thread.__init__( self , name=repo.name )
         DownloadInterface.__init__( self , repo )
@@ -181,7 +178,21 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
             self.cond.release()
 
     def __nonzero__ ( self ) :
-        raise Exception( "Calling abstract  AbstractDownloadThread.__nonzero_ on %s" % self )
+        return self.index != len(self)
+
+    def push ( self , item ) :
+        """Adds an item to the download queue"""
+        self.cond.acquire()
+        try:
+            if not self :
+                # FIXME : Notification takes effect now or after release ???
+                self.cond.notify()
+            if self.closed :
+                raise Exception( "Trying to push into a closed queue" )
+            else :
+                self.append( item )
+        finally:
+            self.cond.release()
 
     def run(self):
         """Main thread loop. Runs over the item list, downloading every file"""
@@ -243,30 +254,6 @@ are appended. Once the thread starts, the actual file download begins"""
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
-
-    def __nonzero__ ( self ) :
-        return self.index != len(self)
-
-    def append ( self , item ) :
-        """Adds an item to the download queue"""
-        self.cond.acquire()
-        try:
-        #    if not self :
-        #        # FIXME : Notification takes effect now or after release ???
-        #        self.cond.notify()
-            if self.closed :
-                raise Exception( "Trying to append file '%s' to a closed thread" % os.path.basename(item['Filename']) )
-            else :
-                if self.closed :
-                    raise Exception( "Trying to append to a closed list" )
-                list.append( self , item )
-        finally:
-            self.cond.release()
-
-    # NOTE : specific extend is required to force the use of the overloaded append
-    def extend ( self , itemlist ) :
-        for item in itemlist :
-            self.append( item )
 
 
 class MirrorRepository ( _repository ) :

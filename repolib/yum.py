@@ -54,18 +54,23 @@ Filename=%s
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
         self.__cnt += 1
 
+class YumPackageList ( YumPackageFile , PackageListInterface ) :
+
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
-
-class YumPackageList ( YumPackageFile , PackageListInterface ) : pass
 
 class YumDownloadList ( YumPackageFile , AbstractDownloadList ) :
 
     def __init__ ( self , repo ) :
         YumPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
+
+    def push ( self , item ) :
+        if self.closed :
+            raise Exception( "Trying to push into a closed queue" )
+        YumPackageFile.append( self , item )
 
 class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
 
@@ -78,23 +83,6 @@ class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
             raise Exception( "Trying to iterate over a running list" )
         return YumPackageFile.__iter__( self )
 
-    def __nonzero__ ( self ) :
-        return self.index != len(self)
-
-    def append ( self , item ) :
-        self.cond.acquire()
-        try:
-            if not self :
-                # FIXME : Notification takes effect now or after release ???
-                self.cond.notify()
-            if self.closed :
-                raise Exception( "Trying to append file '%s' to a closed thread" % item['Filename'] )
-            else :
-                if self.closed :
-                    raise Exception( "Trying to append to a closed list" )
-                YumPackageFile.append( self , item )
-        finally:
-            self.cond.release()
 
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
