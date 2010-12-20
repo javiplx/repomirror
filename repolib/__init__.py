@@ -116,9 +116,7 @@ class AbstractDownloadList ( DownloadInterface ) :
 
             # FIXME : Perform this check while appending to download_pkgs ???
             if os.path.isfile( destname ) :
-                error = utils.md5_error( destname , pkg )
-                if error :
-                    logger.warning( error )
+                if not utils.integrity_check( destname , pkg ) :
                     os.unlink( destname )
                 else :
                     continue
@@ -221,9 +219,7 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            error = repolib.utils.md5_error( destname , pkg )
-            if error :
-                logger.warning( error )
+            if not utils.integrity_check( destname , pkg ) :
                 os.unlink( destname )
             else :
                 return

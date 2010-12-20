@@ -251,9 +251,7 @@ class debian_repository ( MirrorRepository ) :
                         _item.update( item )
         if _item :
             if params['usemd5'] :
-                error = utils.md5_error( filename , _item )
-                if error :
-                    logger.warning( error )
+                if not utils.integrity_check( filename , _item ) :
                     os.unlink( filename )
                     return False
 

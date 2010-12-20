@@ -1,4 +1,6 @@
 
+from repolib import logger
+
 import os
 
 import tempfile
@@ -8,23 +10,45 @@ SKIP_NONE = 0
 SKIP_SIZE = 1
 SKIP_CKSUM = 2
 
-def md5_error ( filename , item , skip_check = 0 , bsize=128 ) :
+def integrity_check ( filename , item , skip_check=0 , bsize=128 ) :
+    """Checks integrity of the given file with values supplied on a dictionary, skipping some if requested.
+Returns true for successfull checks, and false when some check fails. If no checksums were actually performed, returns None.
+
+NOTE : None could be returned if size is verified but no known checksum type exists. This counter-intuitive result can
+be avoided specifying SKIP_CKSUM for those cases where the absence of valid checksums is known in advance, but cannot be
+globally fixed.
+"""
+
+    # Remove file name, unrelated to checksum types
+    name = item.pop( "href" )
+
     if skip_check == ( SKIP_SIZE | SKIP_CKSUM ) :
-        return "No check selected for '%s'" % filename
+        logger.warning( "No check selected for '%s'" % name )
+        # FIXME : This return should n't be required if setting res=None in advance
         return None
 
     if not ( skip_check & SKIP_SIZE ) :
         if os.stat( filename ).st_size != int( item['size'] ) :
-            return "Bad file size '%s'" % filename
+            logger.warning( "Bad size on file '%s'" % name )
+            return False
+        res = True
+        item.pop( "size" )
 
-    # Policy is to verify all the checksums
+    # Policy is to verify all the available checksums
     if not ( skip_check & SKIP_CKSUM ) :
+        res = None
         for type in cksum_handles.keys() :
             if item.has_key( type ) :
-                if cksum_handles[type]( filename , bsize ) != item[type] :
-                    return "Bad %s checksum '%s'" % ( type , filename )
+                if cksum_handles[type]( filename , bsize ) == item[type] :
+                    res = True
+                else :
+                    logger.warning( "Bad %s checksum '%s'" % ( type , name ) )
+                    return False
 
-    return None
+        if res is None :
+            logger.warning( "Unknonw checksum types available for file : %s" % item.keys() )
+
+    return res
 
 def calc_md5(filename, bsize=128):
     f = open( filename , 'rb' )
@@ -84,12 +108,5 @@ def _gpg_error( signature , file ) :
     except IOError , ex :
         gpgerror = "Bad signatute : %s" % ex
     return gpgerror
-
-
-def show_error( str , error=True ) :
-    if error :
-        print "ERROR : %s" % str
-    else :
-        print "WARNING : %s" % str
 
 
