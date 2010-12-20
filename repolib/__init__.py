@@ -289,17 +289,26 @@ class MirrorRepository ( _repository ) :
     def metadata_path ( self , subrepo=None , partial=False ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_signed_metafile ( self , params , meta_file , sign_ext=".asc" ) :
+    def get_signed_metafile ( self , params , meta_file , sign_ext=None ) :
+        """
+Downloads and optionaly verifies with gpg a metadata file. Return the full
+pathname of metadata file on success and False if any error occur.
+
+The returned file is always and off-tree temporary one except when the file
+did already exists and signature was successfully verified. When working on
+update mode, the special value True is returned to signal that no further
+processing is required
+"""
 
         release_file = os.path.join( self.repo_path() , meta_file )
 
-        if params['usegpg'] :
+        if params['usegpg'] and sign_ext :
 
             signature_file = self.downloadRawFile( meta_file + sign_ext )
 
             if not signature_file :
                 logger.error( "Signature file for version '%s' not found." % ( self.version ) )
-                return
+                return False
 
             if os.path.isfile( release_file ) :
                 errstr = utils.gpg_error( signature_file , release_file )
@@ -323,7 +332,7 @@ class MirrorRepository ( _repository ) :
             release_file = self.downloadRawFile( meta_file )
 
             if release_file :
-                if params['usegpg'] :
+                if params['usegpg'] and sign_ext :
                     errstr = utils.gpg_error( signature_file , release_file )
                     if errstr :
                         logger.error( errstr )
@@ -332,7 +341,7 @@ class MirrorRepository ( _repository ) :
             else :
                 logger.error( "Release file for suite '%s' is not found." % ( self.version ) )
 
-        if params['usegpg'] :
+        if params['usegpg'] and sign_ext :
             os.unlink( signature_file )
 
         return release_file
@@ -355,7 +364,7 @@ class MirrorRepository ( _repository ) :
         remote - path relative to repository base
         local - Optional local name for the file
 
-        Returns the local file name"""
+        Returns the local file name or False if errors"""
 
         remote = urljoin( self.base_url() , remote ) 
 

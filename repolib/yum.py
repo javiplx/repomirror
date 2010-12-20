@@ -136,7 +136,7 @@ class yum_repository ( MirrorRepository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            metafile = self.get_signed_metafile ( params , "%srepomd.xml" % self.metadata_path(arch,False) )
+            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" )
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
