@@ -116,7 +116,7 @@ class AbstractDownloadList ( DownloadInterface ) :
 
             # FIXME : Perform this check while appending to download_pkgs ???
             if os.path.isfile( destname ) :
-                if not utils.integrity_check( destname , pkg ) :
+                if utils.integrity_check( destname , pkg ) is False :
                     os.unlink( destname )
                 else :
                     continue
@@ -219,7 +219,7 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            if not utils.integrity_check( destname , pkg ) :
+            if utils.integrity_check( destname , pkg ) is False :
                 os.unlink( destname )
             else :
                 return

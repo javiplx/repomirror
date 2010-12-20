@@ -202,7 +202,7 @@ class yum_repository ( MirrorRepository ) :
         localname = os.path.join( local_repodata[arch] , item['href'] )
     
         if os.path.isfile( localname ) :
-            if not utils.integrity_check( localname , item , not ( item.has_key('size') | utils.SKIP_SIZE ) ) :
+            if utils.integrity_check( localname , item , not ( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
                 os.unlink( localname )
             else :
                 if self.mode == "update" :
@@ -215,7 +215,7 @@ class yum_repository ( MirrorRepository ) :
             url = urljoin( self.metadata_path(arch) , item['href'] )
     
             if self.downloadRawFile( url , localname ) :
-                if not utils.integrity_check( localname , item , not( item.has_key('size') | utils.SKIP_SIZE ) ) :
+                if utils.integrity_check( localname , item , not( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
                     os.unlink( localname )
                     sys.exit(255)
             else :
@@ -259,7 +259,7 @@ class yum_repository ( MirrorRepository ) :
         localname = os.path.join( local_repodata[arch] , filelist['href'] )
     
         if os.path.isfile( localname ) :
-            if not utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) :
+            if utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
                 os.unlink( localname )
             else :
                 if self.mode == "update" :
@@ -272,7 +272,7 @@ class yum_repository ( MirrorRepository ) :
             url = urljoin( self.metadata_path(arch) , filelist['href'] )
     
             if self.downloadRawFile( url , localname ) :
-                if not utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) :
+                if utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
                     os.unlink( localname )
                     sys.exit(255)
             else :

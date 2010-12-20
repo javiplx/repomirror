@@ -251,7 +251,7 @@ class debian_repository ( MirrorRepository ) :
                         _item.update( item )
         if _item :
             if params['usemd5'] :
-                if not utils.integrity_check( filename , _item ) :
+                if utils.integrity_check( filename , _item ) is False :
                     os.unlink( filename )
                     return False
 
