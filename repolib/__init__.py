@@ -3,8 +3,6 @@ import os
 
 import urllib2
 
-import config , utils
-
 
 import socket
 socket.setdefaulttimeout(5)
@@ -25,6 +23,8 @@ console.setFormatter(formatter)
 logger = logging.getLogger()
 logger.addHandler( console )
 
+
+import config , utils
 
 class _repository :
 
