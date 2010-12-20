@@ -19,8 +19,17 @@ be avoided specifying SKIP_CKSUM for those cases where the absence of valid chec
 globally fixed.
 """
 
+    checksums = item.keys()
+
     # Remove file name, unrelated to checksum types
-    name = item.pop( "href" )
+    name = False
+    for key in ( "href" , "name" ) :
+        if item.has_key( key ) :
+            name = item[key]
+            checksums.remove( key )
+            break
+    else :
+        name = os.path.basename(filename)
 
     if skip_check == ( SKIP_SIZE | SKIP_CKSUM ) :
         logger.warning( "No check selected for '%s'" % name )
@@ -32,7 +41,7 @@ globally fixed.
             logger.warning( "Bad size on file '%s'" % name )
             return False
         res = True
-        item.pop( "size" )
+        checksums.remove( "size" )
 
     # Policy is to verify all the available checksums
     if not ( skip_check & SKIP_CKSUM ) :
@@ -46,7 +55,7 @@ globally fixed.
                     return False
 
         if res is None :
-            logger.warning( "Unknonw checksum types available for file : %s" % item.keys() )
+            logger.warning( "Unknonw checksum types available for file : %s" % checksums )
 
     return res
 
