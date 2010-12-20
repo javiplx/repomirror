@@ -13,12 +13,12 @@ def md5_error ( filename , item , skip_check = 0 , bsize=128 ) :
         return "No check selected for '%s'" % filename
         return None
 
-    if not ( skip_check | SKIP_SIZE ) :
+    if not ( skip_check & SKIP_SIZE ) :
         if os.stat( filename ).st_size != int( item['size'] ) :
             return "Bad file size '%s'" % filename
 
     # Policy is to verify all the checksums
-    if not ( skip_check | SKIP_CKSUM ) :
+    if not ( skip_check & SKIP_CKSUM ) :
         for type in cksum_handles.keys() :
             if item.has_key( type ) :
                 if cksum_handles[type]( filename , bsize ) != item[type] :
