@@ -289,10 +289,14 @@ class MirrorRepository ( _repository ) :
     def metadata_path ( self , subrepo=None , partial=False ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_signed_metafile ( self , params , meta_file , sign_ext=None ) :
+    def get_signed_metafile ( self , params , meta_file , sign_ext=None , keep=False ) :
         """
-Downloads and optionaly verifies with gpg a metadata file. Return the full
-pathname of metadata file on success and False if any error occur.
+Verifies with gpg and/or downloads a metadata file. Return the full pathname
+of metadata file on success and False if any error occur. In the signature
+verification is not successfull, the local copy is removed and the file is
+dowloaded into a temporary location. This behaviour can be disabled by setting
+the keep option, and is usually done to avoid the break of already downloaded
+repositories.
 
 The returned file is always and off-tree temporary one except when the file
 did already exists and signature was successfully verified. When working on
@@ -314,7 +318,12 @@ processing is required
                 errstr = utils.gpg_error( signature_file , release_file )
                 if errstr :
                     logger.warning( errstr )
-                    os.unlink( release_file )
+                    # NOTE : The keep flag is a different approach to the behaviour wanted by update mode
+                    if keep :
+                        release_file = False
+                    else :
+                        logger.info( "os.unlink( %s )" % release_file )
+                        os.unlink( release_file )
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
@@ -325,9 +334,12 @@ processing is required
         else :
             # If gpg is not enabled, the metafile is removed to force fresh download
             if os.path.isfile( release_file ) :
-                os.unlink( release_file )
+                if keep :
+                    release_file = False
+                else :
+                    os.unlink( release_file )
 
-        if not os.path.isfile( release_file ) :
+        if release_file and not os.path.isfile( release_file ) :
 
             release_file = self.downloadRawFile( meta_file )
 
