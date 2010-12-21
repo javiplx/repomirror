@@ -140,23 +140,23 @@ class debian_repository ( MirrorRepository ) :
 
         if not release_file :
             logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
-            return
+            return release_file
+        elif release_file is True :
+            return True
 
-        if release_file is True :
-            return
-
+        logger.info( "Content verification of metafile %s" % release_file )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
         if release['Suite'] !=  release['Codename'] :
             if release['Suite'].lower() == self.version.lower() :
                 logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
                 os.unlink( release_file )
-                return
+                return False
 
         if release['Codename'].lower() != self.version.lower() :
             logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
             os.unlink( release_file )
-            return
+            return False
 
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
@@ -166,14 +166,14 @@ class debian_repository ( MirrorRepository ) :
                 for comp in self.components :
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
-                        return
+                        return False
             else :
                 logger.warning( "No components specified, selected all components from Release file" )
                 self.components = release_comps
 
         elif self.components :
             logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
-            return
+            return False
         else :
             # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
             logger.warning( "Va que no, ni haskey, ni components" )
@@ -183,7 +183,7 @@ class debian_repository ( MirrorRepository ) :
         for arch in self.architectures :
             if arch not in release_archs :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
-                return
+                return False
 
         return release_file
 
