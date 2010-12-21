@@ -128,7 +128,7 @@ class yum_repository ( MirrorRepository ) :
             path += "repodata/"
         return path
 
-    def get_master_file ( self , _params ) :
+    def get_master_file ( self , _params , keep=False ) :
 
         params = self.params
         params.update( _params )
@@ -136,7 +136,7 @@ class yum_repository ( MirrorRepository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" )
+            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" , keep )
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )

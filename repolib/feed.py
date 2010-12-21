@@ -61,7 +61,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
 
-    def get_master_file ( self , _params ) :
+    def get_master_file ( self , _params , keep=False ) :
         return True
 
     def get_subrepos ( self ) :

@@ -131,12 +131,12 @@ class debian_repository ( MirrorRepository ) :
             path = "dists/%s/%s" % ( self.version , path )
         return path
 
-    def get_master_file ( self , _params ) :
+    def get_master_file ( self , _params , keep=False ) :
 
         params = self.params
         params.update( _params )
 
-        release_file = self.get_signed_metafile ( params , self.release , ".gpg" )
+        release_file = self.get_signed_metafile ( params , self.release , ".gpg" , keep )
 
         if not release_file :
             logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
