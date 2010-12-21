@@ -327,7 +327,7 @@ processing is required
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
-                        logger.warning( "Metadata file unchanged, exiting" )
+                        logger.warning( "Existing metadata is valid" )
                         os.unlink( signature_file )
                         return True
 
@@ -335,11 +335,11 @@ processing is required
             # If gpg is not enabled, the metafile is removed to force fresh download
             if os.path.isfile( release_file ) :
                 if keep :
-                    release_file = False
+                    release_file = ""
                 else :
                     os.unlink( release_file )
 
-        if release_file and not os.path.isfile( release_file ) :
+        if not ( release_file is False or os.path.isfile( release_file ) ) :
 
             release_file = self.downloadRawFile( meta_file )
 
