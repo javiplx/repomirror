@@ -148,8 +148,14 @@ class yum_repository ( MirrorRepository ) :
                 logger.info( "Content verification of metafile %s" % metafile )
 
                 item , filelist = filelist_xmlparser.get_filelist( metafile )
+
                 if not item :
                     logger.error( "No primary node within repomd file" )
+                    os.unlink( metafile )
+                    metafile = False
+
+                if not filelist :
+                    logger.error( "No filelists node within repomd file" )
                     os.unlink( metafile )
                     metafile = False
     
