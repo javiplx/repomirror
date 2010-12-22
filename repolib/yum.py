@@ -128,7 +128,7 @@ class yum_repository ( MirrorRepository ) :
             path += "repodata/"
         return path
 
-    def get_master_file ( self , _params ) :
+    def get_master_file ( self , _params , keep=False ) :
 
         params = self.params
         params.update( _params )
@@ -136,16 +136,23 @@ class yum_repository ( MirrorRepository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" )
+            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" , keep )
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-                # FIXME : here we could be removing files from their final locations
-                for file in repomd_files.values() :
-                    os.unlink( file )
-                return
+                repomd_files[arch] = metafile
+            elif metafile is True :
+                repomd_files[arch] = True
+            else :
 
-            if metafile is not True :
+                logger.info( "Content verification of metafile %s" % metafile )
+
+                item , filelist = filelist_xmlparser.get_filelist( metafile )
+                if not item :
+                    logger.error( "No primary node within repomd file" )
+                    os.unlink( metafile )
+                    metafile = False
+    
                 repomd_files[arch] = metafile
 
         return repomd_files
@@ -192,13 +199,6 @@ class yum_repository ( MirrorRepository ) :
 
         item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
 
-        if not item :
-            logger.error( "No primary node within repomd file" )
-            os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-            sys.exit(255)
-    
-        # FIXME : On problems, exit or continue next arch ???
-    
         localname = os.path.join( local_repodata[arch] , item['href'] )
     
         if os.path.isfile( localname ) :
