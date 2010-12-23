@@ -88,21 +88,19 @@ class feed_repository ( repolib.MirrorRepository ) :
             return False
         return True
 
-    def get_package_list ( self , subrepo , suite_path , _params , filters ) :
+    def check_packages_file( self , arch , metafile , _params , download=True ) :
+        """Downloads the Packages file for a feed. As no verification is possible,
+fresh download is mandatory, and exception is raised if not specified"""
 
-        # params are not used as no verification is possible
+        localname = False
 
-        download_size = 0
-        missing_pkgs = []
-
-        fd = False
-        localname = None
-
-        # As no verification is possible, we download files every time
         for ( extension , read_handler ) in config.extensions.iteritems() :
 
+            if not download :
+                logger.error( "Download of Packages file is mandatory for simple feeds" )
+
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
-            localname = os.path.join( suite_path , _name )
+            localname = os.path.join( metafile , _name )
             url = urljoin( self.metadata_path() , _name )
 
             if self.downloadRawFile( url , localname ) :
@@ -110,7 +108,13 @@ class feed_repository ( repolib.MirrorRepository ) :
 
         else :
             logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
-            os.sys.exit(0)
+
+        return localname
+
+    def get_package_list ( self , subrepo , localname , _params , filters ) :
+
+        download_size = 0
+        missing_pkgs = []
 
         fd = read_handler( localname )
 

@@ -193,6 +193,88 @@ class yum_repository ( MirrorRepository ) :
             return False
         return True
 
+    def check_packages_file( self , arch , metafiles , _params , download=True ) :
+        """
+Verifies checksums and optionally downloads primary and filelist files for
+an architecture.
+Returns the full pathname for the file in its final destination or False when
+error ocurrs. When the repository is in update mode, True is returned to signal
+that the current copy is ok.
+"""
+
+        # Currently unused, but relevant to verification flags
+        params = self.params
+        params.update( _params )
+
+        if download :
+            local_repodata = metafiles[arch]
+            master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
+        else :
+            local_repodata = os.path.join( self.repo_path() , self.metadata_path(arch) )
+            master_file = metafiles[arch]
+
+        item , filelist = filelist_xmlparser.get_filelist( master_file )
+
+        primary = os.path.join( local_repodata , item['href'] )
+    
+        if os.path.isfile( primary ) :
+            if utils.integrity_check( primary , item , not ( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                if not download :
+                    primary = False
+                else :
+                    os.unlink( primary )
+            else :
+                if self.mode == "update" :
+                    primary = True
+        else :
+            if not download :
+                primary = False
+    
+        if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
+    
+            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
+    
+            url = urljoin( self.metadata_path(arch) , item['href'] )
+    
+            if self.downloadRawFile( url , primary ) :
+                if utils.integrity_check( primary , item , not( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                    os.unlink( primary )
+                    primary = False
+            else :
+                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                primary = False
+    
+        secondary = os.path.join( local_repodata , filelist['href'] )
+    
+        if os.path.isfile( secondary ) :
+            if utils.integrity_check( secondary , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                if not download :
+                    secondary = False
+                else :
+                    os.unlink( secondary )
+            else :
+                if self.mode == "update" :
+                    secondary = True
+        else :
+            if not download :
+                secondary = False
+    
+        if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
+    
+            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
+    
+            url = urljoin( self.metadata_path(arch) , filelist['href'] )
+    
+            if self.downloadRawFile( url , secondary ) :
+                if utils.integrity_check( secondary , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                    os.unlink( secondary )
+                    secondary = False
+            else :
+                logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
+                secondary = False
+    
+        return primary , secondary
+
     def get_package_list ( self , arch , local_repodata , _params , filters ) :
 
         params = self.params
@@ -203,32 +285,7 @@ class yum_repository ( MirrorRepository ) :
         rejected_pkgs = YumPackageList()
         missing_pkgs = []
 
-        item , filelist = filelist_xmlparser.get_filelist( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-
-        localname = os.path.join( local_repodata[arch] , item['href'] )
-    
-        if os.path.isfile( localname ) :
-            if utils.integrity_check( localname , item , not ( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
-                os.unlink( localname )
-            else :
-                if self.mode == "update" :
-                    return 0 , [] , []
-    
-        if not os.path.isfile( localname ) :
-    
-            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
-    
-            url = urljoin( self.metadata_path(arch) , item['href'] )
-    
-            if self.downloadRawFile( url , localname ) :
-                if utils.integrity_check( localname , item , not( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
-                    os.unlink( localname )
-                    sys.exit(255)
-            else :
-                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
-                sys.exit(255)
-    
-        fd = gzip.open( localname )
+        fd = gzip.open( local_repodata[0] )
         packages = filelist_xmlparser.get_package_list( fd )
     
         all_pkgs = {}
@@ -255,37 +312,7 @@ class yum_repository ( MirrorRepository ) :
                 for pkg in pkginfo['requires'] :
                     providers[ pkg ] = 1
 
-        if not filelist :
-            logger.error( "No filelists node within repomd file" )
-            os.unlink( os.path.join( local_repodata[arch] , "repodata/repomd.xml" ) )
-            sys.exit(255)
-    
-        # FIXME : On problems, exit or continue next arch ???
-    
-        localname = os.path.join( local_repodata[arch] , filelist['href'] )
-    
-        if os.path.isfile( localname ) :
-            if utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
-                os.unlink( localname )
-            else :
-                if self.mode == "update" :
-                    return 0 , [] , []
-    
-        if not os.path.isfile( localname ) :
-    
-            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
-    
-            url = urljoin( self.metadata_path(arch) , filelist['href'] )
-    
-            if self.downloadRawFile( url , localname ) :
-                if utils.integrity_check( localname , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
-                    os.unlink( localname )
-                    sys.exit(255)
-            else :
-                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
-                sys.exit(255)
-    
-        filesfd = gzip.open( localname )
+        filesfd = gzip.open( local_repodata[1] )
 
         # NOTE : We run over the filelists content, marking package owners for later addition
         logger.warning( "Scanning filelists.xml for file dependencies" )

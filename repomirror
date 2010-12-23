@@ -60,7 +60,8 @@ for subrepo in repo.get_subrepos() :
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
 
-    _size , _pkgs , _missing = repo.get_package_list( subrepo , local_repodata , params , repo.filters )
+    files = repo.check_packages_file( subrepo , local_repodata , params )
+    _size , _pkgs , _missing = repo.get_package_list( subrepo , files , params , repo.filters )
     download_size += _size
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )

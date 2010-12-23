@@ -261,20 +261,26 @@ class debian_repository ( MirrorRepository ) :
             logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def get_package_list ( self , subrepo , suite_path , _params , filters ) :
+    def check_packages_file( self , arch , metafiles , _params , download=True ) :
+        """
+Verifies checksums and optionally downloads the Packages file for a component.
+Returns the full pathname for the file in its final destination or False when
+error ocurrs. When the repository is in update mode, True is returned to signal
+that the current copy is ok.
+"""
 
+        # Currently unused, but relevant to verification flags
         params = self.params
         params.update( _params )
 
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
+        if download :
+            master_file = os.path.join( self.repo_path() , self.release )
+        else :
+            master_file = metafiles[arch]
 
-        # NOTE : Downloading Package Release file is quite redundant
+        release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
-        download_size = 0
-        missing_pkgs = []
-
-        fd = False
-        localname = None
+        localname = False
 
         for ( extension , read_handler ) in config.extensions.iteritems() :
 
@@ -283,15 +289,16 @@ class debian_repository ( MirrorRepository ) :
 
             if os.path.isfile( localname ) :
                 if self.verify( localname , _name , release , params ) :
-                    # NOTE : force and unsync should behave different here? We could just force download if forced
                     if self.mode == "update" :
                         logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
-                    else :
-                        fd = read_handler( localname )
+                        return True
                     break
                 continue
 
         else :
+
+          if download :
+            # NOTE : Download of Package Release file is quite redundant
 
             logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
 
@@ -308,9 +315,22 @@ class debian_repository ( MirrorRepository ) :
 
             else :
                 logger.error( "No Valid Packages file found for %s / %s" % subrepo )
-                sys.exit(0)
 
-            fd = read_handler( localname )
+        return localname
+
+    def get_package_list ( self , subrepo , packages_path , _params , filters ) :
+
+        params = self.params
+        params.update( _params )
+
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
+
+        # NOTE : Downloading Package Release file is quite redundant
+
+        download_size = 0
+        missing_pkgs = []
+
+        fd = read_handler( packages_path )
 
         all_pkgs = {}
         all_requires = {}
