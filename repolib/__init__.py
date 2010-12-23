@@ -320,14 +320,13 @@ processing is required
                     logger.warning( errstr )
                     # NOTE : The keep flag is a different approach to the behaviour wanted by update mode
                     if keep :
-                        release_file = False
+                        release_file = ""
                     else :
-                        logger.info( "os.unlink( %s )" % release_file )
                         os.unlink( release_file )
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
-                        logger.warning( "Existing metadata is valid" )
+                        logger.warning( "Existing metadata file is valid" )
                         os.unlink( signature_file )
                         return True
 
@@ -339,7 +338,7 @@ processing is required
                 else :
                     os.unlink( release_file )
 
-        if not ( release_file is False or os.path.isfile( release_file ) ) :
+        if not os.path.isfile( release_file ) :
 
             release_file = self.downloadRawFile( meta_file )
 

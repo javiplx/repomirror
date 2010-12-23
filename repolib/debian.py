@@ -24,7 +24,6 @@ def safe_encode ( str ) :
 # Derived from Deb822.dump()
 def dump_package(deb822 , fd):
     _multivalued_fields = [ "Description" ]
-    fd.write('%s:%s\n' % ('Name',safe_encode(deb822['Package'])))
     for key, value in deb822.iteritems():
         if not value or value[0] == '\n':
             # Avoid trailing whitespace after "Field:" if it's on its own
@@ -140,9 +139,9 @@ class debian_repository ( MirrorRepository ) :
 
         if not release_file :
             logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
-            return release_file
+            return { '':release_file }
         elif release_file is True :
-            return True
+            return { '':True }
 
         logger.info( "Content verification of metafile %s" % release_file )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
@@ -151,12 +150,12 @@ class debian_repository ( MirrorRepository ) :
             if release['Suite'].lower() == self.version.lower() :
                 logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
                 os.unlink( release_file )
-                return False
+                return { '':False }
 
         if release['Codename'].lower() != self.version.lower() :
             logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
             os.unlink( release_file )
-            return False
+            return { '':False }
 
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
@@ -166,14 +165,14 @@ class debian_repository ( MirrorRepository ) :
                 for comp in self.components :
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
-                        return False
+                        return { '':False }
             else :
                 logger.warning( "No components specified, selected all components from Release file" )
                 self.components = release_comps
 
         elif self.components :
             logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
-            return False
+            return { '':False }
         else :
             # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
             logger.warning( "Va que no, ni haskey, ni components" )
@@ -183,9 +182,9 @@ class debian_repository ( MirrorRepository ) :
         for arch in self.architectures :
             if arch not in release_archs :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
-                return False
+                return { '':False }
 
-        return release_file
+        return { '':release_file }
 
     def write_master_file ( self , release_file ) :
 
@@ -194,12 +193,12 @@ class debian_repository ( MirrorRepository ) :
         # FIXME : If we reach this point, is it possible that the file is still there ?
         if not os.path.exists( local ) :
             try :
-                os.rename( release_file , local )
+                os.rename( release_file[''] , local )
             except OSError , ex :
                 if ex.errno != errno.EXDEV :
                     print "OSError: %s" % ex
                     sys.exit(1)
-                shutil.move( release_file , local )
+                shutil.move( release_file[''] , local )
 
         return os.path.dirname( local )
 
@@ -261,7 +260,7 @@ class debian_repository ( MirrorRepository ) :
             logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def check_packages_file( self , arch , metafiles , _params , download=True ) :
+    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
         """
 Verifies checksums and optionally downloads the Packages file for a component.
 Returns the full pathname for the file in its final destination or False when
@@ -276,7 +275,8 @@ that the current copy is ok.
         if download :
             master_file = os.path.join( self.repo_path() , self.release )
         else :
-            master_file = metafiles[arch]
+            master_file = metafile['']
+        suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
@@ -315,22 +315,24 @@ that the current copy is ok.
 
             else :
                 logger.error( "No Valid Packages file found for %s / %s" % subrepo )
+                localname = False
+          else :
+            localname = False
 
-        return localname
+        if isinstance(localname,bool) :
+            return localname
 
-    def get_package_list ( self , subrepo , packages_path , _params , filters ) :
+        return read_handler( localname )
+
+    def get_package_list ( self , subrepo , fd , _params , filters ) :
 
         params = self.params
         params.update( _params )
-
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( self.repo_path() , self.release ) ) )
 
         # NOTE : Downloading Package Release file is quite redundant
 
         download_size = 0
         missing_pkgs = []
-
-        fd = read_handler( packages_path )
 
         all_pkgs = {}
         all_requires = {}
@@ -339,7 +341,7 @@ that the current copy is ok.
         rejected_pkgs = DebianPackageList()
 
         if fd :
-            packages = debian_bundle.debian_support.PackageFile( localname , fd )
+            packages = debian_bundle.debian_support.PackageFile( fd.name , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach
@@ -348,6 +350,7 @@ that the current copy is ok.
             logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+                pkginfo['Name'] = pkginfo['Package']
 
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
                 # SOLUTION : Create a second and separate Category with the last part (filename) of Section

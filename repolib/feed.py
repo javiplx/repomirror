@@ -62,7 +62,7 @@ class feed_repository ( repolib.MirrorRepository ) :
         return os.path.join( self.destdir , self.name )
 
     def get_master_file ( self , _params , keep=False ) :
-        return True
+        return { '':False }
 
     def get_subrepos ( self ) :
         return self.architectures
@@ -88,35 +88,38 @@ class feed_repository ( repolib.MirrorRepository ) :
             return False
         return True
 
-    def check_packages_file( self , arch , metafile , _params , download=True ) :
+    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 
         localname = False
 
+        if not download :
+            logger.error( "Download of Packages file is mandatory for simple feeds" )
+            return False
+
         for ( extension , read_handler ) in config.extensions.iteritems() :
 
-            if not download :
-                logger.error( "Download of Packages file is mandatory for simple feeds" )
-
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
-            localname = os.path.join( metafile , _name )
+            localname = os.path.join( self.repo_path() , _name )
             url = urljoin( self.metadata_path() , _name )
 
             if self.downloadRawFile( url , localname ) :
-                    break
+                break
 
         else :
             logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
+            localname = False
 
-        return localname
+        if isinstance(localname,bool) :
+            return localname
 
-    def get_package_list ( self , subrepo , localname , _params , filters ) :
+        return read_handler( localname )
+
+    def get_package_list ( self , subrepo , fd , _params , filters ) :
 
         download_size = 0
         missing_pkgs = []
-
-        fd = read_handler( localname )
 
         all_pkgs = {}
         all_requires = {}
@@ -125,7 +128,7 @@ fresh download is mandatory, and exception is raised if not specified"""
         rejected_pkgs = PackageList() 
 
         if fd :
-            packages = debian_bundle.debian_support.PackageFile( localname , fd )
+            packages = debian_bundle.debian_support.PackageFile( fd.filename , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach
