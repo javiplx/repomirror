@@ -19,7 +19,7 @@ be avoided specifying SKIP_CKSUM for those cases where the absence of valid chec
 globally fixed.
 """
 
-    checksums = item.keys()
+    checksums = map( lambda x : x.lower() , item.keys() )
 
     # Remove file name, unrelated to checksum types
     name = False
