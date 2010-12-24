@@ -3,14 +3,17 @@
 import repolib
 import os , sys
 
+usage = "Usage : %s repo_name subrepo" % os.path.basename( sys.argv[0] )
+
 if sys.argv[1:] :
-    if len(sys.argv) > 2 :
-        print "Too many arguments"
-        print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
+    if len(sys.argv) != 3 :
+        print usage
         sys.exit(2)
-    repo_name = sys.argv[1]
+    repo_name , subrepo = sys.argv[1:3]
+    if subrepo.find(',') != -1 :
+        subrepo = tuple(subrepo.split(','))
 else :
-    print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
+    print usage
     sys.exit(1)
 
 try :
@@ -19,6 +22,9 @@ except Exception , ex :
     print "Exception : %s" % ex
     sys.exit(255)
 
+if not subrepo in repo.get_subrepos() :
+    print "Specified subrepo %s does not exists" % ( subrepo, )
+    sys.exit(255)
 
 def purge ( filesdict ) :
     for subrepo in filesdict.keys() :
@@ -32,22 +38,19 @@ repo.mode = "update"
 
 meta_files = repo.get_master_file( {} , True )
 
-if meta_files.get('') is True :
-    sys.exit(0)
+msg = "Outdated subrepo"
+retcode = 1
 
-outdated = []
-for subrepo in repo.get_subrepos() :
-    if not repo.check_packages_file( subrepo , meta_files , {} , False ) :
-        outdated.append( "%s" % ( subrepo ,) )
-        repolib.logger.error( "%s is outdated" % ( subrepo ,) )
+if meta_files.get('') is True :
+    msg = "Subrepo is up to date"
+    retcode = 0
+
+if retcode and repo.check_packages_file( subrepo , meta_files , {} , False ) :
+    msg = "Subrepo is up to date"
+    retcode = 0
 
 purge( meta_files )
 
-repolib.logger.warning( "Mirando IV  %s" % meta_files )
-
-if not outdated :
-    sys.exit(0)
-
-print "Outdated repositories :\n\t%s" % "\n\t".join( outdated )
-sys.exit(1)
+print msg
+sys.exit(retcode)
 
