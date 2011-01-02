@@ -108,6 +108,9 @@ class MirrorConf ( RepoConf ) :
 
         if config.has_option ( self.__name__ , "url" ) :
             self['url'] = config.get( self.__name__ , "url" )
+            if not self['url'].endswith("/") :
+                repolib.logger.warning( "Appending trailing '/' to url, missing on configuration file" )
+                self['url'] += "/"
         else :
             scheme = config.get( self.__name__ , "scheme" )
             server = config.get( self.__name__ , "server" )

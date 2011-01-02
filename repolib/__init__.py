@@ -278,7 +278,7 @@ class MirrorRepository ( _repository ) :
 
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
-        self.repo_url = urljoin( "%s/" % config[ "url" ] , "" )
+        self.repo_url = config[ "url" ]
         self.mode = config[ "mode" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
