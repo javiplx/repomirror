@@ -137,6 +137,7 @@ class debian_repository ( MirrorRepository ) :
 
         release_file = self.get_signed_metafile ( params , self.release , ".gpg" , keep )
 
+        version = self.version.split("/")[0].lower()
         if not release_file :
             logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
             return { '':release_file }
@@ -147,12 +148,12 @@ class debian_repository ( MirrorRepository ) :
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
         if release['Suite'] !=  release['Codename'] :
-            if release['Suite'].lower() == self.version.lower() :
+            if release['Suite'].lower() == version :
                 logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
                 os.unlink( release_file )
                 return { '':False }
 
-        if release['Codename'].lower() != self.version.lower() :
+        if release['Codename'].lower() != version :
             logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
             os.unlink( release_file )
             return { '':False }
