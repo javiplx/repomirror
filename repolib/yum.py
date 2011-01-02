@@ -218,7 +218,7 @@ that the current copy is ok.
         primary = os.path.join( local_repodata , item['href'] )
     
         if os.path.isfile( primary ) :
-            if utils.integrity_check( primary , item , not ( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
+            if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
                 if not download :
                     primary = False
                 else :
@@ -237,7 +237,7 @@ that the current copy is ok.
             url = urljoin( self.metadata_path(arch) , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
-                if utils.integrity_check( primary , item , not( item.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
                     os.unlink( primary )
                     primary = False
             else :
@@ -247,7 +247,7 @@ that the current copy is ok.
         secondary = os.path.join( local_repodata , filelist['href'] )
     
         if os.path.isfile( secondary ) :
-            if utils.integrity_check( secondary , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
+            if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
                 if not download :
                     secondary = False
                 else :
@@ -266,7 +266,7 @@ that the current copy is ok.
             url = urljoin( self.metadata_path(arch) , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
-                if utils.integrity_check( secondary , filelist , not( filelist.has_key('size') | utils.SKIP_SIZE ) ) is False :
+                if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
                     os.unlink( secondary )
                     secondary = False
             else :
