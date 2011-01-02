@@ -35,10 +35,6 @@ except :
     default_params['usegpg'] = False
 
 
-# usemd5. To disable size & checksums verification for broken repositories
-default_params['usemd5'] = True
-
-
 # pkgvflags. To specify special flags for verification of downloaded packages
 default_params['pkgvflags'] = "SKIP_NONE"
 
