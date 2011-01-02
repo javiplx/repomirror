@@ -33,9 +33,7 @@ if not os.path.isdir( repo.destdir ) :
 
 meta_files = repo.get_master_file( params )
 
-# FIXME : debian - identify error from updated repositories
-# FIXME : yum - only errors produce empty output
-if not meta_files :
+if meta_files.get('') is True :
     print "Cannot process, exiting"
     sys.exit(255)
 
@@ -63,6 +61,9 @@ for subrepo in repo.get_subrepos() :
 for subrepo in repo.get_subrepos() :
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
+
+    if packages[subrepo] is True :
+        continue
 
     _size , _pkgs , _missing = repo.get_package_list( subrepo , packages[subrepo] , params , repo.filters )
     download_size += _size
