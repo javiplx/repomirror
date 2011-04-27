@@ -315,7 +315,7 @@ processing is required
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
-                        logger.warning( "Existing metadata file is valid" )
+                        logger.info( "Existing metadata file is valid, skipping" )
                         os.unlink( signature_file )
                         return True
 
@@ -339,7 +339,7 @@ processing is required
                         os.unlink( release_file )
                         release_file = False
             else :
-                logger.error( "Release file for suite '%s' is not found." % ( self.version ) )
+                logger.error( "Primary metadata file for '%s' not found." % ( self.version ) )
 
         if params['usegpg'] and sign_ext :
             os.unlink( signature_file )
