@@ -113,7 +113,7 @@ Used in while loop context to enable element extraction"""
             if utils.integrity_check( destname , pkg ) is False :
                 os.unlink( destname )
             else :
-                return False
+                return
         else :
             path , name = os.path.split( destname )
             if not os.path.exists( path ) :
@@ -122,8 +122,6 @@ Used in while loop context to enable element extraction"""
         if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
             logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
-        return True
-
 
 class AbstractDownloadList ( DownloadInterface ) :
 
@@ -131,9 +129,7 @@ class AbstractDownloadList ( DownloadInterface ) :
 
         for pkg in self :
             self.started = True
-
-            if not self.download_pkg( pkg ) :
-                continue
+            self.download_pkg( pkg )
 
     def finish ( self ) :
         self.closed = True

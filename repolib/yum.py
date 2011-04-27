@@ -140,10 +140,9 @@ class yum_repository ( MirrorRepository ) :
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-                repomd_files[arch] = metafile
-            elif metafile is True :
-                repomd_files[arch] = True
             else :
+
+              if metafile is not True :
 
                 logger.info( "Content verification of metafile %s" % metafile )
 
@@ -159,7 +158,7 @@ class yum_repository ( MirrorRepository ) :
                     os.unlink( metafile )
                     metafile = False
     
-                repomd_files[arch] = metafile
+            repomd_files[arch] = metafile
 
         return repomd_files
 
