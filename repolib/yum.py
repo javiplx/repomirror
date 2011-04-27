@@ -51,7 +51,7 @@ Filename=%s
             self.pkgfd.seek(0)
 
     def append ( self , pkg ) :
-        self.pkgfd.write( self.out_template % ( pkg['name'] , pkg['sha256'] , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
+        self.pkgfd.write( self.out_template % ( pkg['name'] , pkg.get( 'sha256' , pkg.get( 'sha' ) ) , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
         self.__cnt += 1
 
 class YumPackageList ( YumPackageFile , PackageListInterface ) :
