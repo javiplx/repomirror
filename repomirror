@@ -38,8 +38,8 @@ if meta_files.values().count( False ) == len(meta_files) :
     sys.exit(255)
 
 if meta_files.get('') is True :
-    print "Cannot process, exiting"
-    sys.exit(255)
+    repolib.logger.info( "Updated repository, no processing required" )
+    sys.exit(0)
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 

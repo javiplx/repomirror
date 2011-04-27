@@ -139,7 +139,7 @@ class debian_repository ( MirrorRepository ) :
 
         version = self.version.split("/")[0].lower()
         if not release_file :
-            logger.error( "Could not retrieve Release file for suite '%s'" % ( self.version ) )
+            logger.error( "No valid Release file for suite '%s'" % ( self.version ) )
             return { '':release_file }
         elif release_file is True :
             return { '':True }

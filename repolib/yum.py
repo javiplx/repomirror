@@ -168,6 +168,9 @@ class yum_repository ( MirrorRepository ) :
         local = {}
 
         for arch in repomd_file.keys() :
+          if not repomd_file[arch] :
+            local[arch] = False
+          else :
             local[arch] = os.path.join( self.repo_path() , self.metadata_path(arch) )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
@@ -205,6 +208,9 @@ that the current copy is ok.
         # Currently unused, but relevant to verification flags
         params = self.params
         params.update( _params )
+
+        if not metafiles[arch] :
+            return False
 
         if download :
             local_repodata = metafiles[arch]

@@ -338,8 +338,6 @@ processing is required
                         logger.error( errstr )
                         os.unlink( release_file )
                         release_file = False
-            else :
-                logger.error( "Primary metadata file for '%s' not found." % ( self.version ) )
 
         if params['usegpg'] and sign_ext :
             os.unlink( signature_file )
