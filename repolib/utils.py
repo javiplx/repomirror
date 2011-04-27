@@ -1,6 +1,11 @@
 
 from repolib import logger
 
+try :
+    import GnuPGInterface
+except :
+    pass
+
 import os
 
 import tempfile
