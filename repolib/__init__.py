@@ -104,6 +104,26 @@ Used in while loop context to enable element extraction"""
     def __iter__ ( self ) :
         raise Exception( "Calling abstract DownloadInterface.__iter__ on %s" % self )
 
+    def download_pkg ( self , pkg ) :
+
+        destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
+
+        # FIXME : Perform this check while appending to download_pkgs ???
+        if os.path.isfile( destname ) :
+            if utils.integrity_check( destname , pkg ) is False :
+                os.unlink( destname )
+            else :
+                return False
+        else :
+            path , name = os.path.split( destname )
+            if not os.path.exists( path ) :
+                os.makedirs( path )
+
+        if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
+            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
+
+        return True
+
 
 class AbstractDownloadList ( DownloadInterface ) :
 
@@ -112,21 +132,8 @@ class AbstractDownloadList ( DownloadInterface ) :
         for pkg in self :
             self.started = True
 
-            destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
-
-            # FIXME : Perform this check while appending to download_pkgs ???
-            if os.path.isfile( destname ) :
-                if utils.integrity_check( destname , pkg ) is False :
-                    os.unlink( destname )
-                else :
-                    continue
-            else :
-                path , name = os.path.split( destname )
-                if not os.path.exists( path ) :
-                    os.makedirs( path )
-
-            if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-                logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
+            if not self.download_pkg( pkg ) :
+                continue
 
     def finish ( self ) :
         self.closed = True
@@ -212,24 +219,6 @@ class AbstractDownloadThread ( threading.Thread , DownloadInterface ) :
                 self.download_pkg( pkginfo )
                 pkginfo = None
                 self.index += 1
-
-    def download_pkg ( self , pkg ) :
-
-        destname = os.path.join( self.repo.repo_path() , pkg['Filename'] )
-
-        # FIXME : Perform this check while appending to download_pkgs ???
-        if os.path.isfile( destname ) :
-            if utils.integrity_check( destname , pkg ) is False :
-                os.unlink( destname )
-            else :
-                return
-        else :
-            path , name = os.path.split( destname )
-            if not os.path.exists( path ) :
-                os.makedirs( path )
-
-        if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
 class DownloadThread ( list , AbstractDownloadThread ) :
     """File download thread. It is build around a threaded list where files
