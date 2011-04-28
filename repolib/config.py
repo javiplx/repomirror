@@ -153,7 +153,6 @@ class BuildConf ( RepoConf ) :
 
     def __init__ ( self , reponame , filename=None ) :
         RepoConf.__init__( self , reponame , filename )
-        self['extensions'] = None
 
     def read ( self , config ) :
         RepoConf.read( self , config )
