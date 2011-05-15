@@ -36,7 +36,13 @@ class feed_build_repository ( repolib.BuildRepository ) :
 
     def build ( self ) :
 
-        packages = open( os.path.join( self.repo_path() , "Packages" ) , 'w' )
+        config.mimetypes[''] = open
+        packages = []
+
+        packages = []
+        filename = os.path.join( self.repo_path() , "Packages" )
+        for ( extension , read_handler ) in config.mimetypes.iteritems() :
+            packages.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
         for filename in filter( lambda x : os.path.splitext(x)[1] in self.valid_extensions , os.listdir( self.repo_path() ) ) :
             pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , filename ) )
@@ -48,9 +54,11 @@ class feed_build_repository ( repolib.BuildRepository ) :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
             for type in ( 'MD5sum' ,) :
                 control[type] = utils.cksum_handles[type.lower()]( fullpath )
-            packages.write( "%s\n" % control )
+            for pkgsfile in packages :
+                pkgsfile.write( "%s\n" % control )
 
-        packages.close()
+        for pkgsfile in packages :
+            pkgsfile.close()
 
 
 class feed_repository ( repolib.MirrorRepository ) :
