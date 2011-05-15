@@ -98,7 +98,7 @@ fresh download is mandatory, and exception is raised if not specified"""
             logger.error( "Download of Packages file is mandatory for simple feeds" )
             return False
 
-        for ( extension , read_handler ) in config.extensions.iteritems() :
+        for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( self.repo_path() , _name )

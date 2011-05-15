@@ -282,7 +282,7 @@ that the current copy is ok.
 
         localname = False
 
-        for ( extension , read_handler ) in config.extensions.iteritems() :
+        for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( suite_path , _name )
@@ -302,7 +302,7 @@ that the current copy is ok.
 
             logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
 
-            for ( extension , read_handler ) in config.extensions.iteritems() :
+            for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )
