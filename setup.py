@@ -17,6 +17,6 @@ setup(
                  ( 'share/repomgr' , [ 'repomgr/repomgr.conf' ] )
                  ],
     packages = [ 'repolib' , 'repomgr' ],
-    py_modules = [ 'filelist_xmlparser' ]
+    py_modules = [ 'filelist_xmlparser' , 'debtarfile' ]
     )
 

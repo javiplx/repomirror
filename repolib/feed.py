@@ -1,5 +1,6 @@
 
 import debian_bundle.debfile
+import debtarfile
 
 import os
 
@@ -45,7 +46,10 @@ class feed_build_repository ( repolib.BuildRepository ) :
             packages.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
         for filename in filter( lambda x : os.path.splitext(x)[1] in self.valid_extensions , os.listdir( self.repo_path() ) ) :
-            pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , filename ) )
+            try :
+                pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , filename ) )
+            except debian_bundle.arfile.ArError , ex :
+                pkg = debtarfile.DebTarFile( os.path.join( self.repo_path() , filename ) )
             control = pkg.control.debcontrol()
             if not control.has_key("Filename") :
                 control["Filename"] = filename
