@@ -107,6 +107,11 @@ class feed_repository ( repolib.MirrorRepository ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 
+        params = self.params
+        params.update( _params )
+
+        release = metafile
+
         localname = False
 
         if not download :
@@ -153,11 +158,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
             logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
-                # At least for the sample feed, double empty lines are used
-                fd.readline()
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
-
-                # On debian repos, we add this key while writting into PackageList
                 pkginfo['Name'] = pkginfo['Package']
 
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
@@ -175,7 +176,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 # FIXME : This might cause a ValueError exception ??
                 download_size += int( pkginfo['Size'] )
 
-                if pkginfo.has_key( 'Depends' ) :
+                if pkginfo.has_key( 'Depends' ) and pkginfo['Depends'] :
                     for deplist in pkginfo['Depends'].split(',') :                            
                         # When we found 'or' in Depends, we will download all of them
                         for depitem in deplist.split('|') :
@@ -195,7 +196,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
-                    if pkginfo.has_key( 'Depends' ) :
+                    if pkginfo.has_key( 'Depends' ) and pkginfo['Depends'] :
                         for deplist in pkginfo['Depends'].split(',') :                            
                             # When we found 'or' in Depends, we will download all of them
                             for depitem in deplist.split('|') :

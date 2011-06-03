@@ -367,7 +367,7 @@ that the current copy is ok.
                 # FIXME : This might cause a ValueError exception ??
                 download_size += int( pkginfo['Size'] )
 
-                if pkginfo.has_key( 'Depends' ) :
+                if pkginfo.has_key( 'Depends' ) and pkginfo['Depends'] :
                     for deplist in pkginfo['Depends'].split(',') :                            
                         # When we found 'or' in Depends, we will download all of them
                         for depitem in deplist.split('|') :
@@ -387,7 +387,7 @@ that the current copy is ok.
                     # FIXME : This might cause a ValueError exception ??
                     download_size += int( pkginfo['Size'] )
 
-                    if pkginfo.has_key( 'Depends' ) :
+                    if pkginfo.has_key( 'Depends' ) and pkginfo['Depends'] :
                         for deplist in pkginfo['Depends'].split(',') :                            
                             # When we found 'or' in Depends, we will download all of them
                             for depitem in deplist.split('|') :
