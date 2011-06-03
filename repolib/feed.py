@@ -73,14 +73,11 @@ class feed_repository ( repolib.MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
 
-    def get_master_file ( self , _params , keep=False ) :
-        return { '':'' }
-
-    def get_subrepos ( self ) :
-        return self.architectures
-
     def metadata_path ( self , subrepo=None , partial=False ) :
         return ""
+
+    def get_master_file ( self , _params , keep=False ) :
+        return { '':'' }
 
     def write_master_file ( self , release_file ) :
         return self.repo_path()
@@ -91,13 +88,19 @@ class feed_repository ( repolib.MirrorRepository ) :
         str += "unused - version %s\n" % ( self.version )
         return str
 
+    def get_subrepos ( self ) :
+        return self.architectures
+
     def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
+        if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
             return False
         if filters.has_key('priorities') and pkginfo.has_key('Priority') and pkginfo['Priority'] not in filters['priorities'] :
             return False
         if filters.has_key('tags') and pkginfo.has_key('Tag') and pkginfo['Tag'] not in filters['tags'] :
             return False
+        return True
+
+    def verify( self , filename , _name , release , params ) :
         return True
 
     def check_packages_file( self , subrepo , metafile , _params , download=True ) :
@@ -117,7 +120,9 @@ fresh download is mandatory, and exception is raised if not specified"""
             url = urljoin( self.metadata_path() , _name )
 
             if self.downloadRawFile( url , localname ) :
-                break
+                if self.verify( localname , _name , release , params ) :
+                    break
+                continue
 
         else :
             logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
@@ -172,9 +177,6 @@ fresh download is mandatory, and exception is raised if not specified"""
 
                 if pkginfo.has_key( 'Depends' ) :
                     for deplist in pkginfo['Depends'].split(',') :                            
-                        if not deplist :
-                            continue
-
                         # When we found 'or' in Depends, we will download all of them
                         for depitem in deplist.split('|') :
                             # We keep only the package name, more or less safer within a repository
