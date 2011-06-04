@@ -247,15 +247,6 @@ class debian_repository ( MirrorRepository ) :
               subrepos.append( debian_feed( _config , ( arch , comp ) ) )
         return subrepos
 
-    def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
-            return False
-        if filters.has_key('priorities') and pkginfo.has_key('Priority') and pkginfo['Priority'] not in filters['priorities'] :
-            return False
-        if filters.has_key('tags') and pkginfo.has_key('Tag') and pkginfo['Tag'] not in filters['tags'] :
-            return False
-        return True
-
     def verify( self , filename , _name , release , params ) :
         #
         # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
