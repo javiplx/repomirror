@@ -123,6 +123,9 @@ class debian_feed ( feed.feed_repository ) :
     def comp ( self ) :
         return self._comp
 
+    def __str__ ( self ) :
+        return "%s / %s" % ( self.comp() , self.arch() )
+
 
 class debian_repository ( MirrorRepository ) :
 
@@ -316,7 +319,7 @@ that the current copy is ok.
           if download :
             # NOTE : Download of Package Release file is quite redundant
 
-            logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
+            logger.warning( "No local Packages file exist for %s. Downloading." % subrepo )
 
             for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
@@ -330,7 +333,7 @@ that the current copy is ok.
                     continue
 
             else :
-                logger.error( "No Valid Packages file found for %s / %s" % subrepo )
+                logger.error( "No Valid Packages file found for %s" % subrepo )
                 localname = False
           else :
             localname = False
