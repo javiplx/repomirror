@@ -53,7 +53,7 @@ for subrepo in repo.get_subrepos() :
 
     print "Scanning %s" % ( subrepo , )
 
-    _size , _pkgs , _missing = repo.get_package_list( subrepo , local_repodata , params , {} )
+    _size , _pkgs , _missing = subrepo.get_package_list( local_repodata , params , {} )
     download_size += _size
     download_pkgs.extend( _pkgs )
 

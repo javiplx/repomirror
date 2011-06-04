@@ -69,7 +69,7 @@ for subrepo in repo.get_subrepos() :
     if packages[subrepo] is True :
         continue
 
-    _size , _pkgs , _missing = repo.get_package_list( subrepo , packages[subrepo] , params , repo.filters )
+    _size , _pkgs , _missing = subrepo.get_package_list( packages[subrepo] , params , repo.filters )
     download_size += _size
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )

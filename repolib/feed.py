@@ -89,6 +89,12 @@ class feed_repository ( repolib.MirrorRepository ) :
         return str
 
     def get_subrepos ( self ) :
+        return ( self ,)
+
+    def comp ( self ) :
+        return ""
+
+    def arch ( self ) :
         return self.architectures
 
     def match_filters( self , pkginfo , filters ) :
@@ -138,7 +144,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         return read_handler( localname )
 
-    def get_package_list ( self , subrepo , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters ) :
 
         download_size = 0
         missing_pkgs = []
@@ -164,7 +170,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
                 # SOLUTION : Create a second and separate Category with the last part (filename) of Section
                 # For now, we kept the simplest way
-                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
+                if pkginfo['Section'].find( "%s/" % self.comp() ) == 0 :
                     pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 if not self.match_filters( pkginfo , filters ) :
