@@ -146,6 +146,11 @@ fresh download is mandatory, and exception is raised if not specified"""
 
     def get_package_list ( self , fd , _params , filters ) :
 
+        params = self.params
+        params.update( _params )
+
+        # NOTE : On debian repos, there is a per-Package Release file that could be useful to download and check
+
         download_size = 0
         missing_pkgs = []
 
