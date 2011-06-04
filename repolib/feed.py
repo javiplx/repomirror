@@ -152,8 +152,8 @@ fresh download is mandatory, and exception is raised if not specified"""
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = PackageList()
-        rejected_pkgs = PackageList() 
+        download_pkgs = self.get_pkg_list()
+        rejected_pkgs = self.get_pkg_list() 
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( fd.filename , fd )
@@ -215,5 +215,8 @@ fresh download is mandatory, and exception is raised if not specified"""
                     missing_pkgs.append( pkgname )
 
         return download_size , download_pkgs , missing_pkgs
+
+    def get_pkg_list( self ) :
+        return PackageList()
 
 

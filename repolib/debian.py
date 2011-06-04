@@ -349,8 +349,8 @@ that the current copy is ok.
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = DebianPackageList()
-        rejected_pkgs = DebianPackageList()
+        download_pkgs = self.get_pkg_list()
+        rejected_pkgs = self.get_pkg_list() 
 
         if fd :
             packages = debian_bundle.debian_support.PackageFile( fd.name , fd )
@@ -412,6 +412,9 @@ that the current copy is ok.
                     missing_pkgs.append( pkgname )
 
         return download_size , download_pkgs , missing_pkgs
+
+    def get_pkg_list( self ) :
+        return DebianPackageList()
 
     def get_download_list( self ) :
         return DebianDownloadThread( self )

@@ -286,8 +286,8 @@ that the current copy is ok.
         params.update( _params )
 
         download_size = 0
-        download_pkgs = YumPackageList()
-        rejected_pkgs = YumPackageList()
+        download_pkgs = self.get_pkg_list()
+        rejected_pkgs = self.get_pkg_list() 
         missing_pkgs = []
 
         fd = gzip.open( local_repodata[0] )
@@ -387,6 +387,9 @@ that the current copy is ok.
         logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
         return download_size , download_pkgs , missing_pkgs
+
+    def get_pkg_list( self ) :
+        return YumPackageList()
 
     def get_download_list( self ) :
         return YumDownloadThread( self )
