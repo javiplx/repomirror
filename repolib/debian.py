@@ -106,6 +106,18 @@ class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
         return DebianPackageFile.__iter__( self )
 
 
+import feed
+
+class debian_feed ( feed.feed_repository ) :
+
+    def __init__ ( self , config , subrepo ) :
+        self.subrepo = subrepo
+        feed.feed_repository.__init__( self , config )
+
+    def metadata_path ( self , subrepo=None , partial=False ) :
+        return "dists/%s/%s/binary-%s/" % ( self.version , self.subrepo[0] , self.subrepo[1] )
+
+
 class debian_repository ( MirrorRepository ) :
 
     def __init__ ( self , config ) :
