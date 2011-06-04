@@ -111,11 +111,14 @@ import feed
 class debian_feed ( feed.feed_repository ) :
 
     def __init__ ( self , config , subrepo ) :
-        self.subrepo = subrepo
         feed.feed_repository.__init__( self , config )
+        self.architectures , self._comp = subrepo
 
     def metadata_path ( self , subrepo=None , partial=False ) :
         return "dists/%s/%s/binary-%s/" % ( self.version , self.subrepo[0] , self.subrepo[1] )
+
+    def comp ( self ) :
+        return self._comp
 
 
 class debian_repository ( MirrorRepository ) :
@@ -136,8 +139,7 @@ class debian_repository ( MirrorRepository ) :
     def metadata_path ( self , subrepo=None , partial=False ) :
         path = ""
         if subrepo :
-            arch , comp = subrepo
-            path += "%s/binary-%s/" % ( comp , arch )
+            path += "%s/binary-%s/" % ( subrepo.comp() , subrepo.arch() )
         if not partial :
             path = "dists/%s/%s" % ( self.version , path )
         return path
@@ -234,10 +236,11 @@ class debian_repository ( MirrorRepository ) :
         return str
 
     def get_subrepos ( self ) :
+        _config = config.read_mirror_config( self.name )
         subrepos = []
         for arch in self.architectures :
             for comp in self.components :
-              subrepos.append( ( arch , comp ) )
+              subrepos.append( debian_feed( _config , ( arch , comp ) ) )
         return subrepos
 
     def match_filters( self , pkginfo , filters ) :
