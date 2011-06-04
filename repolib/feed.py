@@ -73,7 +73,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , partial=False ) :
         return ""
 
     def get_master_file ( self , _params , keep=False ) :
@@ -126,7 +126,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
+            _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
             localname = os.path.join( self.repo_path() , _name )
             url = urljoin( self.metadata_path() , _name )
 

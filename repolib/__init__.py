@@ -271,7 +271,7 @@ class MirrorRepository ( _repository ) :
     def base_url ( self ) :
         raise Exception( "Calling an abstract method" )
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , partial=False ) :
         raise Exception( "Calling an abstract method" )
 
     def get_signed_metafile ( self , params , meta_file , sign_ext=None , keep=False ) :
@@ -345,7 +345,7 @@ processing is required
         suite_path = self.repo_path()
 
         for subrepo in self.get_subrepos() :
-            packages_path = self.metadata_path( subrepo , False )
+            packages_path = subrepo.metadata_path(False)
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
 

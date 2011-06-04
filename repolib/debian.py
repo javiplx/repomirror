@@ -114,8 +114,11 @@ class debian_feed ( feed.feed_repository ) :
         feed.feed_repository.__init__( self , config )
         self.architectures , self._comp = subrepo
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
-        return "dists/%s/%s/binary-%s/" % ( self.version , self.subrepo[0] , self.subrepo[1] )
+    def metadata_path ( self , partial=False ) :
+        path = ""
+        if not partial :
+            path = "dists/%s/" % self.version
+        return "%s%s/binary-%s/" % ( path , self.comp() , self.arch() )
 
     def comp ( self ) :
         return self._comp
@@ -136,13 +139,11 @@ class debian_repository ( MirrorRepository ) :
     def repo_path ( self ) :
         return self.destdir
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , partial=False ) :
         path = ""
-        if subrepo :
-            path += "%s/binary-%s/" % ( subrepo.comp() , subrepo.arch() )
-        if not partial :
-            path = "dists/%s/%s" % ( self.version , path )
-        return path
+        if partial :
+            return ""
+        return "dists/%s/" % self.version
 
     def get_master_file ( self , _params , keep=False ) :
 
@@ -299,7 +300,7 @@ that the current copy is ok.
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
+            _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
             localname = os.path.join( suite_path , _name )
 
             if os.path.isfile( localname ) :
@@ -319,7 +320,7 @@ that the current copy is ok.
 
             for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-                _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
+                _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
                 localname = os.path.join( suite_path , _name )
                 url = urljoin( self.metadata_path() , _name )
 
