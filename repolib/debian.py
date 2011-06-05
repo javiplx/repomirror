@@ -129,6 +129,29 @@ class debian_feed ( feed.feed_repository ) :
     def __str__ ( self ) :
         return "%s / %s" % ( self.comp() , self.arch() )
 
+    def verify( self , filename , _name , release , params ) :
+        #
+        # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
+        #
+        # FIXME : 'size' element should be a number !!!
+        #
+        _item = {}
+        for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
+            if release.has_key(type) :
+                for item in release[type] :
+                    if item['name'] == _name :
+                        _item.update( item )
+        if _item :
+            if utils.integrity_check( filename , _item ) is False :
+                os.unlink( filename )
+                return False
+
+            return True
+
+        else :
+            logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
+            return False
+
 
 class debian_repository ( MirrorRepository ) :
 
