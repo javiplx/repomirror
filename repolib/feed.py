@@ -67,6 +67,9 @@ class feed_build_repository ( repolib.BuildRepository ) :
 
 class feed_repository ( repolib.MirrorRepository ) :
 
+    def __str__ ( self ) :
+        return "%s" % self.arch()[0]
+
     def base_url ( self ) :
         return self.repo_url
 
@@ -136,7 +139,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 continue
 
         else :
-            logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
+            logger.error( "No Valid Packages file found for %s" % self )
             localname = False
 
         if isinstance(localname,bool) :
