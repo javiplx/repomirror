@@ -113,6 +113,7 @@ class debian_feed ( feed.feed_repository ) :
     def __init__ ( self , config , subrepo ) :
         feed.feed_repository.__init__( self , config )
         self.architectures , self._comp = subrepo
+        self.release = os.path.join( "dists/%s" % self.version , "Release" )
 
     def metadata_path ( self , partial=False ) :
         path = ""
@@ -151,6 +152,52 @@ class debian_feed ( feed.feed_repository ) :
         else :
             logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
+
+    def check_packages_file( self , metafile , _params , download=True ) :
+        """
+Verifies checksums and optionally downloads the Packages file for a component.
+Returns the full pathname for the file in its final destination or False when
+error ocurrs. When the repository is in update mode, True is returned to signal
+that the current copy is ok.
+"""
+
+        # Currently unused, but relevant to verification flags
+        params = self.params
+        params.update( _params )
+
+        if download :
+            master_file = os.path.join( self.repo_path() , self.release )
+        else :
+            master_file = metafile['']
+
+        release = debian_bundle.deb822.Release( sequence=open( master_file ) )
+
+        localname = False
+
+        for ( extension , read_handler ) in config.mimetypes.iteritems() :
+
+            _name = "%sPackages%s" % ( self.metadata_path() , extension )
+            localname = os.path.join( self.repo_path() , _name )
+
+            if os.path.isfile( localname ) :
+                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
+                if self.verify( localname , _name , release , params ) :
+                    if self.mode == "update" :
+                        logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
+                        return True
+                    break
+                continue
+
+        else :
+
+            localname = feed.feed_repository.check_packages_file( self , release , params , download )
+            if localname :
+                return localname
+
+        if isinstance(localname,bool) :
+            return localname
+
+        return read_handler( localname )
 
 
 class debian_repository ( MirrorRepository ) :
@@ -272,75 +319,6 @@ class debian_repository ( MirrorRepository ) :
             for comp in self.components :
               subrepos.append( debian_feed( _config , ( arch , comp ) ) )
         return subrepos
-
-    def verify( self , filename , _name , release , params ) :
-        #
-        # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
-        #
-        # FIXME : 'size' element should be a number !!!
-        #
-        _item = {}
-        for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
-            if release.has_key(type) :
-                for item in release[type] :
-                    if item['name'] == _name :
-                        _item.update( item )
-        if _item :
-            if utils.integrity_check( filename , _item ) is False :
-                os.unlink( filename )
-                return False
-
-            return True
-
-        else :
-            logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
-            return False
-
-    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
-        """
-Verifies checksums and optionally downloads the Packages file for a component.
-Returns the full pathname for the file in its final destination or False when
-error ocurrs. When the repository is in update mode, True is returned to signal
-that the current copy is ok.
-"""
-
-        # Currently unused, but relevant to verification flags
-        params = self.params
-        params.update( _params )
-
-        if download :
-            master_file = os.path.join( self.repo_path() , self.release )
-        else :
-            master_file = metafile['']
-
-        release = debian_bundle.deb822.Release( sequence=open( master_file ) )
-
-        localname = False
-
-        for ( extension , read_handler ) in config.mimetypes.iteritems() :
-
-            _name = "%sPackages%s" % ( subrepo.metadata_path() , extension )
-            localname = os.path.join( subrepo.repo_path() , _name )
-
-            if os.path.isfile( localname ) :
-                _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
-                if self.verify( localname , _name , release , params ) :
-                    if self.mode == "update" :
-                        logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
-                        return True
-                    break
-                continue
-
-        else :
-
-            localname = subrepo.check_packages_file( subrepo , release , params , download )
-            if localname :
-                return localname
-
-        if isinstance(localname,bool) :
-            return localname
-
-        return read_handler( localname )
 
     def get_pkg_list( self ) :
         return DebianPackageList()

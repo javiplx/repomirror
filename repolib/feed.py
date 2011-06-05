@@ -112,7 +112,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def verify( self , filename , _name , release , params ) :
         return True
 
-    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
+    def check_packages_file( self , metafile , _params , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 

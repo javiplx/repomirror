@@ -63,7 +63,7 @@ for subrepo in repo.get_subrepos() :
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
 
-    fd = repo.check_packages_file( subrepo , local_repodata , params )
+    fd = subrepo.check_packages_file( local_repodata , params )
     if fd is True :
         continue
 
