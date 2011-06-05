@@ -312,7 +312,6 @@ that the current copy is ok.
             master_file = os.path.join( self.repo_path() , self.release )
         else :
             master_file = metafile['']
-        suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
@@ -320,10 +319,11 @@ that the current copy is ok.
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
-            localname = os.path.join( suite_path , _name )
+            _name = "%sPackages%s" % ( subrepo.metadata_path() , extension )
+            localname = os.path.join( subrepo.repo_path() , _name )
 
             if os.path.isfile( localname ) :
+                _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
                 if self.verify( localname , _name , release , params ) :
                     if self.mode == "update" :
                         logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )

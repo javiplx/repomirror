@@ -129,11 +129,11 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
             url = "%sPackages%s" % ( self.metadata_path() , extension )
             localname = os.path.join( self.repo_path() , url )
 
             if self.downloadRawFile( url , localname ) :
+                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
                 if self.verify( localname , _name , release , params ) :
                     break
                 continue
