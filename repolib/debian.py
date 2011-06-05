@@ -123,6 +123,9 @@ class debian_feed ( feed.feed_repository ) :
     def comp ( self ) :
         return self._comp
 
+    def repo_path ( self ) :
+        return self.destdir
+
     def __str__ ( self ) :
         return "%s / %s" % ( self.comp() , self.arch() )
 
@@ -315,8 +318,8 @@ that the current copy is ok.
             for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
                 _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
-                localname = os.path.join( suite_path , _name )
-                url = urljoin( self.metadata_path() , _name )
+                url = "%sPackages%s" % ( subrepo.metadata_path() , extension )
+                localname = os.path.join( subrepo.repo_path() , url )
 
                 if self.downloadRawFile( url , localname ) :
                     if self.verify( localname , _name , release , params ) :
