@@ -333,27 +333,9 @@ that the current copy is ok.
 
         else :
 
-          if download :
-            # NOTE : Download of Package Release file is quite redundant
-
-            logger.warning( "No local Packages file exist for %s. Downloading." % subrepo )
-
-            for ( extension , read_handler ) in config.mimetypes.iteritems() :
-
-                _name = "%sPackages%s" % ( subrepo.metadata_path(True) , extension )
-                url = "%sPackages%s" % ( subrepo.metadata_path() , extension )
-                localname = os.path.join( subrepo.repo_path() , url )
-
-                if self.downloadRawFile( url , localname ) :
-                    if self.verify( localname , _name , release , params ) :
-                        break
-                    continue
-
-            else :
-                logger.error( "No Valid Packages file found for %s" % subrepo )
-                localname = False
-          else :
-            localname = False
+            localname = subrepo.check_packages_file( subrepo , release , params , download )
+            if localname :
+                return localname
 
         if isinstance(localname,bool) :
             return localname
