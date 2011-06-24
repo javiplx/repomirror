@@ -135,7 +135,7 @@ class yum_repository ( MirrorRepository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            metafile = self.get_signed_metafile( params , "%s/os/%srepomd.xml" % ( arch , self.metadata_path(False) ) , ".asc" , keep )
+            metafile = self.get_signed_metafile( params , "%s%srepomd.xml" % ( self.arch_prefix(arch) , self.metadata_path(False) ) , ".asc" , keep )
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
@@ -169,7 +169,7 @@ class yum_repository ( MirrorRepository ) :
           if not repomd_file[arch] :
             local[arch] = False
           else :
-            local[arch] = os.path.join( self.repo_path() , "%s/os/%s" % ( arch , self.metadata_path() ) )
+            local[arch] = os.path.join( self.repo_path() , "%s%s" % ( self.arch_prefix(arch) , self.metadata_path() ) )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
             except OSError , ex :
@@ -190,12 +190,17 @@ class yum_repository ( MirrorRepository ) :
         _config = config.read_mirror_config( self.name )
         subrepos = []
         for arch in self.architectures :
-            subrepos.append( yum_comp( _config , arch ) )
+            subrepos.append( self.subrepo( _config , arch ) )
         return subrepos
 
     def get_download_list( self ) :
         return YumDownloadThread( self )
 
+    def subrepo( self , _config , arch ) :
+        return yum_comp( _config , arch )
+
+    def arch_prefix ( self , arch ) :
+        return "%s/os/" % arch
 
 class yum_comp ( MirrorRepository ) :
 
@@ -428,10 +433,22 @@ class fedora_update_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        if subrepo :
-            path += "%s/" % subrepo
+    def subrepo( self , _config , arch ) :
+        return fedora_update_comp( _config , arch )
+
+    def arch_prefix ( self , arch ) :
+        return "%s/" % arch
+
+class fedora_update_comp ( yum_comp ) :
+
+    def base_url ( self ) :
+        return urljoin( self.repo_url , "%s/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
+    def metadata_path ( self , partial=True ) :
+        path = "%s/" % self.architectures
         if not partial :
             path += "repodata/"
         return path
