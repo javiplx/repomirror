@@ -133,31 +133,8 @@ class yum_repository ( MirrorRepository ) :
         params.update( _params )
 
         repomd_files = {}
-        for arch in self.architectures :
-
-            metafile = self.get_signed_metafile( params , "%s%srepomd.xml" % ( self.arch_prefix(arch) , self.metadata_path(False) ) , ".asc" , keep )
-
-            if not metafile :
-                logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-            else :
-
-              if metafile is not True :
-
-                logger.info( "Content verification of metafile %s" % metafile )
-
-                item , filelist = filelist_xmlparser.get_filelist( metafile )
-
-                if not item :
-                    logger.error( "No primary node within repomd file" )
-                    os.unlink( metafile )
-                    metafile = False
-
-                if not filelist :
-                    logger.error( "No filelists node within repomd file" )
-                    os.unlink( metafile )
-                    metafile = False
-    
-            repomd_files[arch] = metafile
+        for subrepo in self.get_subrepos() :
+            repomd_files[ subrepo.arch() ] = subrepo.get_master_file( params , keep )
 
         return repomd_files
 
@@ -169,7 +146,9 @@ class yum_repository ( MirrorRepository ) :
           if not repomd_file[arch] :
             local[arch] = False
           else :
-            local[arch] = os.path.join( self.repo_path() , "%s%s" % ( self.arch_prefix(arch) , self.metadata_path() ) )
+            _config = config.read_mirror_config( self.name )
+            subrepo = self.subrepo( _config , arch )
+            local[arch] = os.path.join( self.repo_path() , subrepo.metadata_path() )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
             except OSError , ex :
@@ -208,6 +187,9 @@ class yum_comp ( MirrorRepository ) :
         MirrorRepository.__init__( self , config )
         self.architectures = subrepo
 
+    def arch ( self ) :
+        return self.architectures
+
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/Fedora/" % self.version )
 
@@ -219,6 +201,32 @@ class yum_comp ( MirrorRepository ) :
         if not partial :
             path += "repodata/"
         return path
+
+    def get_master_file ( self , params , keep=False ) :
+
+            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(False) , ".asc" , keep )
+
+            if not metafile :
+                logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
+            else :
+
+              if metafile is not True :
+
+                logger.info( "Content verification of metafile %s" % metafile )
+
+                item , filelist = filelist_xmlparser.get_filelist( metafile )
+
+                if not item :
+                    logger.error( "No primary node within repomd file" )
+                    os.unlink( metafile )
+                    metafile = False
+
+                if not filelist :
+                    logger.error( "No filelists node within repomd file" )
+                    os.unlink( metafile )
+                    metafile = False
+    
+            return metafile
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
