@@ -119,8 +119,9 @@ Used in while loop context to enable element extraction"""
             if not os.path.exists( path ) :
                 os.makedirs( path )
 
-        if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
+##        if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
+##            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
+#        logger.info( "Downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
 
 class AbstractDownloadList ( DownloadInterface ) :
@@ -346,6 +347,7 @@ processing is required
 
         for subrepo in self.get_subrepos() :
             packages_path = subrepo.metadata_path(False)
+            print "verificamos",packages_path,"against",os.path.join( suite_path , packages_path )
             if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
                 os.makedirs( os.path.join( suite_path , packages_path ) )
 
@@ -361,6 +363,7 @@ processing is required
         Returns the local file name or False if errors"""
 
         remote = urljoin( self.base_url() , remote ) 
+        logger.info( "REMOTE FILE IS : %s" % remote )
 
         if not local :
             (handle, fname) = tempfile.mkstemp()

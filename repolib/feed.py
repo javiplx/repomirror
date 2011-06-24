@@ -164,7 +164,11 @@ fresh download is mandatory, and exception is raised if not specified"""
         rejected_pkgs = self.get_pkg_list() 
 
         if fd :
-            packages = debian_bundle.debian_support.PackageFile( fd.filename , fd )
+            if 'name' in dir(fd) :
+                fdname = fd.name
+            else :
+                fdname = fd.filename
+            packages = debian_bundle.debian_support.PackageFile( fdname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach

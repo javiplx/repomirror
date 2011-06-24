@@ -32,6 +32,8 @@ if not os.path.isdir( repo.destdir ) :
 
 
 meta_files = repo.get_master_file( params )
+print "HELLO META" , meta_files
+repolib.logger.info( "HELLO META %s" % meta_files )
 
 if meta_files.values().count( False ) == len(meta_files) :
     repolib.logger.critical( "No valid metadata files found, exiting" )
@@ -43,11 +45,20 @@ if meta_files.get('') is True :
 
 # After verify all the mirroring parameters, it is safe to create directory tree
 
+suite_path = repo.repo_path()
+print "SUITE :",suite_path
+print "       ",repo.get_subrepos()
+for subrepo in repo.get_subrepos() :
+    print "HOLANDO", subrepo.metadata_path(False)
+
 repo.build_local_tree()
+print "BUILD TREE FOR",repo
 
 # Once created, we move in the primary metadata file
 
 local_repodata = repo.write_master_file( meta_files )
+print "HELLO LOCAL" , local_repodata
+repolib.logger.info( "HELLO LOCAL %s" % local_repodata )
 
 repolib.logger.setLevel( repolib.logging.INFO )
 
@@ -55,14 +66,17 @@ map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
 
 
 download_pkgs = repo.get_download_list()
+print "REANDO",download_pkgs,repo
 download_size = 0
 missing_pkgs = []
 
 packages = {}
+print "ENTER WITH", repo.get_subrepos() 
 for subrepo in repo.get_subrepos() :
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
 
+    print "CHECING FOR",subrepo, local_repodata , params
     fd = subrepo.check_packages_file( local_repodata , params )
     if fd is True :
         continue

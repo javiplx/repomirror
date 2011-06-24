@@ -7,6 +7,7 @@ import gzip
 import os , sys
 import tempfile
 
+import config
 from repolib import utils , MirrorRepository , AbstractDownloadThread
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
@@ -120,10 +121,8 @@ class yum_repository ( MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
+    def metadata_path ( self , partial=True ) :
         path = ""
-        if subrepo :
-            path += "%s/os/" % subrepo
         if not partial :
             path += "repodata/"
         return path
@@ -136,7 +135,7 @@ class yum_repository ( MirrorRepository ) :
         repomd_files = {}
         for arch in self.architectures :
 
-            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" , keep )
+            metafile = self.get_signed_metafile( params , "%s/os/%srepomd.xml" % ( arch , self.metadata_path(False) ) , ".asc" , keep )
 
             if not metafile :
                 logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
@@ -170,7 +169,7 @@ class yum_repository ( MirrorRepository ) :
           if not repomd_file[arch] :
             local[arch] = False
           else :
-            local[arch] = os.path.join( self.repo_path() , self.metadata_path(arch) )
+            local[arch] = os.path.join( self.repo_path() , "%s/os/%s" % ( arch , self.metadata_path() ) )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
             except OSError , ex :
@@ -188,14 +187,40 @@ class yum_repository ( MirrorRepository ) :
         return str
 
     def get_subrepos ( self ) :
-        return self.architectures
+        _config = config.read_mirror_config( self.name )
+        subrepos = []
+        for arch in self.architectures :
+            subrepos.append( yum_comp( _config , arch ) )
+        return subrepos
+
+    def get_download_list( self ) :
+        return YumDownloadThread( self )
+
+
+class yum_comp ( MirrorRepository ) :
+
+    def __init__ ( self , config , subrepo ) :
+        MirrorRepository.__init__( self , config )
+        self.architectures = subrepo
+
+    def base_url ( self ) :
+        return urljoin( self.repo_url , "%s/Fedora/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
+
+    def metadata_path ( self , partial=True ) :
+        path = "%s/os/" % self.architectures
+        if not partial :
+            path += "repodata/"
+        return path
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
             return False
         return True
 
-    def check_packages_file( self , arch , metafiles , _params , download=True ) :
+    def check_packages_file( self , metafiles , _params , download=True ) :
         """
 Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
@@ -208,15 +233,15 @@ that the current copy is ok.
         params = self.params
         params.update( _params )
 
-        if not metafiles[arch] :
+        if not metafiles[self.architectures] :
             return False
 
         if download :
-            local_repodata = metafiles[arch]
+            local_repodata = metafiles[self.architectures]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
         else :
-            local_repodata = os.path.join( self.repo_path() , self.metadata_path(arch) )
-            master_file = metafiles[arch]
+            local_repodata = os.path.join( self.repo_path() , self.metadata_path() )
+            master_file = metafiles[self.architectures]
 
         item , filelist = filelist_xmlparser.get_filelist( master_file )
 
@@ -237,16 +262,16 @@ that the current copy is ok.
     
         if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
     
-            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , self.architectures ) )
     
-            url = urljoin( self.metadata_path(arch) , item['href'] )
+            url = urljoin( self.metadata_path() , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
                 if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
                     os.unlink( primary )
                     primary = False
             else :
-                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , self.architectures ) )
                 primary = False
     
         secondary = os.path.join( local_repodata , filelist['href'] )
@@ -266,21 +291,21 @@ that the current copy is ok.
     
         if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
     
-            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , self.architectures ) )
     
-            url = urljoin( self.metadata_path(arch) , filelist['href'] )
+            url = urljoin( self.metadata_path() , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
                 if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
                     os.unlink( secondary )
                     secondary = False
             else :
-                logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
+                logger.error( "Problems downloading filelists for %s-%s" % ( self.version , self.architectures ) )
                 secondary = False
     
         return primary , secondary
 
-    def get_package_list ( self , arch , local_repodata , _params , filters ) :
+    def get_package_list ( self , local_repodata , _params , filters ) :
 
         params = self.params
         params.update( _params )
@@ -308,7 +333,7 @@ that the current copy is ok.
                 continue
 
             all_pkgs[ pkginfo['name'] ] = 1
-            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+            pkginfo['Filename'] = os.path.join( self.metadata_path() , pkginfo['href'] )
             download_pkgs.append( pkginfo )
             # FIXME : This might cause a ValueError exception ??
             download_size += pkginfo['size']
@@ -341,7 +366,7 @@ that the current copy is ok.
 
             if providers.has_key( pkginfo['name'] ) :
                 all_pkgs[ pkginfo['name'] ] = 1
-                pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                pkginfo['Filename'] = os.path.join( self.metadata_path() , pkginfo['href'] )
                 download_pkgs.append( pkginfo )
                 # FIXME : This might cause a ValueError exception ??
                 download_size += int( pkginfo['size'] )
@@ -355,7 +380,7 @@ that the current copy is ok.
                     if providers.has_key( pkg ) :
                     
                         all_pkgs[ pkginfo['name'] ] = 1
-                        pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                        pkginfo['Filename'] = os.path.join( self.metadata_path() , pkginfo['href'] )
                         download_pkgs.append( pkginfo )
                         # FIXME : This might cause a ValueError exception ??
                         download_size += int( pkginfo['size'] )
@@ -391,8 +416,6 @@ that the current copy is ok.
     def get_pkg_list( self ) :
         return YumPackageList()
 
-    def get_download_list( self ) :
-        return YumDownloadThread( self )
 
 class fedora_update_repository ( yum_repository ) :
 
