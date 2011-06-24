@@ -54,7 +54,12 @@ Filename=%s
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg.get( 'sha256' , pkg.get( 'sha' ) ) , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
         self.__cnt += 1
 
-class YumPackageList ( YumPackageFile , PackageListInterface ) :
+class YumPackageList ( list ) :
+
+    def __repr__ ( self ) :
+        return "<YumPackageList items:%d>" % len(self)
+
+class YumPackageFile ( YumPackageFile , PackageListInterface ) :
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)

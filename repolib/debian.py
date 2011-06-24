@@ -41,6 +41,17 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
+class DebianPackageList ( list ) :
+
+    def __repr__ ( self ) :
+        return "<DebianPackageList items:%d>" % len(self)
+
+    def start ( self ) :
+        pass
+
+    def rewind ( self ) :
+        pass
+
 class DebianPackageFile ( debian_bundle.debian_support.PackageFile ) :
     """This implements a read & write PackageFile.
 Input uses a list interface, and output a sequence interface taken from original PackageFile"""
@@ -71,39 +82,39 @@ Input uses a list interface, and output a sequence interface taken from original
         dump_package( pkg , self.pkgfd )
         self.__cnt += 1
 
-class DebianPackageList ( DebianPackageFile , PackageListInterface ) :
+class DebianPackageList ( DebianPackageList , PackageListInterface ) :
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
 
-class DebianDownloadList ( DebianPackageFile , AbstractDownloadList ) :
+class DebianDownloadList ( DebianPackageList , AbstractDownloadList ) :
 
     def __init__ ( self , repo ) :
-        DebianPackageFile.__init__( self )
+        DebianPackageList.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
     def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
-        return DebianPackageFile.__iter__( self )
+        return DebianPackageList.__iter__( self )
 
     def push ( self , pkg ) :
         if self.closed :
             raise Exception( "Trying to push into a closed queue" )
-        DebianPackageFile.append( self , pkg )
+        DebianPackageList.append( self , pkg )
 
-class DebianDownloadThread ( DebianPackageFile , AbstractDownloadThread ) :
+class DebianDownloadThread ( DebianPackageList , AbstractDownloadThread ) :
  
     def __init__ ( self , repo=None ) :
         AbstractDownloadThread.__init__( self , repo )
-        DebianPackageFile.__init__( self )
+        DebianPackageList.__init__( self )
 
     def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
-        return DebianPackageFile.__iter__( self )
+        return DebianPackageList.__iter__( self )
 
 
 class debian_repository ( MirrorRepository ) :
