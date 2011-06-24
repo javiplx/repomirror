@@ -199,6 +199,9 @@ that the current copy is ok.
 
         return read_handler( localname )
 
+    def get_pkg_list( self ) :
+        return DebianPackageList()
+
 
 class debian_repository ( MirrorRepository ) :
 
@@ -319,9 +322,6 @@ class debian_repository ( MirrorRepository ) :
             for comp in self.components :
               subrepos.append( debian_feed( _config , ( arch , comp ) ) )
         return subrepos
-
-    def get_pkg_list( self ) :
-        return DebianPackageList()
 
     def get_download_list( self ) :
         return DebianDownloadThread( self )
