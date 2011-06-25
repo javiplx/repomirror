@@ -137,19 +137,17 @@ class yum_repository ( MirrorRepository ) :
     def write_master_file ( self , repomd_file ) :
 
         arch = self.arch()
-        local = {}
+        local = False
 
-        if not repomd_file[ self.arch() ] :
-            local[arch] = False
-        else :
-            local[arch] = os.path.join( self.repo_path() , self.metadata_path() )
+        if repomd_file[arch] :
+            local = os.path.join( self.repo_path() , self.metadata_path() )
             try :
-                os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+                os.rename( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
             except OSError , ex :
                 if ex.errno != errno.EXDEV :
                     print "OSError: %s" % ex
                     sys.exit(1)
-                shutil.move( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+                shutil.move( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
 
         return local
 
@@ -180,13 +178,34 @@ class fedora_repository ( yum_repository ) :
             subrepos.append( self.subrepo( _config , arch ) )
         return subrepos
 
+    def get_master_file ( self , _params , keep=False ) :
+
+        params = self.params
+        params.update( _params )
+
+        repomd_files = {}
+        for subrepo in self.get_subrepos() :
+            repomd_files[ subrepo.arch() ] = subrepo.get_master_file( params , keep )
+
+        return repomd_files
+
+    def write_master_file ( self , repomd_file ) :
+
+        local = {}
+
+        for subrepo in self.get_subrepos() :
+            arch = subrepo.arch()
+            local[ subrepo.arch() ] = subrepo.write_master_file( repomd_file )
+
+        return local
+
     def subrepo( self , _config , arch ) :
         return yum_comp( _config , arch )
 
-class yum_comp ( MirrorRepository ) :
+class yum_comp ( yum_repository ) :
 
     def __init__ ( self , config , subrepo ) :
-        MirrorRepository.__init__( self , config )
+        yum_repository.__init__( self , config )
         self.architectures = subrepo
 
     def arch ( self ) :
@@ -432,10 +451,10 @@ that the current copy is ok.
         return YumPackageList()
 
 
-class fedora_update_repository ( yum_repository ) :
+class fedora_update_repository ( fedora_repository ) :
 
     def __init__ ( self , config ) :
-        yum_repository.__init__( self , config )
+        fedora_repository.__init__( self , config )
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/" % self.version )
@@ -460,7 +479,7 @@ class fedora_update_comp ( yum_comp ) :
             path += "repodata/"
         return path
 
-class centos_repository ( yum_repository ) :
+class centos_repository ( fedora_repository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/" % self.version )
@@ -510,7 +529,7 @@ class centos_update_comp ( centos_comp ) :
             path += "repodata/"
         return path
 
-class yast2_repository ( yum_repository ) :
+class yast2_repository ( fedora_repository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
