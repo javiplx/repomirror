@@ -11,7 +11,7 @@ from repolib import utils , MirrorRepository , AbstractDownloadThread
 from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
 
 
-class YumPackageFile :
+class _YumPackageFile :
     """This pretends to be a file base storage for package lists, to reduce memory footprint.
 Is an actual complete implementation of PackageListInterface, but it is not declared
 to avoid inheritance problems"""
@@ -54,45 +54,45 @@ Filename=%s
         self.pkgfd.write( self.out_template % ( pkg['name'] , pkg.get( 'sha256' , pkg.get( 'sha' ) ) , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
         self.__cnt += 1
 
-class YumPackageList ( list ) :
+class _YumPackageList ( list ) :
 
     def __repr__ ( self ) :
-        return "<YumPackageList items:%d>" % len(self)
+        return "<_YumPackageList items:%d>" % len(self)
 
-class YumPackageFile ( YumPackageFile , PackageListInterface ) :
+class YumPackageFile ( _YumPackageFile , PackageListInterface ) :
 
     def extend ( self , values_list ) :
         self.pkgfd.seek(0,2)
         for pkg in values_list :
             self.append( pkg )
 
-class YumDownloadList ( YumPackageFile , AbstractDownloadList ) :
+class YumDownloadList ( _YumPackageFile , AbstractDownloadList ) :
 
     def __init__ ( self , repo ) :
-        YumPackageFile.__init__( self )
+        _YumPackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
     def push ( self , item ) :
         if self.closed :
             raise Exception( "Trying to push into a closed queue" )
-        YumPackageFile.append( self , item )
+        _YumPackageFile.append( self , item )
 
-class YumDownloadThread ( YumPackageFile , AbstractDownloadThread ) :
+class YumDownloadThread ( _YumPackageFile , AbstractDownloadThread ) :
 
     def __init__ ( self , repo ) :
-        YumPackageFile.__init__( self )
+        _YumPackageFile.__init__( self )
         AbstractDownloadThread.__init__( self , repo )
 
     def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
-        return YumPackageFile.__iter__( self )
+        return _YumPackageFile.__iter__( self )
 
 
 # NOTE : The xml version seems more attractive, but we cannot use it until
 #        we get a way to build an iterable XML parser, maybe availeble
 #        using xml.etree.ElementTree.iterparse
-class YumXMLPackageList ( YumPackageFile ) :
+class YumXMLPackageList ( _YumPackageFile ) :
 
     out_template = """<package type="rpm">
   <name>%s</name>
@@ -105,7 +105,7 @@ class YumXMLPackageList ( YumPackageFile ) :
 
     def __init__ ( self ) :
         """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        YumPackageFile.__init__( self )
+        _YumPackageFile.__init__( self )
         self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
         self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
 
