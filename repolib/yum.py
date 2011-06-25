@@ -178,9 +178,6 @@ class yum_repository ( MirrorRepository ) :
     def subrepo( self , _config , arch ) :
         return yum_comp( _config , arch )
 
-    def arch_prefix ( self , arch ) :
-        return "%s/os/" % arch
-
 class yum_comp ( MirrorRepository ) :
 
     def __init__ ( self , config , subrepo ) :
@@ -443,9 +440,6 @@ class fedora_update_repository ( yum_repository ) :
 
     def subrepo( self , _config , arch ) :
         return fedora_update_comp( _config , arch )
-
-    def arch_prefix ( self , arch ) :
-        return "%s/" % arch
 
 class fedora_update_comp ( yum_comp ) :
 
