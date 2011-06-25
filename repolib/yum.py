@@ -468,20 +468,44 @@ class centos_repository ( yum_repository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
+    def metadata_path ( self , partial=True ) :
         path = ""
-        if subrepo :
-            path += "os/%s/" % subrepo
+        if not partial :
+            path += "repodata/"
+        return path
+
+    def subrepo( self , _config , arch ) :
+        return centos_comp( _config , arch )
+
+class centos_comp ( yum_comp ) :
+
+    def base_url ( self ) :
+        return urljoin( self.repo_url , "%s/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
+    def metadata_path ( self , partial=True ) :
+        path = "os/%s/" % self.architectures
         if not partial :
             path += "repodata/"
         return path
 
 class centos_update_repository ( centos_repository ) :
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
+    def metadata_path ( self , partial=True ) :
         path = ""
-        if subrepo :
-            path += "updates/%s/" % subrepo
+        if not partial :
+            path += "repodata/"
+        return path
+
+    def subrepo( self , _config , arch ) :
+        return centos_update_comp( _config , arch )
+
+class centos_update_comp ( centos_comp ) :
+
+    def metadata_path ( self , partial=True ) :
+        path = "updates/%s/" % self.architectures
         if not partial :
             path += "repodata/"
         return path
