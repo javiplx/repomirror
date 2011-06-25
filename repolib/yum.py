@@ -116,10 +116,10 @@ class YumXMLPackageList ( YumPackageFile ) :
 class yum_repository ( MirrorRepository ) :
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "%s/Fedora/" % self.version )
+        return urljoin( self.repo_url , self.version )
 
     def repo_path ( self ) :
-        return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
+        return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , partial=True ) :
         path = ""
@@ -132,23 +132,17 @@ class yum_repository ( MirrorRepository ) :
         params = self.params
         params.update( _params )
 
-        repomd_files = {}
-        for subrepo in self.get_subrepos() :
-            repomd_files[ subrepo.arch() ] = subrepo.get_master_file( params , keep )
-
-        return repomd_files
+        return { self.arch() : self.get_master_file( params , keep ) }
 
     def write_master_file ( self , repomd_file ) :
 
+        arch = self.arch()
         local = {}
 
-        for arch in repomd_file.keys() :
-          if not repomd_file[arch] :
+        if not repomd_file[ self.arch() ] :
             local[arch] = False
-          else :
-            _config = config.read_mirror_config( self.name )
-            subrepo = self.subrepo( _config , arch )
-            local[arch] = os.path.join( self.repo_path() , subrepo.metadata_path() )
+        else :
+            local[arch] = os.path.join( self.repo_path() , self.metadata_path() )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
             except OSError , ex :
@@ -166,14 +160,25 @@ class yum_repository ( MirrorRepository ) :
         return str
 
     def get_subrepos ( self ) :
+        return [ self ]
+
+    def get_download_list( self ) :
+        return YumDownloadThread( self )
+
+class fedora_repository ( yum_repository ) :
+
+    def base_url ( self ) :
+        return urljoin( self.repo_url , "%s/Fedora/" % self.version )
+
+    def repo_path ( self ) :
+        return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
+
+    def get_subrepos ( self ) :
         _config = config.read_mirror_config( self.name )
         subrepos = []
         for arch in self.architectures :
             subrepos.append( self.subrepo( _config , arch ) )
         return subrepos
-
-    def get_download_list( self ) :
-        return YumDownloadThread( self )
 
     def subrepo( self , _config , arch ) :
         return yum_comp( _config , arch )
