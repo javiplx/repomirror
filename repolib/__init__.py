@@ -111,6 +111,10 @@ class MirrorRepository ( mirror_repository ) :
             Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
 
+    def __init__ ( self , config ) :
+	mirror_repository.__init__( self , config )
+        self.subrepos = []
+
     def get_master_file ( self , params , keep=False ) :
         raise Exception( "Calling an abstract method" )
 
