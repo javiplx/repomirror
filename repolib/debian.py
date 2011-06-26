@@ -122,7 +122,7 @@ class debian_repository ( MirrorRepository ) :
     def __init__ ( self , config ) :
         MirrorRepository.__init__( self , config )
 
-        self.components = config.get( "components" , None )
+        self.__config = config
 
         self.release = os.path.join( self.metadata_path() , "Release" )
 
@@ -132,11 +132,8 @@ class debian_repository ( MirrorRepository ) :
     def repo_path ( self ) :
         return self.destdir
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , partial=False ) :
         path = ""
-        if subrepo :
-            arch , comp = subrepo
-            path += "%s/binary-%s/" % ( comp , arch )
         if not partial :
             path = "dists/%s/%s" % ( self.version , path )
         return path
@@ -169,32 +166,39 @@ class debian_repository ( MirrorRepository ) :
             os.unlink( release_file )
             return { '':False }
 
+        components = self.__config.get( "components" , None )
+
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
             release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
 
-            if self.components :
-                for comp in self.components :
+            if components :
+                for comp in components :
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         return { '':False }
             else :
                 logger.warning( "No components specified, selected all components from Release file" )
-                self.components = release_comps
+                components = release_comps
 
-        elif self.components :
+        elif components :
             logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
             return { '':False }
         else :
             # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
             logger.warning( "Va que no, ni haskey, ni components" )
-            self.components = ( "main" ,)
+            components = ( "main" ,)
 
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
             if arch not in release_archs :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 return { '':False }
+
+        for archname in self.architectures :
+            for compname in components :
+                self.subrepos.append( DebianComponent( self.__config , ( archname , compname ) ) )
+        del self.__config
 
         return { '':release_file }
 
@@ -228,9 +232,31 @@ class debian_repository ( MirrorRepository ) :
 
         str  = "Mirroring %(Label)s %(Version)s (%(Codename)s)\n" % release
         str += "%(Origin)s %(Suite)s , %(Date)s\n" % release
-        str += "Components : %s\n" % " ".join(self.components)
-        str += "Architectures : %s\n" % " ".join(self.architectures)
+        str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
+
+from feed import SimpleComponent
+
+class DebianComponent ( SimpleComponent ) :
+
+    def __init__ ( self , config , ( arch , comp ) ) :
+        SimpleComponent.__init__( self , config , ( arch , comp ) )
+        self.arch , self.comp = arch, comp
+
+    def __str__ ( self ) :
+        return "%s/%s" % ( self.arch , self.comp )
+
+    def base_url ( self ) :
+        return self.repo_url
+
+    def repo_path ( self ) :
+        return self.destdir
+
+    def metadata_path ( self , partial=False ) :
+        path = "%s/binary-%s/" % ( self.comp , self.arch )
+        if not partial :
+            path = "dists/%s/%s" % ( self.version , path )
+        return path
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
@@ -264,7 +290,7 @@ class debian_repository ( MirrorRepository ) :
             logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
+    def check_packages_file( self , metafile , _params , download=True ) :
         """
 Verifies checksums and optionally downloads the Packages file for a component.
 Returns the full pathname for the file in its final destination or False when
@@ -277,10 +303,9 @@ that the current copy is ok.
         params.update( _params )
 
         if download :
-            master_file = os.path.join( self.repo_path() , self.release )
+            master_file = os.path.join( metafile , "Release" )
         else :
             master_file = metafile['']
-        suite_path = os.path.join( self.repo_path() , self.metadata_path() )
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
@@ -288,10 +313,11 @@ that the current copy is ok.
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
-            localname = os.path.join( suite_path , _name )
+            _name = "%sPackages%s" % ( self.metadata_path() , extension )
+            localname = os.path.join( self.repo_path() , _name )
 
             if os.path.isfile( localname ) :
+                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
                 if self.verify( localname , _name , release , params ) :
                     if self.mode == "update" :
                         logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
@@ -304,31 +330,19 @@ that the current copy is ok.
           if download :
             # NOTE : Download of Package Release file is quite redundant
 
-            logger.warning( "No local Packages file exist for %s / %s. Downloading." % subrepo )
+            logger.warning( "No local Packages file exist for %s. Downloading." % self )
 
-            for ( extension , read_handler ) in config.mimetypes.iteritems() :
+            localname = SimpleComponent.check_packages_file( self , release , _params , True )
 
-                _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
-                localname = os.path.join( suite_path , _name )
-                url = utils.urljoin( self.metadata_path() , _name )
-
-                if self.downloadRawFile( url , localname ) :
-                    if self.verify( localname , _name , release , params ) :
-                        break
-                    continue
-
-            else :
-                logger.error( "No Valid Packages file found for %s / %s" % subrepo )
-                localname = False
           else :
             localname = False
 
-        if isinstance(localname,bool) :
-            return localname
+        if isinstance(localname,str) :
+            return read_handler( localname )
 
-        return read_handler( localname )
+        return localname
 
-    def get_package_list ( self , subrepo , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters ) :
 
         params = self.params
         params.update( _params )
@@ -363,8 +377,9 @@ that the current copy is ok.
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
                 # SOLUTION : Create a second and separate Category with the last part (filename) of Section
                 # For now, we kept the simplest way
-                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
-                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
+# FIXME : Remaining reference to subrepo
+#                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
+#                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 if not self.match_filters( pkginfo , filters ) :
                     rejected_pkgs.append( pkginfo )
