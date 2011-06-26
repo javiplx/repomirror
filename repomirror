@@ -58,18 +58,16 @@ download_pkgs = repo.get_download_list()
 download_size = 0
 missing_pkgs = []
 
-packages = {}
 for subrepo in repo.get_subrepos() :
-    packages[subrepo] = repo.check_packages_file( subrepo , local_repodata , params )
 
-for subrepo in repo.get_subrepos() :
+    packages = subrepo.check_packages_file( local_repodata , params )
+
+    if packages is True :
+        continue
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
 
-    if packages[subrepo] is True :
-        continue
-
-    _size , _pkgs , _missing = repo.get_package_list( subrepo , packages[subrepo] , params , repo.filters )
+    _size , _pkgs , _missing = subrepo.get_package_list( packages , params , repo.filters )
     download_size += _size
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )

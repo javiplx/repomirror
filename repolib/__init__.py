@@ -34,6 +34,8 @@ class _repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
+        self._config = config
+
     def repo_path ( self ) :
         raise Exception( "Calling an abstract method" )
 
@@ -200,13 +202,21 @@ processing is required
 
 class MirrorComponent ( mirror_repository ) :
 
-    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
+    def __init__ ( self , config ) :
+        mirror_repository.__init__( self , config )
+        if len(self.architectures) != 1 :
+            raise Exception( "Only a single architecture is allowed for a component" )
+
+    def __str__ ( self ) :
+        return "%s" % self.architectures[0]
+
+    def check_packages_file( self , metafile , _params , download=True ) :
         raise Exception( "Calling an abstract method" )
 
     def match_filters( self , pkginfo , filters ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_package_list ( self , subrepo , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters ) :
         raise Exception( "Calling an abstract method" )
 
     def verify( self , filename , _name , release , params ) :
@@ -227,9 +237,6 @@ class BuildRepository ( _repository ) :
         else :
             Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )
-
-    def __init__ ( self , config ) :
-	_repository.__init__( self , config )
 
 from yum import *
 

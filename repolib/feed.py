@@ -78,7 +78,7 @@ class feed_repository ( repolib.MirrorRepository ) :
         return { '':'' }
 
     def get_subrepos ( self ) :
-        return self.architectures
+        return [ DebianComponent( self._config ) ]
 
     def metadata_path ( self , subrepo=None , partial=False ) :
         return ""
@@ -92,6 +92,17 @@ class feed_repository ( repolib.MirrorRepository ) :
         str += "unused - version %s\n" % ( self.version )
         return str
 
+class DebianComponent ( repolib.MirrorComponent ) :
+
+    def base_url ( self ) :
+        return self.repo_url
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.name )
+
+    def metadata_path ( self , partial=False ) :
+        return ""
+
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
             return False
@@ -101,7 +112,7 @@ class feed_repository ( repolib.MirrorRepository ) :
             return False
         return True
 
-    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
+    def check_packages_file( self , metafile , _params , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 
@@ -113,7 +124,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
+            _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
             localname = os.path.join( self.repo_path() , _name )
             url = utils.urljoin( self.metadata_path() , _name )
 
@@ -121,7 +132,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 break
 
         else :
-            logger.error( "No Valid Packages file found for %s / %s" % ( subrepo , None ) )
+            logger.error( "No Valid Packages file found for %s" % self )
             localname = False
 
         if isinstance(localname,bool) :
@@ -129,7 +140,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         return read_handler( localname )
 
-    def get_package_list ( self , subrepo , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters ) :
 
         download_size = 0
         missing_pkgs = []
@@ -159,8 +170,9 @@ fresh download is mandatory, and exception is raised if not specified"""
                 # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
                 # SOLUTION : Create a second and separate Category with the last part (filename) of Section
                 # For now, we kept the simplest way
-                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
-                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
+# FIXME : Remaining reference to subrepo
+#                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
+#                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
                 if not self.match_filters( pkginfo , filters ) :
                     rejected_pkgs.append( pkginfo )
