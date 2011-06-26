@@ -7,7 +7,8 @@ import gzip
 import os , sys
 import tempfile
 
-from repolib import utils , MirrorRepository , logger
+import repolib
+from repolib import utils , logger
 from repolib.package_lists import AbstractDownloadThread , PackageListInterface , AbstractDownloadList
 
 
@@ -117,16 +118,13 @@ class YumXMLPackageList ( _YumPackageFile ) :
         self.pkgfd.write( '</metadata>\n' )
 
 
-class yum_repository ( MirrorRepository ) :
+class yum_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
-        MirrorRepository.__init__( self , config )
+        repolib.MirrorRepository.__init__( self , config )
         if len(self.architectures) != 1 :
             raise Exception( "Yum repositories can only hold a single architecture" )
-
-    # NOTE : this method should return a value suitable for dictionary key
-    def arch ( self ) :
-        return self.architectures[0]
+        self.__config = config
 
     def base_url ( self ) :
         return self.repo_url
@@ -134,7 +132,7 @@ class yum_repository ( MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
+    def metadata_path ( self , partial=False ) :
         if partial :
             return ""
         return "repodata/"
@@ -144,8 +142,7 @@ class yum_repository ( MirrorRepository ) :
         params = self.params
         params.update( _params )
 
-        metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(None,False) , ".asc" , keep )
-        print "     ", metafile
+        metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path() , ".asc" , keep )
 
         if not metafile :
             logger.error( "Repository for version %s is not available" % self.version )
@@ -164,16 +161,20 @@ class yum_repository ( MirrorRepository ) :
                     os.unlink( metafile )
                     metafile = False
     
+        for archname in self.architectures :
+            self.subrepos.append( YumComponent( self.__config , archname ) )
+        del self.__config
+
         # NOTE : the initial implementation did return an empty dictionary if metafile is false
-        return { self.arch() : metafile }
+        return { self.architectures[0] : metafile }
 
     def write_master_file ( self , repomd_file ) :
 
         local = False
-        arch = self.arch()
+        arch = self.subrepos[0].arch()
 
         if repomd_file[arch] :
-            local = os.path.join( self.repo_path() , self.metadata_path() )
+            local = os.path.join( self.repo_path() , self.metadata_path(True) )
             try :
                 os.rename( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
             except OSError , ex :
@@ -182,20 +183,37 @@ class yum_repository ( MirrorRepository ) :
                     sys.exit(1)
                 shutil.move( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
 
-        return { self.arch() : local }
+        return { arch : local }
 
     def info ( self , metafile ) :
         str  = "Mirroring version %s\n" % self.version
         str += "Source at %s\n" % self.repo_url
-        str += "Architecture : %s\n" % self.arch()
+        str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
+
+class YumComponent ( repolib.MirrorComponent ) :
+
+    # NOTE : this method should return a value suitable for dictionary key
+    def arch ( self ) :
+        return self.architectures[0]
+
+    def base_url ( self ) :
+        return self.repo_url
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
+    def metadata_path ( self , partial=False ) :
+        if partial :
+            return ""
+        return "repodata/"
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo.has_key('groups') and pkginfo['group'] not in filters['groups'] :
             return False
         return True
 
-    def check_packages_file( self , _arch , metafiles , _params , download=True ) :
+    def check_packages_file( self , metafiles , _params , download=True ) :
         """
 Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
@@ -217,7 +235,7 @@ that the current copy is ok.
             local_repodata = metafiles[arch]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
         else :
-            local_repodata = os.path.join( self.repo_path() , self.metadata_path() )
+            local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
             master_file = metafiles[arch]
 
         item , filelist = filelist_xmlparser.get_filelist( master_file )
@@ -241,7 +259,7 @@ that the current copy is ok.
     
             logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = utils.urljoin( self.metadata_path(arch) , item['href'] )
+            url = utils.urljoin( self.metadata_path(True) , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
                 if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
@@ -270,7 +288,7 @@ that the current copy is ok.
     
             logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = utils.urljoin( self.metadata_path(arch) , filelist['href'] )
+            url = utils.urljoin( self.metadata_path(True) , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
                 if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
@@ -282,7 +300,7 @@ that the current copy is ok.
     
         return primary , secondary
 
-    def get_package_list ( self , arch , local_repodata , _params , filters ) :
+    def get_package_list ( self , local_repodata , _params , filters ) :
 
         params = self.params
         params.update( _params )
@@ -310,7 +328,7 @@ that the current copy is ok.
                 continue
 
             all_pkgs[ pkginfo['name'] ] = 1
-            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+            pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
             download_pkgs.append( pkginfo )
             # FIXME : This might cause a ValueError exception ??
             download_size += pkginfo['size']
@@ -343,7 +361,7 @@ that the current copy is ok.
 
             if providers.has_key( pkginfo['name'] ) :
                 all_pkgs[ pkginfo['name'] ] = 1
-                pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
                 download_pkgs.append( pkginfo )
                 # FIXME : This might cause a ValueError exception ??
                 download_size += int( pkginfo['size'] )
@@ -357,7 +375,7 @@ that the current copy is ok.
                     if providers.has_key( pkg ) :
                     
                         all_pkgs[ pkginfo['name'] ] = 1
-                        pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
+                        pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
                         download_pkgs.append( pkginfo )
                         # FIXME : This might cause a ValueError exception ??
                         download_size += int( pkginfo['size'] )
@@ -393,7 +411,7 @@ that the current copy is ok.
     def get_download_list( self ) :
         return YumDownloadThread( self )
 
-class fedora_repository ( MirrorRepository ) :
+class fedora_repository ( repolib.MirrorRepository ) :
 
     def base_url ( self ) :
         return utils.urljoin( self.repo_url , "%s/Fedora/" % self.version )
