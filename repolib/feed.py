@@ -10,7 +10,7 @@ import config , utils
 
 import repolib
 from repolib import logger
-from repolib.package_lists import PackageList
+from repolib.package_lists import PackageList , DownloadThread
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -91,6 +91,9 @@ class feed_repository ( repolib.MirrorRepository ) :
         str += "Architectures : %s\n" % " ".join(self.architectures)
         str += "unused - version %s\n" % ( self.version )
         return str
+
+    def get_download_list( self ) :
+        return DownloadThread( self )
 
 class DebianComponent ( repolib.MirrorComponent ) :
 

@@ -1,6 +1,7 @@
 
 import os
 
+import urllib2
 
 import socket
 socket.setdefaulttimeout(5)
@@ -198,6 +199,9 @@ processing is required
             packages_path = os.path.join( suite_path , subrepo.metadata_path() )
             if not os.path.exists( packages_path ) :
                 os.makedirs( packages_path )
+
+    def get_download_list( self ) :
+        return DownloadThread( self )
 
 
 class MirrorComponent ( mirror_repository ) :
