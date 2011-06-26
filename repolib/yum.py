@@ -7,8 +7,8 @@ import gzip
 import os , sys
 import tempfile
 
-from repolib import utils , MirrorRepository , AbstractDownloadThread
-from repolib import logger , PackageListInterface , AbstractDownloadList
+from repolib import utils , MirrorRepository , logger
+from repolib.package_lists import AbstractDownloadThread , PackageListInterface , AbstractDownloadList
 
 
 class _YumPackageFile :

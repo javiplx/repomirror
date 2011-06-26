@@ -10,8 +10,8 @@ import tempfile
 import config , utils
 
 
-from repolib import MirrorRepository , BuildRepository , AbstractDownloadThread
-from repolib import logger , PackageListInterface , AbstractDownloadList
+from repolib import MirrorRepository , BuildRepository , logger
+from repolib.package_lists import AbstractDownloadThread , PackageListInterface , AbstractDownloadList
 
 
 def safe_encode ( str ) :

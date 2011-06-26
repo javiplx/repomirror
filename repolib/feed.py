@@ -9,7 +9,8 @@ import config , utils
 
 
 import repolib
-from repolib import logger , PackageList
+from repolib import logger
+from repolib.package_lists import PackageList
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
