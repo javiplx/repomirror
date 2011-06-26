@@ -128,9 +128,6 @@ class yum_repository ( MirrorRepository ) :
     def arch ( self ) :
         return self.architectures[0]
 
-    def get_subrepos ( self ) :
-        return self.architectures
-
     def base_url ( self ) :
         return self.repo_url
 
@@ -470,9 +467,6 @@ class fedora_repository ( MirrorRepository ) :
         str += "%s\n" % self.repo_url
         str += "Architectures : %s\n" % " ".join(self.architectures)
         return str
-
-    def get_subrepos ( self ) :
-        return self.architectures
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :

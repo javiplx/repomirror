@@ -58,7 +58,7 @@ download_pkgs = repo.get_download_list()
 download_size = 0
 missing_pkgs = []
 
-for subrepo in repo.get_subrepos() :
+for subrepo in repo.subrepos :
 
     packages = subrepo.check_packages_file( local_repodata , params )
 

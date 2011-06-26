@@ -35,8 +35,6 @@ class _repository :
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
-        self._config = config
-
     def repo_path ( self ) :
         raise Exception( "Calling an abstract method" )
 
@@ -182,9 +180,6 @@ processing is required
 
         return release_file
 
-    def get_subrepos ( self ) :
-        raise Exception( "Calling an abstract method" )
-
     def info ( self , release_file ) :
         raise Exception( "Calling an abstract method" )
 
@@ -195,7 +190,7 @@ processing is required
 
         suite_path = self.repo_path()
 
-        for subrepo in self.get_subrepos() :
+        for subrepo in self.subrepos :
             packages_path = os.path.join( suite_path , subrepo.metadata_path() )
             if not os.path.exists( packages_path ) :
                 os.makedirs( packages_path )
@@ -206,10 +201,11 @@ processing is required
 
 class MirrorComponent ( mirror_repository ) :
 
-    def __init__ ( self , config ) :
+    def __init__ ( self , config , compname ) :
         mirror_repository.__init__( self , config )
-        if len(self.architectures) != 1 :
-            raise Exception( "Only a single architecture is allowed for a component" )
+        if compname not in self.architectures :
+            raise Exception( "Unknown architecture for component" )
+        self.architectures = [ compname ]
 
     def __str__ ( self ) :
         return "%s" % self.architectures[0]

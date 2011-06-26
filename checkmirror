@@ -22,7 +22,7 @@ except Exception , ex :
     print "Exception : %s" % ex
     sys.exit(255)
 
-if not subrepo in repo.get_subrepos() :
+if not subrepo in repo.subrepos :
     print "Specified subrepo %s does not exists" % ( subrepo, )
     sys.exit(255)
 

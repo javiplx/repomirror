@@ -232,13 +232,6 @@ class debian_repository ( MirrorRepository ) :
         str += "Architectures : %s\n" % " ".join(self.architectures)
         return str
 
-    def get_subrepos ( self ) :
-        subrepos = []
-        for arch in self.architectures :
-            for comp in self.components :
-              subrepos.append( ( arch , comp ) )
-        return subrepos
-
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
             return False

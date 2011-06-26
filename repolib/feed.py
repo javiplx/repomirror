@@ -68,6 +68,12 @@ class feed_build_repository ( repolib.BuildRepository ) :
 
 class feed_repository ( repolib.MirrorRepository ) :
 
+    def __init__ ( self , config ) :
+        repolib.MirrorRepository.__init__( self , config )
+        self.subrepos = []
+        for archname in self.architectures :
+            self.subrepos.append( DebianComponent( config , archname ) )
+
     def base_url ( self ) :
         return self.repo_url
 
@@ -76,9 +82,6 @@ class feed_repository ( repolib.MirrorRepository ) :
 
     def get_master_file ( self , _params , keep=False ) :
         return { '':'' }
-
-    def get_subrepos ( self ) :
-        return [ DebianComponent( self._config ) ]
 
     def metadata_path ( self , subrepo=None , partial=False ) :
         return ""
