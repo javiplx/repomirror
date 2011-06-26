@@ -11,7 +11,7 @@ import config , utils
 
 
 from repolib import MirrorRepository , BuildRepository , AbstractDownloadThread
-from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
+from repolib import logger , PackageListInterface , AbstractDownloadList
 
 
 def safe_encode ( str ) :
@@ -317,7 +317,7 @@ that the current copy is ok.
 
                 _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
                 localname = os.path.join( suite_path , _name )
-                url = urljoin( self.metadata_path() , _name )
+                url = utils.urljoin( self.metadata_path() , _name )
 
                 if self.downloadRawFile( url , localname ) :
                     if self.verify( localname , _name , release , params ) :

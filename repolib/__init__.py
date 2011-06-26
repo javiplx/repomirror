@@ -1,18 +1,9 @@
 
 import os
 
-import urllib2
-
 
 import socket
 socket.setdefaulttimeout(5)
-
-urljoin = urllib2.urlparse.urljoin
-
-def unsplit ( scheme , server , path ) :
-    urltuple = ( scheme , server , path , None , None )
-    return urllib2.urlparse.urlunsplit( urltuple )
-
 
 import logging
 
@@ -71,7 +62,7 @@ class mirror_repository :
 
         Returns the local file name or False if errors"""
 
-        remote = urljoin( self.base_url() , remote ) 
+        remote = utils.urljoin( self.base_url() , remote ) 
 
         if not local :
             (handle, fname) = tempfile.mkstemp()

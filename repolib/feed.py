@@ -9,7 +9,7 @@ import config , utils
 
 
 import repolib
-from repolib import urljoin , logger , PackageList
+from repolib import logger , PackageList
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -114,7 +114,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
             _name = "%sPackages%s" % ( self.metadata_path(subrepo,True) , extension )
             localname = os.path.join( self.repo_path() , _name )
-            url = urljoin( self.metadata_path() , _name )
+            url = utils.urljoin( self.metadata_path() , _name )
 
             if self.downloadRawFile( url , localname ) :
                 break

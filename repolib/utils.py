@@ -11,6 +11,15 @@ import os
 import tempfile
 
 
+import urllib2
+
+urljoin = urllib2.urlparse.urljoin
+
+def unsplit ( scheme , server , path ) :
+    urltuple = ( scheme , server , path , None , None )
+    return urllib2.urlparse.urlunsplit( urltuple )
+
+
 SKIP_NONE = 0
 SKIP_SIZE = 1
 SKIP_CKSUM = 2

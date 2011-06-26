@@ -94,7 +94,7 @@ class MirrorConf ( RepoConf ) :
 
     def set_url ( self , scheme , server , base_path ) :
         self.url_parts = ( scheme , server , base_path )
-        self['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
+        self['url'] = utils.unsplit( scheme , server , "%s/" % base_path )
 
     def read ( self , config ) :
         RepoConf.read( self , config )

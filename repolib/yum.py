@@ -8,7 +8,7 @@ import os , sys
 import tempfile
 
 from repolib import utils , MirrorRepository , AbstractDownloadThread
-from repolib import urljoin , logger , PackageListInterface , AbstractDownloadList
+from repolib import logger , PackageListInterface , AbstractDownloadList
 
 
 class _YumPackageFile :
@@ -244,7 +244,7 @@ that the current copy is ok.
     
             logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.metadata_path(arch) , item['href'] )
+            url = utils.urljoin( self.metadata_path(arch) , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
                 if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
@@ -273,7 +273,7 @@ that the current copy is ok.
     
             logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.metadata_path(arch) , filelist['href'] )
+            url = utils.urljoin( self.metadata_path(arch) , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
                 if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
@@ -399,7 +399,7 @@ that the current copy is ok.
 class fedora_repository ( MirrorRepository ) :
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "%s/Fedora/" % self.version )
+        return utils.urljoin( self.repo_url , "%s/Fedora/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
@@ -523,7 +523,7 @@ that the current copy is ok.
     
             logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.metadata_path(arch) , item['href'] )
+            url = utils.urljoin( self.metadata_path(arch) , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
                 if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
@@ -552,7 +552,7 @@ that the current copy is ok.
     
             logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = urljoin( self.metadata_path(arch) , filelist['href'] )
+            url = utils.urljoin( self.metadata_path(arch) , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
                 if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
@@ -681,7 +681,7 @@ class fedora_update_repository ( fedora_repository ) :
         fedora_repository.__init__( self , config )
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "%s/" % self.version )
+        return utils.urljoin( self.repo_url , "%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -697,7 +697,7 @@ class fedora_update_repository ( fedora_repository ) :
 class centos_repository ( fedora_repository ) :
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "%s/" % self.version )
+        return utils.urljoin( self.repo_url , "%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -723,7 +723,7 @@ class centos_update_repository ( centos_repository ) :
 class yast2_repository ( fedora_repository ) :
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
+        return utils.urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , "distribution/%s" % self.version )
@@ -738,7 +738,7 @@ class yast2_repository ( fedora_repository ) :
 class yast2_update_repository ( yast2_repository ) :
 
     def base_url ( self ) :
-        return urljoin( self.repo_url , "update/%s/" % self.version )
+        return utils.urljoin( self.repo_url , "update/%s/" % self.version )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , "update/%s" % self.version )
