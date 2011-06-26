@@ -38,11 +38,11 @@ class _repository :
         raise Exception( "Calling an abstract method" )
 
 
-class mirror_repository :
+class mirror_repository ( _repository ) :
     """Convenience class primarily created only to avoid moving download method into base _repository"""
 
     def __init__ ( self , config ) :
-	mirror_repository.__init__( self , config )
+	_repository.__init__( self , config )
         self.repo_url = config[ "url" ]
         self.mode = config[ "mode" ]
         self.params = config[ "params" ]
