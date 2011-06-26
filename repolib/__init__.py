@@ -47,7 +47,53 @@ class _repository :
         raise Exception( "Calling an abstract method" )
 
 
-class MirrorRepository ( _repository ) :
+class mirror_repository :
+    """Convenience class primarily created only to avoid moving download method into base _repository"""
+
+    def __init__ ( self , config ) :
+	mirror_repository.__init__( self , config )
+        self.repo_url = config[ "url" ]
+        self.mode = config[ "mode" ]
+        self.params = config[ "params" ]
+        self.filters = config[ "filters" ]
+
+    def base_url ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+    def metadata_path ( self , partial=False ) :
+        raise Exception( "Calling an abstract method" )
+
+    def downloadRawFile ( self , remote , local=None ) :
+        """Downloads a remote file to the local system.
+
+        remote - path relative to repository base
+        local - Optional local name for the file
+
+        Returns the local file name or False if errors"""
+
+        remote = urljoin( self.base_url() , remote ) 
+
+        if not local :
+            (handle, fname) = tempfile.mkstemp()
+        else :
+            fname = local
+            handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
+        try:
+            response = urllib2.urlopen( remote )
+            data = response.read(256)
+            while data :
+                os.write(handle, data)
+                data = response.read(256)
+            os.close(handle)
+        except Exception ,ex :
+            logger.error( "Exception : %s" % ex )
+            os.close(handle)
+            os.unlink(fname)
+            return False
+        return fname
+
+
+class MirrorRepository ( mirror_repository ) :
 
     def new ( name ) :
         _config = config.read_mirror_config( name )
@@ -73,17 +119,7 @@ class MirrorRepository ( _repository ) :
             Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
 
-    def __init__ ( self , config ) :
-	_repository.__init__( self , config )
-        self.repo_url = config[ "url" ]
-        self.mode = config[ "mode" ]
-        self.params = config[ "params" ]
-        self.filters = config[ "filters" ]
-
-    def base_url ( self ) :
-        raise Exception( "Calling an abstract method" )
-
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def get_master_file ( self , params , keep=False ) :
         raise Exception( "Calling an abstract method" )
 
     def get_signed_metafile ( self , params , meta_file , sign_ext=None , keep=False ) :
@@ -152,46 +188,41 @@ processing is required
 
         return release_file
 
+    def get_subrepos ( self ) :
+        raise Exception( "Calling an abstract method" )
+
+    def info ( self , release_file ) :
+        raise Exception( "Calling an abstract method" )
+
+    def write_master_file ( self , release_file ) :
+        raise Exception( "Calling an abstract method" )
+
     def build_local_tree( self ) :
 
         suite_path = self.repo_path()
 
         for subrepo in self.get_subrepos() :
-            packages_path = self.metadata_path( subrepo , False )
-            if not os.path.exists( os.path.join( suite_path , packages_path ) ) :
-                os.makedirs( os.path.join( suite_path , packages_path ) )
+            packages_path = os.path.join( suite_path , subrepo.metadata_path() )
+            if not os.path.exists( packages_path ) :
+                os.makedirs( packages_path )
+
+
+class MirrorComponent ( mirror_repository ) :
+
+    def check_packages_file( self , subrepo , metafile , _params , download=True ) :
+        raise Exception( "Calling an abstract method" )
+
+    def match_filters( self , pkginfo , filters ) :
+        raise Exception( "Calling an abstract method" )
+
+    def get_package_list ( self , subrepo , fd , _params , filters ) :
+        raise Exception( "Calling an abstract method" )
+
+    def verify( self , filename , _name , release , params ) :
+        raise Exception( "Calling an abstract method" )
 
     def get_download_list( self ) :
         return DownloadThread( self )
-
-    def downloadRawFile ( self , remote , local=None ) :
-        """Downloads a remote file to the local system.
-
-        remote - path relative to repository base
-        local - Optional local name for the file
-
-        Returns the local file name or False if errors"""
-
-        remote = urljoin( self.base_url() , remote ) 
-
-        if not local :
-            (handle, fname) = tempfile.mkstemp()
-        else :
-            fname = local
-            handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-        try:
-            response = urllib2.urlopen( remote )
-            data = response.read(256)
-            while data :
-                os.write(handle, data)
-                data = response.read(256)
-            os.close(handle)
-        except Exception ,ex :
-            logger.error( "Exception : %s" % ex )
-            os.close(handle)
-            os.unlink(fname)
-            return False
-        return fname
 
 
 class BuildRepository ( _repository ) :
@@ -208,9 +239,6 @@ class BuildRepository ( _repository ) :
 
     def __init__ ( self , config ) :
 	_repository.__init__( self , config )
-
-
-from package_lists import *
 
 from yum import *
 
