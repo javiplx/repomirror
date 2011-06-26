@@ -80,7 +80,7 @@ class feed_repository ( repolib.MirrorRepository ) :
 
     def get_master_file ( self , _params , keep=False ) :
         for archname in self.architectures :
-            self.subrepos.append( DebianComponent( self.__config , archname ) )
+            self.subrepos.append( SimpleComponent( self.__config , archname ) )
         del self.__config
         return { '':'' }
 
@@ -99,7 +99,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def get_download_list( self ) :
         return DownloadThread( self )
 
-class DebianComponent ( repolib.MirrorComponent ) :
+class SimpleComponent ( repolib.MirrorComponent ) :
 
     def base_url ( self ) :
         return self.repo_url
@@ -125,18 +125,19 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         localname = False
 
-        if not download :
-            logger.error( "Download of Packages file is mandatory for simple feeds" )
-            return False
+        params = self.params
+        params.update( _params )
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
-            _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
-            localname = os.path.join( self.repo_path() , _name )
-            url = utils.urljoin( self.metadata_path() , _name )
+            url = "%sPackages%s" % ( self.metadata_path() , extension )
+            localname = os.path.join( self.repo_path() , url )
 
             if self.downloadRawFile( url , localname ) :
-                break
+                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
+                if self.verify( localname , _name , metafile , params ) :
+                    break
+                continue
 
         else :
             logger.error( "No Valid Packages file found for %s" % self )
@@ -146,6 +147,9 @@ fresh download is mandatory, and exception is raised if not specified"""
             return localname
 
         return read_handler( localname )
+
+    def verify( self , filename , _name , release , params ) :
+        return True
 
     def get_package_list ( self , fd , _params , filters ) :
 
