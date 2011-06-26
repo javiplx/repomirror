@@ -241,7 +241,9 @@ class MirrorRepository ( _repository ) :
 
     def new ( name ) :
         _config = config.read_mirror_config( name )
-        if _config['type'] == "fedora" :
+        if _config['type'] == "yum" :
+            return yum_repository( _config )
+        elif _config['type'] == "fedora" :
             return fedora_repository( _config )
         elif _config['type'] == "centos" :
             return centos_repository( _config )
