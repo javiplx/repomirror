@@ -241,11 +241,11 @@ class MirrorRepository ( _repository ) :
 
     def new ( name ) :
         _config = config.read_mirror_config( name )
-        if _config['type'] == "yum" :
-            return yum_repository( _config )
+        if _config['type'] == "fedora" :
+            return fedora_repository( _config )
         elif _config['type'] == "centos" :
             return centos_repository( _config )
-        elif _config['type'] == "yum_upd" :
+        elif _config['type'] == "fedora_upd" :
             return fedora_update_repository( _config )
         elif _config['type'] == "centos_upd" :
             return centos_update_repository( _config )

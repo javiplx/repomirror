@@ -117,7 +117,7 @@ class YumXMLPackageList ( _YumPackageFile ) :
         self.pkgfd.write( '</metadata>\n' )
 
 
-class yum_repository ( MirrorRepository ) :
+class fedora_repository ( MirrorRepository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/Fedora/" % self.version )
@@ -396,10 +396,10 @@ that the current copy is ok.
     def get_download_list( self ) :
         return YumDownloadThread( self )
 
-class fedora_update_repository ( yum_repository ) :
+class fedora_update_repository ( fedora_repository ) :
 
     def __init__ ( self , config ) :
-        yum_repository.__init__( self , config )
+        fedora_repository.__init__( self , config )
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/" % self.version )
@@ -415,7 +415,7 @@ class fedora_update_repository ( yum_repository ) :
             path += "repodata/"
         return path
 
-class centos_repository ( yum_repository ) :
+class centos_repository ( fedora_repository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "%s/" % self.version )
@@ -441,7 +441,7 @@ class centos_update_repository ( centos_repository ) :
             path += "repodata/"
         return path
 
-class yast2_repository ( yum_repository ) :
+class yast2_repository ( fedora_repository ) :
 
     def base_url ( self ) :
         return urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
