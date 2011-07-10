@@ -439,9 +439,6 @@ class fedora_repository ( yum_repository ) :
 
 class FedoraComponent ( YumComponent ) :
 
-    def __init__ ( self , config , compname ) :
-        YumComponent.__init__( self , config , compname )
-
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version , "Fedora" )
 
@@ -450,46 +447,43 @@ class FedoraComponent ( YumComponent ) :
 
 class fedora_update_repository ( fedora_repository ) :
 
-    def __init__ ( self , config ) :
-        fedora_repository.__init__( self , config )
+    def build_subrepo ( self , config , archname ) :
+        return FedoraUpdateComponent( config , archname )
 
-    def base_url ( self ) :
-        return utils.urljoin( self.repo_url , "%s/" % self.version )
+    def base_url_extend ( self ) :
+        return "%s/" % self.version
+
+class FedoraUpdateComponent ( FedoraComponent ) :
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        if subrepo :
-            path += "%s/" % subrepo
-        if not partial :
-            path += "repodata/"
-        return path
+    def path_extend ( self ) :
+        return "%s/" % self.arch()
 
 class centos_repository ( fedora_repository ) :
 
-    def base_url ( self ) :
-        return utils.urljoin( self.repo_url , "%s/" % self.version )
+    def build_subrepo ( self , config , archname ) :
+        return CentosComponent( config , archname )
 
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version )
+    def base_url_extend ( self ) :
+        return "%s/" % self.version
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        if subrepo :
-            path += "os/%s/" % subrepo
-        if not partial :
-            path += "repodata/"
-        return path
+class CentosComponent ( YumComponent ) :
+
+    def path_extend ( self ) :
+        return "os/%s/" % self.arch()
 
 class centos_update_repository ( centos_repository ) :
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        if subrepo :
-            path += "updates/%s/" % subrepo
-        if not partial :
-            path += "repodata/"
-        return path
+    def build_subrepo ( self , config , archname ) :
+        return CentosUpdateComponent( config , archname )
+
+    def base_url_extend ( self ) :
+        return "%s/updates/" % self.version
+
+class CentosUpdateComponent ( YumComponent ) :
+
+    def path_extend ( self ) :
+        return "%s/" % self.arch()
 
