@@ -170,20 +170,23 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def write_master_file ( self , repomd_file ) :
 
-        local = False
-        arch = self.subrepos[0].arch()
+        local = {}
 
-        if repomd_file[arch] :
-            local = os.path.join( self.repo_path() , self.metadata_path(True) )
-            try :
-                os.rename( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
-            except OSError , ex :
-                if ex.errno != errno.EXDEV :
-                    print "OSError: %s" % ex
-                    sys.exit(1)
-                shutil.move( repomd_file[arch] , os.path.join( local , "repodata/repomd.xml" ) )
+        for subrepo in self.subrepos :
+            arch = subrepo.arch()
+            if repomd_file[arch] :
+                local[ arch ] = os.path.join( self.repo_path() , self.metadata_path(True) )
+                try :
+                    os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+                except OSError , ex :
+                    if ex.errno != errno.EXDEV :
+                        print "OSError: %s" % ex
+                        sys.exit(1)
+                    shutil.move( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+            else :
+                local[ arch ] = False
 
-        return { arch : local }
+        return local
 
     def info ( self , metafile ) :
         str  = "Mirroring version %s\n" % self.version
