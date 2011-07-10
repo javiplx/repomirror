@@ -216,11 +216,11 @@ class debian_repository ( MirrorRepository ) :
                     sys.exit(1)
                 shutil.move( release_file[''] , local )
 
-        return os.path.dirname( local )
+        return { '' : os.path.dirname( local ) }
 
     def info ( self , release_file ) :
 
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file , "Release" ) ) )
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file[''] , "Release" ) ) )
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :
@@ -240,11 +240,11 @@ from feed import SimpleComponent
 class DebianComponent ( SimpleComponent ) :
 
     def __init__ ( self , config , ( arch , comp ) ) :
+        self.archname , self.compname = arch, comp
         SimpleComponent.__init__( self , config , ( arch , comp ) )
-        self.arch , self.comp = arch, comp
 
     def __str__ ( self ) :
-        return "%s/%s" % ( self.arch , self.comp )
+        return "%s/%s" % ( self.archname , self.compname )
 
     def base_url ( self ) :
         return self.repo_url
@@ -253,7 +253,7 @@ class DebianComponent ( SimpleComponent ) :
         return self.destdir
 
     def metadata_path ( self , partial=False ) :
-        path = "%s/binary-%s/" % ( self.comp , self.arch )
+        path = "%s/binary-%s/" % ( self.compname , self.archname )
         if not partial :
             path = "dists/%s/%s" % ( self.version , path )
         return path
@@ -303,7 +303,7 @@ that the current copy is ok.
         params.update( _params )
 
         if download :
-            master_file = os.path.join( metafile , "Release" )
+            master_file = os.path.join( metafile[''] , "Release" )
         else :
             master_file = metafile['']
 
