@@ -192,10 +192,8 @@ processing is required
 
     def build_local_tree( self ) :
 
-        suite_path = self.repo_path()
-
         for subrepo in self.subrepos :
-            packages_path = os.path.join( suite_path , subrepo.metadata_path() )
+            packages_path = os.path.join( subrepo.repo_path() , subrepo.metadata_path() )
             if not os.path.exists( packages_path ) :
                 os.makedirs( packages_path )
 

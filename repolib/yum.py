@@ -122,10 +122,20 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
-        if len(self.architectures) != 1 :
-            raise Exception( "Yum repositories can only hold a single architecture" )
         for archname in self.architectures :
-            self.subrepos.append( YumComponent( config , archname ) )
+            self.subrepos.append( self.build_subrepo( config , archname ) )
+        self.repo_url += self.base_url_extend()
+        for subrepo in self.subrepos :
+            subrepo.repo_url += self.base_url_extend()
+
+    def build_subrepo ( self , config , archname ) :
+        return YumComponent( config , archname )
+
+    def base_url_extend ( self ) :
+        return ""
+
+    def path_extend ( self ) :
+        return ""
 
     def base_url ( self ) :
         return self.repo_url
@@ -135,15 +145,18 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def metadata_path ( self , partial=False ) :
         if partial :
-            return ""
-        return "repodata/"
+            return self.path_extend()
+        return "%srepodata/" % self.path_extend()
 
     def get_master_file ( self , _params , keep=False ) :
 
-        params = self.params
-        params.update( _params )
+      params = self.params
+      params.update( _params )
 
-        metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path() , ".asc" , keep )
+      repomd = {}
+
+      for subrepo in self.subrepos :
+        metafile = self.get_signed_metafile( params , "%srepomd.xml" % subrepo.metadata_path() , ".asc" , keep )
 
         if not metafile :
             logger.error( "Repository for version %s is not available" % self.version )
@@ -163,7 +176,9 @@ class yum_repository ( repolib.MirrorRepository ) :
                     metafile = False
     
         # NOTE : the initial implementation did return an empty dictionary if metafile is false
-        return { self.architectures[0] : metafile }
+        repomd[ subrepo.arch() ] = metafile
+
+      return repomd
 
     def write_master_file ( self , repomd_file ) :
 
@@ -172,7 +187,7 @@ class yum_repository ( repolib.MirrorRepository ) :
         for subrepo in self.subrepos :
             arch = subrepo.arch()
             if repomd_file[arch] :
-                local[ arch ] = os.path.join( self.repo_path() , self.metadata_path(True) )
+                local[ arch ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
                 try :
                     os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
                 except OSError , ex :
@@ -187,7 +202,7 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def info ( self , metafile ) :
         str  = "Mirroring version %s\n" % self.version
-        str += "Source at %s\n" % self.repo_url
+        str += "Source at %s\n" % self.base_url()
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
 
@@ -197,6 +212,9 @@ class YumComponent ( repolib.MirrorComponent ) :
     def arch ( self ) :
         return self.architectures[0]
 
+    def path_extend ( self ) :
+        return ""
+
     def base_url ( self ) :
         return self.repo_url
 
@@ -205,8 +223,8 @@ class YumComponent ( repolib.MirrorComponent ) :
 
     def metadata_path ( self , partial=False ) :
         if partial :
-            return ""
-        return "repodata/"
+            return self.path_extend()
+        return "%srepodata/" % self.path_extend()
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo.has_key('groups') and pkginfo['group'] not in filters['groups'] :
@@ -411,281 +429,24 @@ that the current copy is ok.
     def get_download_list( self ) :
         return YumDownloadThread( self )
 
-class fedora_repository ( repolib.MirrorRepository ) :
+class fedora_repository ( yum_repository ) :
 
-    def base_url ( self ) :
-        return utils.urljoin( self.repo_url , "%s/Fedora/" % self.version )
+    def build_subrepo ( self , config , archname ) :
+        return FedoraComponent( config , archname )
+
+    def base_url_extend ( self ) :
+        return "%s/Fedora/" % self.version
+
+class FedoraComponent ( YumComponent ) :
+
+    def __init__ ( self , config , compname ) :
+        YumComponent.__init__( self , config , compname )
 
     def repo_path ( self ) :
-        return os.path.join( os.path.join( self.destdir , self.version ) , "Fedora" )
+        return os.path.join( self.destdir , self.version , "Fedora" )
 
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        if subrepo :
-            path += "%s/os/" % subrepo
-        if not partial :
-            path += "repodata/"
-        return path
-
-    def get_master_file ( self , _params , keep=False ) :
-
-        params = self.params
-        params.update( _params )
-
-        repomd_files = {}
-        for arch in self.architectures :
-
-            metafile = self.get_signed_metafile( params , "%srepomd.xml" % self.metadata_path(arch,False) , ".asc" , keep )
-
-            if not metafile :
-                logger.error( "Architecture '%s' is not available for version %s" % ( arch , self.version ) )
-            else :
-
-              if metafile is not True :
-
-                logger.info( "Content verification of metafile %s" % metafile )
-
-                item , filelist = filelist_xmlparser.get_filelist( metafile )
-
-                if not item :
-                    logger.error( "No primary node within repomd file" )
-                    os.unlink( metafile )
-                    metafile = False
-
-                if not filelist :
-                    logger.error( "No filelists node within repomd file" )
-                    os.unlink( metafile )
-                    metafile = False
-    
-            repomd_files[arch] = metafile
-
-        return repomd_files
-
-    def write_master_file ( self , repomd_file ) :
-
-        local = {}
-
-        for arch in repomd_file.keys() :
-          if not repomd_file[arch] :
-            local[arch] = False
-          else :
-            local[arch] = os.path.join( self.repo_path() , self.metadata_path(arch) )
-            try :
-                os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
-            except OSError , ex :
-                if ex.errno != errno.EXDEV :
-                    print "OSError: %s" % ex
-                    sys.exit(1)
-                shutil.move( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
-
-        return local
-
-    def info ( self , metafile ) :
-        str  = "Mirroring version %s\n" % self.version
-        str += "%s\n" % self.repo_url
-        str += "Architectures : %s\n" % " ".join(self.architectures)
-        return str
-
-    def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('groups') and pkginfo['group'] not in filters['groups'] :
-            return False
-        return True
-
-    def check_packages_file( self , arch , metafiles , _params , download=True ) :
-        """
-Verifies checksums and optionally downloads primary and filelist files for
-an architecture.
-Returns the full pathname for the file in its final destination or False when
-error ocurrs. When the repository is in update mode, True is returned to signal
-that the current copy is ok.
-"""
-
-        # Currently unused, but relevant to verification flags
-        params = self.params
-        params.update( _params )
-
-        if not metafiles[arch] :
-            return False
-
-        if download :
-            local_repodata = metafiles[arch]
-            master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
-        else :
-            local_repodata = os.path.join( self.repo_path() , self.metadata_path(arch) )
-            master_file = metafiles[arch]
-
-        item , filelist = filelist_xmlparser.get_filelist( master_file )
-
-        primary = os.path.join( local_repodata , item['href'] )
-    
-        if os.path.isfile( primary ) :
-            if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
-                if not download :
-                    primary = False
-                else :
-                    os.unlink( primary )
-            else :
-                if self.mode == "update" :
-                    primary = True
-        else :
-            if not download :
-                primary = False
-    
-        if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
-    
-            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
-    
-            url = utils.urljoin( self.metadata_path(arch) , item['href'] )
-    
-            if self.downloadRawFile( url , primary ) :
-                if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
-                    os.unlink( primary )
-                    primary = False
-            else :
-                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
-                primary = False
-    
-        secondary = os.path.join( local_repodata , filelist['href'] )
-    
-        if os.path.isfile( secondary ) :
-            if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
-                if not download :
-                    secondary = False
-                else :
-                    os.unlink( secondary )
-            else :
-                if self.mode == "update" :
-                    secondary = True
-        else :
-            if not download :
-                secondary = False
-    
-        if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
-    
-            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
-    
-            url = utils.urljoin( self.metadata_path(arch) , filelist['href'] )
-    
-            if self.downloadRawFile( url , secondary ) :
-                if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
-                    os.unlink( secondary )
-                    secondary = False
-            else :
-                logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
-                secondary = False
-    
-        return primary , secondary
-
-    def get_package_list ( self , arch , local_repodata , _params , filters ) :
-
-        params = self.params
-        params.update( _params )
-
-        download_size = 0
-        download_pkgs = YumPackageList()
-        rejected_pkgs = YumPackageList()
-        missing_pkgs = []
-
-        fd = gzip.open( local_repodata[0] )
-        packages = filelist_xmlparser.get_package_list( fd )
-    
-        all_pkgs = {}
-        providers = {}
-
-        logger.warning( "Scanning available packages for minor filters" )
-        for pkginfo in packages :
-    
-# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
-#         Solution : Disable filtering on first approach
-#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
-    
-            if not self.match_filters( pkginfo , filters ) :
-                rejected_pkgs.append( pkginfo )
-                continue
-
-            all_pkgs[ pkginfo['name'] ] = 1
-            pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
-            download_pkgs.append( pkginfo )
-            # FIXME : This might cause a ValueError exception ??
-            download_size += pkginfo['size']
-
-            if pkginfo.has_key( 'requires' ) :
-                for pkg in pkginfo['requires'] :
-                    providers[ pkg ] = 1
-
-        filesfd = gzip.open( local_repodata[1] )
-
-        # NOTE : We run over the filelists content, marking package owners for later addition
-        logger.warning( "Scanning filelists.xml for file dependencies" )
-        files = filelist_xmlparser.get_files_list( filesfd )
-        for fileinfo in files :
-            if not fileinfo.has_key( 'file' ) : continue
-            pkg = fileinfo[ 'name' ]
-            # There are multiple packages providing the same item, so we cannot break on matches
-            for file in fileinfo[ 'file' ] :
-                if providers.has_key( file ) :
-                    providers[ pkg ] = 1
-    
-        filesfd.close()
-        
-        logger.warning( "Searching for missing dependencies" )
-        for pkginfo in rejected_pkgs :
-        
-            # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
-            #if all_pkgs.has_key( pkginfo['name'] ) :
-            #    continue
-
-            if providers.has_key( pkginfo['name'] ) :
-                all_pkgs[ pkginfo['name'] ] = 1
-                pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
-                download_pkgs.append( pkginfo )
-                # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkginfo['size'] )
-                providers.pop( pkginfo['name'] )
-
-            elif pkginfo.has_key( 'provides' ) :
-                for pkg in pkginfo['provides'] :
-                    # There are multiple packages providing the same item, so we cannot break on matches
-
-                    # FIXME : We made no attempt to go into a full depenceny loop
-                    if providers.has_key( pkg ) :
-                    
-                        all_pkgs[ pkginfo['name'] ] = 1
-                        pkginfo['Filename'] = os.path.join( self.metadata_path(arch) , pkginfo['href'] )
-                        download_pkgs.append( pkginfo )
-                        # FIXME : This might cause a ValueError exception ??
-                        download_size += int( pkginfo['size'] )
-
-#                        if pkginfo.has_key( 'requires' ) :
-#                            for reqpkg in pkginfo['requires'] :
-#                                providers[ reqpkg ] = 1
-
-        # Rewind file
-        fd.seek(0)
-
-        logger.warning( "Running to filter out fixed dependencies" )
-        packages = filelist_xmlparser.get_package_list( fd )
-        for pkginfo in packages :
-            if not all_pkgs.has_key( pkginfo['name'] ) :
-                continue
-            if pkginfo.has_key( 'provides' ) :
-                for pkg in pkginfo['provides'] :
-                    if providers.has_key( pkg ) :
-                        providers.pop( pkg )
-        
-        fd.close()
-        del packages
-
-        for pkgname in providers.keys() :
-            if not all_pkgs.has_key( pkgname ) :
-                missing_pkgs.append( pkgname )
-
-        logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
-
-        return download_size , download_pkgs , missing_pkgs
-
-    def get_download_list( self ) :
-        return YumDownloadThread( self )
+    def path_extend ( self ) :
+        return "%s/os/" % self.arch()
 
 class fedora_update_repository ( fedora_repository ) :
 
