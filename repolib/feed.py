@@ -88,7 +88,7 @@ class feed_repository ( repolib.MirrorRepository ) :
         return ""
 
     def write_master_file ( self , release_file ) :
-        return self.repo_path()
+        return { '' : self.repo_path() }
 
     def info ( self , release_file ) :
         str  = "Mirroring %s\n" % self.name
@@ -100,6 +100,9 @@ class feed_repository ( repolib.MirrorRepository ) :
         return DownloadThread( self )
 
 class SimpleComponent ( repolib.MirrorComponent ) :
+
+    def arch ( self ) :
+        return self.architectures[0]
 
     def base_url ( self ) :
         return self.repo_url

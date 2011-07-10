@@ -214,6 +214,9 @@ class MirrorComponent ( mirror_repository ) :
     def __str__ ( self ) :
         return "%s" % self.architectures[0]
 
+    def arch( self ) :
+        raise Exception( "Calling an abstract method" )
+
     def check_packages_file( self , metafile , _params , download=True ) :
         raise Exception( "Calling an abstract method" )
 
