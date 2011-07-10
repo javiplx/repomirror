@@ -207,8 +207,6 @@ class MirrorComponent ( mirror_repository ) :
 
     def __init__ ( self , config , compname ) :
         mirror_repository.__init__( self , config )
-        if compname not in self.architectures :
-            raise Exception( "Unknown architecture for component" )
         self.architectures = [ compname ]
 
     def __str__ ( self ) :

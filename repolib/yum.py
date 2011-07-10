@@ -124,7 +124,8 @@ class yum_repository ( repolib.MirrorRepository ) :
         repolib.MirrorRepository.__init__( self , config )
         if len(self.architectures) != 1 :
             raise Exception( "Yum repositories can only hold a single architecture" )
-        self.__config = config
+        for archname in self.architectures :
+            self.subrepos.append( YumComponent( config , archname ) )
 
     def base_url ( self ) :
         return self.repo_url
@@ -161,10 +162,6 @@ class yum_repository ( repolib.MirrorRepository ) :
                     os.unlink( metafile )
                     metafile = False
     
-        for archname in self.architectures :
-            self.subrepos.append( YumComponent( self.__config , archname ) )
-        del self.__config
-
         # NOTE : the initial implementation did return an empty dictionary if metafile is false
         return { self.architectures[0] : metafile }
 

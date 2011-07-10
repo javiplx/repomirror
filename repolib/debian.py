@@ -122,7 +122,11 @@ class debian_repository ( MirrorRepository ) :
     def __init__ ( self , config ) :
         MirrorRepository.__init__( self , config )
 
-        self.__config = config
+        self.components = config.get( "components" , None )
+
+        for archname in self.architectures :
+            for compname in self.components :
+                self.subrepos.append( DebianComponent( config , ( archname , compname ) ) )
 
         self.release = os.path.join( self.metadata_path() , "Release" )
 
@@ -166,39 +170,32 @@ class debian_repository ( MirrorRepository ) :
             os.unlink( release_file )
             return { '':False }
 
-        components = self.__config.get( "components" , None )
-
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
             release_comps = map( lambda s : s.rsplit("/").pop() , release['Components'].split() )
 
-            if components :
-                for comp in components :
+            if self.components :
+                for comp in self.components :
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         return { '':False }
             else :
                 logger.warning( "No components specified, selected all components from Release file" )
-                components = release_comps
+                self.components = release_comps
 
-        elif components :
+        elif self.components :
             logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
             return { '':False }
         else :
             # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
             logger.warning( "Va que no, ni haskey, ni components" )
-            components = ( "main" ,)
+            self.components = ( "main" ,)
 
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
             if arch not in release_archs :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 return { '':False }
-
-        for archname in self.architectures :
-            for compname in components :
-                self.subrepos.append( DebianComponent( self.__config , ( archname , compname ) ) )
-        del self.__config
 
         return { '':release_file }
 
