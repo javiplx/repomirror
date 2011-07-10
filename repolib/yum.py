@@ -493,26 +493,3 @@ class centos_update_repository ( centos_repository ) :
             path += "repodata/"
         return path
 
-class yast2_repository ( fedora_repository ) :
-
-    def base_url ( self ) :
-        return utils.urljoin( self.repo_url , "distribution/%s/repo/oss/suse/" % self.version )
-
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , "distribution/%s" % self.version )
-
-    def metadata_path ( self , subrepo=None , partial=True ) :
-        path = ""
-        # FIXME : No subrepos available for OpenSuSE
-        if not partial :
-            path += "repodata/"
-        return path
-
-class yast2_update_repository ( yast2_repository ) :
-
-    def base_url ( self ) :
-        return utils.urljoin( self.repo_url , "update/%s/" % self.version )
-
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , "update/%s" % self.version )
-

@@ -103,10 +103,6 @@ class MirrorRepository ( mirror_repository ) :
             return debian_repository( _config )
         elif _config['type'] == "feed" :
             return feed_repository( _config )
-        elif _config['type'] == "yast2" :
-            return yast2_repository( _config )
-        elif _config['type'] == "yast2_update" :
-            return yast2_update_repository( _config )
         else :
             Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
