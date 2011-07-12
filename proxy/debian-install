@@ -1,0 +1,42 @@
+#!/bin/sh
+
+
+# Custom config without alias and under-docroot location
+
+patch -p0 <<EOF
+--- repomirror-debproxy.conf	2011-07-07 10:22:08.000000000 +0200
++++ repomirror-debproxy.conf	2011-07-12 10:26:11.000000000 +0200
+@@ -1,8 +1,5 @@
+ 
+-Alias /repomirror-proxy /home/repomirror-proxy
+-
+-<Directory "/home/repomirror-proxy">
+-    Options Indexes MultiViews
++<Directory /var/www/repomirror-proxy>
+     SetHandler python-program
+     PythonHeaderParserHandler repomirror-debproxy
+     PythonDebug On
+EOF
+
+cp repomirror-debproxy.conf /etc/apache2/conf.d
+
+
+# Create & populate destination tree
+
+mkdir /var/www/repomirror-proxy
+chown www-data:www-data /var/www/repomirror-proxy
+
+mkdir -p /var/www/repomirror-proxy/debian/dists
+chown www-data:www-data /var/www/repomirror-proxy/debian
+
+
+# This way we ensure that no write permissions are there for the apache user
+
+cd /var/www/repomirror-proxy/debian/dists
+
+for suite in lenny squeeze ; do
+  wget -q -r -nH --cut-dirs=3 -P ${suite} ftp://ftp.es.debian.org/debian/dists/${suite}
+  done
+
+cd ..
+
