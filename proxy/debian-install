@@ -32,6 +32,9 @@ chown www-data:www-data /var/www/repomirror-proxy/debian
 
 # This way we ensure that no write permissions are there for the apache user
 
+mkdir /var/www/repomirror-proxy/debian/pool
+chown www-data:www-data /var/www/repomirror-proxy/debian/pool
+
 cd /var/www/repomirror-proxy/debian/dists
 
 for suite in lenny squeeze ; do
