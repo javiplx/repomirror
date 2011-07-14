@@ -45,11 +45,25 @@ def headerparserhandler ( req ) :
             remote = urllib2.urlopen( remote_url )
         except :
             return apache.HTTP_NOT_FOUND
-        local = open( local_path , 'w' )
-# Instead of redirecting, we could also perform a buffered double write to speed up
-        local.write( remote.read() )
+        local = open( local_path , 'wb' )
+
+        # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
+        file_size = int( remote.info().getheaders("Content-Length")[0] )
+
+        file_size_dl = 0
+        block_sz = 8192
+        while True:
+            buffer = remote.read(block_sz)
+            if not buffer:
+                break
+
+            file_size_dl += block_sz
+            local.write(buffer)
+
         remote.close()
         local.close()
+
+        # Instead of redirecting, we could write response while storing local file to speed up
         req.internal_redirect( req.uri )
 
     return apache.OK
