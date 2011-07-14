@@ -42,8 +42,10 @@ def headerparserhandler ( req ) :
 
     if not os.path.exists( local_path ) :
         try :
+            req.log_error( "Downloading %s" % remote_url , apache.APLOG_INFO )
             remote = urllib2.urlopen( remote_url )
-        except :
+        except Exception , ex :
+            req.log_error( "Cannot download remote %s : %s" % ( remote_url , ex ) )
             return apache.HTTP_NOT_FOUND
         local = open( local_path , 'wb' )
 
