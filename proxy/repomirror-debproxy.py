@@ -16,22 +16,27 @@ from mod_python import apache
 import urllib2
 import os
 
-source_url = "http://ftp.es.debian.org/"
+source_url = {}
+source_url['debian'] = "http://ftp.es.debian.org/"
+source_url['debian-security'] = "http://security.debian.org/"
+
 
 def headerparserhandler ( req ) :
 
     local_path = req.filename
-    remote_url = source_url
+    subpath = local_path.replace( req.hlist.directory , "" , 1 )
+    reponame = subpath.split("/")[0]
+    remote_url = source_url[reponame]
 
     if req.used_path_info :
         local_path += req.path_info
-        remote_url = urllib2.urlparse.urljoin( remote_url , local_path.replace( req.hlist.directory , "" , 1 ) )
+        remote_url = urllib2.urlparse.urljoin( remote_url , subpath + req.path_info )
 
     if not os.path.isdir( os.path.dirname(local_path) ) :
         try :
             os.makedirs( os.path.dirname(local_path) )
         except OSError , ex :
-            req.log_error( "Cannot create destination hierarchy" )
+            req.log_error( "Cannot create destination hierarchy %s" % os.path.dirname(local_path) )
             req.status = apache.HTTP_INTERNAL_SERVER_ERROR
             return apache.DONE
 
