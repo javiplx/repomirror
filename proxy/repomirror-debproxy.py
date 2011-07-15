@@ -21,7 +21,7 @@ source_url['debian'] = "http://ftp.es.debian.org/"
 source_url['debian-security'] = "http://security.debian.org/"
 
 
-def headerparserhandler ( req ) :
+def handler ( req ) :
 
     local_path = req.filename
     subpath = local_path.replace( req.hlist.directory , "" , 1 )
@@ -51,6 +51,7 @@ def headerparserhandler ( req ) :
 
         # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
         file_size = int( remote.info().getheaders("Content-Length")[0] )
+        req.content_type = remote.info().getheader('Content-Type')
 
         file_size_dl = 0
         block_sz = 8192
@@ -61,12 +62,12 @@ def headerparserhandler ( req ) :
 
             file_size_dl += block_sz
             local.write(buffer)
+            req.write(buffer)
 
         remote.close()
         local.close()
-
-        # Instead of redirecting, we could write response while storing local file to speed up
-        req.internal_redirect( req.uri )
+    else :
+        req.sendfile(local_path)
 
     return apache.OK
 
