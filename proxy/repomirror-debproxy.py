@@ -16,16 +16,25 @@ from mod_python import apache
 import urllib2
 import os
 
+import repolib.config
+
 source_url = {}
-source_url['debian'] = "http://ftp.es.debian.org/"
-source_url['debian-security'] = "http://security.debian.org/"
+
+
+def load_confs () :
+    for repo in repolib.config.get_all_configs( 'type' , 'deb' ) :
+        source_url[ repo.__name__ ] = repo['url']
 
 
 def handler ( req ) :
 
     local_path = req.filename
-    subpath = local_path.replace( req.hlist.directory , "" , 1 )
-    reponame = subpath.split("/")[0]
+    _subpath = local_path.replace( req.hlist.directory , "" , 1 )
+    # FIXME : top directory (debian) must be created by hand or an error happens
+    reponame , subpath = _subpath.split("/",1)
+    if not source_url.has_key( reponame ) :
+        req.log_error( "Reloading configurations" )
+        load_confs()
     remote_url = source_url[reponame]
 
     if req.used_path_info :
@@ -70,4 +79,6 @@ def handler ( req ) :
         req.sendfile(local_path)
 
     return apache.OK
+
+load_confs()
 
