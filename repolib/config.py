@@ -143,10 +143,34 @@ def read_mirror_config ( repo_name ) :
     try :
         conf.read( config )
     except Exception , ex :
-        print "ERROR : %s" % ex
+        repolib.logger.error( "Exception while reading mirror configuration : %s" % ex )
         return False
 
     return conf
+
+
+def get_all_configs ( key=None , value=None ) :
+
+    config = ConfigParser.RawConfigParser()
+    for file in ( "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ) :
+        config.read( file )
+    if not config.sections() :
+        print "Could not find a valid configuration file"
+        return False
+
+    conflist = []
+
+    for name in config.sections() :
+        if name != "global" :
+            try :
+                conf = MirrorConf( name )
+                conf.read( config )
+                if not key or conf[key] == value :
+                    conflist.append( conf )
+            except Exception , ex :
+                repolib.logger.error( "Exception while reading configuration : %s" % ex )
+
+    return conflist
 
 
 class BuildConf ( RepoConf ) :
@@ -171,8 +195,13 @@ def read_build_config ( repo_name ) :
     try :
         conf.read( config )
     except Exception , ex :
-        print "ERROR : %s" % ex
+        repolib.logger.error( "Exception while reading build configuration : %s" % ex )
         return False
 
     return conf
+
+if __name__ == "__main__" :
+    print get_all_configs()
+    print 
+    print get_all_configs( 'type' , 'deb' )
 
