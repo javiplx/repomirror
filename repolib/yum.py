@@ -5,117 +5,9 @@ import errno , shutil
 import gzip
 
 import os , sys
-import tempfile
 
 import repolib
-from repolib import utils , logger
-from repolib.package_lists import AbstractDownloadThread , PackageListInterface , AbstractDownloadList
-
-
-class _YumPackageFile :
-    """This pretends to be a file base storage for package lists, to reduce memory footprint.
-Is an actual complete implementation of PackageListInterface, but it is not declared
-to avoid inheritance problems"""
-
-    out_template = """name=%s
-sha256=%s
-size=%s
-href=%s
-Filename=%s
-
-"""
-
-    def __init__ ( self ) :
-        self.pkgfd = tempfile.NamedTemporaryFile()
-        self.__cnt = 0
-
-    def __len__ ( self ) :
-        return self.__cnt
-
-    def __iter__ ( self ) :
-        _pkg = {}
-        self.rewind()
-        line = self.pkgfd.readline()
-        while line :
-            if line == '\n' :
-                yield _pkg
-                _pkg = {}
-            else :
-                k,v = line[:-1].split('=',1)
-                _pkg[k] = v
-            line = self.pkgfd.readline()
-        if _pkg :
-            yield _pkg
-
-    def rewind ( self ) :
-        if self.pkgfd :
-            self.pkgfd.seek(0)
-
-    def append ( self , pkg ) :
-        self.pkgfd.write( self.out_template % ( pkg['name'] , pkg.get( 'sha256' , pkg.get( 'sha' ) ) , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
-        self.__cnt += 1
-
-class _YumPackageList ( list ) :
-
-    def __repr__ ( self ) :
-        return "<_YumPackageList items:%d>" % len(self)
-
-class YumPackageFile ( _YumPackageFile , PackageListInterface ) :
-
-    def extend ( self , values_list ) :
-        self.pkgfd.seek(0,2)
-        for pkg in values_list :
-            self.append( pkg )
-
-class YumDownloadList ( _YumPackageFile , AbstractDownloadList ) :
-
-    def __init__ ( self , repo ) :
-        _YumPackageFile.__init__( self )
-        AbstractDownloadList.__init__( self , repo )
-
-    def push ( self , item ) :
-        if self.closed :
-            raise Exception( "Trying to push into a closed queue" )
-        _YumPackageFile.append( self , item )
-
-class YumDownloadThread ( _YumPackageFile , AbstractDownloadThread ) :
-
-    def __init__ ( self , repo ) :
-        _YumPackageFile.__init__( self )
-        AbstractDownloadThread.__init__( self , repo )
-
-    def __iter__ ( self ) :
-        if self.started :
-            raise Exception( "Trying to iterate over a running list" )
-        return _YumPackageFile.__iter__( self )
-
-
-# NOTE : The xml version seems more attractive, but we cannot use it until
-#        we get a way to build an iterable XML parser, maybe availeble
-#        using xml.etree.ElementTree.iterparse
-class YumXMLPackageList ( _YumPackageFile ) :
-
-    out_template = """<package type="rpm">
-  <name>%s</name>
-  <checksum type="sha256" pkgid="YES">%s</checksum>
-  <size package="%s"/>
-  <location href="%s"/>
-  <poolfile href="%s"/>
-</package>
-"""
-
-    def __init__ ( self ) :
-        """Input uses a list interface, and output a sequence interface taken from original PackageFile"""
-        _YumPackageFile.__init__( self )
-        self.pkgfd.write( '<?xml version="1.0" encoding="UTF-8"?>\n' )
-        self.pkgfd.write( '<metadata xmlns="http://linux.duke.edu/metadata/common" xmlns:rpm="http://linux.duke.edu/metadata/rpm">\n' )
-
-    def __iter__ ( self ) :
-        raise Exception( "Iterable parser not yet implemented" )
-
-    # NOTE : The flush methods move this object somewhat between a simple and a download list
-    def flush ( self ) :
-        self.pkgfd.write( '</metadata>\n' )
+from yum_lists import YumDownloadThread , YumPackageFile , YumDownloadList , YumXMLPackageList
 
 
 class yum_repository ( repolib.MirrorRepository ) :
@@ -159,19 +51,19 @@ class yum_repository ( repolib.MirrorRepository ) :
         metafile = self.get_signed_metafile( params , "%srepomd.xml" % subrepo.metadata_path() , ".asc" , keep )
 
         if not metafile :
-            logger.error( "Repository for version %s is not available" % self.version )
+            repolib.logger.error( "Repository for version %s is not available" % self.version )
         else :
             if metafile is not True :
-                logger.info( "Content verification of metafile %s" % metafile )
+                repolib.logger.info( "Content verification of metafile %s" % metafile )
                 item , filelist = filelist_xmlparser.get_filelist( metafile )
 
                 if not item :
-                    logger.error( "No primary node within repomd file" )
+                    repolib.logger.error( "No primary node within repomd file" )
                     os.unlink( metafile )
                     metafile = False
 
                 if not filelist :
-                    logger.error( "No filelists node within repomd file" )
+                    repolib.logger.error( "No filelists node within repomd file" )
                     os.unlink( metafile )
                     metafile = False
     
@@ -261,7 +153,7 @@ that the current copy is ok.
         primary = os.path.join( local_repodata , item['href'] )
     
         if os.path.isfile( primary ) :
-            if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
+            if repolib.utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
                 if not download :
                     primary = False
                 else :
@@ -275,22 +167,22 @@ that the current copy is ok.
     
         if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
     
-            logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            repolib.logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = utils.urljoin( self.metadata_path(True) , item['href'] )
+            url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
     
             if self.downloadRawFile( url , primary ) :
-                if utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
+                if repolib.utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
                     os.unlink( primary )
                     primary = False
             else :
-                logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                repolib.logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
                 primary = False
     
         secondary = os.path.join( local_repodata , filelist['href'] )
     
         if os.path.isfile( secondary ) :
-            if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
+            if repolib.utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
                 if not download :
                     secondary = False
                 else :
@@ -304,16 +196,16 @@ that the current copy is ok.
     
         if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
     
-            logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            repolib.logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
     
-            url = utils.urljoin( self.metadata_path(True) , filelist['href'] )
+            url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
     
             if self.downloadRawFile( url , secondary ) :
-                if utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
+                if repolib.utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
                     os.unlink( secondary )
                     secondary = False
             else :
-                logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
+                repolib.logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
                 secondary = False
     
         return primary , secondary
@@ -334,7 +226,7 @@ that the current copy is ok.
         all_pkgs = {}
         providers = {}
 
-        logger.warning( "Scanning available packages for minor filters" )
+        repolib.logger.warning( "Scanning available packages for minor filters" )
         for pkginfo in packages :
     
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
@@ -358,7 +250,7 @@ that the current copy is ok.
         filesfd = gzip.open( local_repodata[1] )
 
         # NOTE : We run over the filelists content, marking package owners for later addition
-        logger.warning( "Scanning filelists.xml for file dependencies" )
+        repolib.logger.warning( "Scanning filelists.xml for file dependencies" )
         files = filelist_xmlparser.get_files_list( filesfd )
         for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
@@ -370,7 +262,7 @@ that the current copy is ok.
     
         filesfd.close()
         
-        logger.warning( "Searching for missing dependencies" )
+        repolib.logger.warning( "Searching for missing dependencies" )
         for pkginfo in rejected_pkgs :
         
             # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
@@ -405,7 +297,7 @@ that the current copy is ok.
         # Rewind file
         fd.seek(0)
 
-        logger.warning( "Running to filter out fixed dependencies" )
+        repolib.logger.warning( "Running to filter out fixed dependencies" )
         packages = filelist_xmlparser.get_package_list( fd )
         for pkginfo in packages :
             if not all_pkgs.has_key( pkginfo['name'] ) :
@@ -422,7 +314,7 @@ that the current copy is ok.
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
 
-        logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
+        repolib.logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
         return download_size , download_pkgs , missing_pkgs
 
