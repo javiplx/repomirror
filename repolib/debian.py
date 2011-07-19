@@ -122,12 +122,14 @@ class debian_repository ( MirrorRepository ) :
     def __init__ ( self , config ) :
         MirrorRepository.__init__( self , config )
 
+        # Stored for later use during Release file checks
         self.components = config.get( "components" , None )
 
         for archname in self.architectures :
             for compname in self.components :
                 self.subrepos.append( DebianComponent( config , ( archname , compname ) ) )
 
+        # Not strictly required, but kept as member for convenience
         self.release = os.path.join( self.metadata_path() , "Release" )
 
     def base_url ( self ) :
@@ -149,9 +151,8 @@ class debian_repository ( MirrorRepository ) :
 
         release_file = self.get_signed_metafile ( params , self.release , ".gpg" , keep )
 
-        version = self.version.split("/")[0].lower()
         if not release_file :
-            logger.error( "No valid Release file for suite '%s'" % ( self.version ) )
+            logger.error( "No valid Release file for '%s'" % ( self.version ) )
             return { '':release_file }
         elif release_file is True :
             return { '':True }
@@ -159,16 +160,30 @@ class debian_repository ( MirrorRepository ) :
         logger.info( "Content verification of metafile %s" % release_file )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
-        if release['Suite'] !=  release['Codename'] :
-            if release['Suite'].lower() == version :
-                logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, release['Codename'] ) )
-                os.unlink( release_file )
-                return { '':False }
 
-        if release['Codename'].lower() != version :
-            logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, release['Codename'] ) )
+        # Although both names and suites can be used within sources.list, we
+        # will enforce mirroring based on codenames
+        # FIXME : Is sensible to use in any way the version from Release?
+
+        version = self.version.split("/").pop(0)
+        suite = release['Suite']
+        codename = release['Codename']
+
+        if suite != codename and suite == version :
+            logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, codename ) )
             os.unlink( release_file )
             return { '':False }
+
+        if codename != version :
+            logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, codename ) )
+            os.unlink( release_file )
+            return { '':False }
+
+
+        # We get sure that all the requested components are defined in the
+        # mirrored repository.
+        # If no component is defined neither on repomirror configuration or
+        # in Release file, main is selected as the only component to mirror
 
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
@@ -184,12 +199,16 @@ class debian_repository ( MirrorRepository ) :
                 self.components = release_comps
 
         elif self.components :
-            logger.error( "There is no components entry in Release file for suite '%s', please fix your configuration" % self.version )
+            logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
             return { '':False }
         else :
-            # FIXME : This policy is taken from scratchbox repository, with no explicit component and files located right under dists along Packages file
-            logger.warning( "Va que no, ni haskey, ni components" )
+            logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
+
+
+        # Architecture requires the same verification than components, but
+        # as it must be present on Release and repomirror configuration the
+        # workflow is much simpler
 
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
@@ -197,13 +216,14 @@ class debian_repository ( MirrorRepository ) :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 return { '':False }
 
+
         return { '':release_file }
 
     def write_master_file ( self , release_file ) :
 
+        # Path for local copy must be created in advance by build_local_tree
         local = os.path.join( self.repo_path() , self.release )
 
-        # FIXME : If we reach this point, is it possible that the file is still there ?
         if not os.path.exists( local ) :
             try :
                 os.rename( release_file[''] , local )
@@ -221,14 +241,18 @@ class debian_repository ( MirrorRepository ) :
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :
-            release['Version'] = None
+            release['Version'] = ""
+        else :
+            release['Version'] += " "
 
         # Some Release files hold no 'Date' information
         if not release.has_key( 'Date' ) :
-            release['Date'] = None
+            release['Date'] = ""
+        else :
+            release['Date'] = " , %s" % release['Date']
 
-        str  = "Mirroring %(Label)s %(Version)s (%(Codename)s)\n" % release
-        str += "%(Origin)s %(Suite)s , %(Date)s\n" % release
+        str  = "Mirroring %(Label)s %(Version)s(%(Codename)s)\n" % release
+        str += "%(Origin)s %(Suite)s%(Date)s\n" % release
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
 
