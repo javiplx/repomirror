@@ -9,7 +9,6 @@ import config , utils
 
 
 import repolib
-from repolib import logger
 from repolib.package_lists import PackageList , DownloadThread
 
 
@@ -141,7 +140,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 continue
 
         else :
-            logger.error( "No Valid Packages file found for %s" % self )
+            repolib.logger.error( "No Valid Packages file found for %s" % self )
             localname = False
 
         if isinstance(localname,bool) :
@@ -170,7 +169,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            logger.warning( "Scanning available packages for minor filters" )
+            repolib.logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
                 # At least for the sample feed, double empty lines are used
                 fd.readline()
