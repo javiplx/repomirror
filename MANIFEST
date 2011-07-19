@@ -8,6 +8,9 @@ repolib/feed.py
 get_filters
 repolib/yum.py
 repolib/config.py
+repolib/package_lists.py
+repolib/debian_lists.py
+repolib/yum_lists.py
 repomirror.conf
 filelist_xmlparser.py
 debtarfile.py
