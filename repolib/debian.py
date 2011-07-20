@@ -35,10 +35,9 @@ class debian_repository ( MirrorRepository ) :
         return self.destdir
 
     def metadata_path ( self , partial=False ) :
-        path = ""
-        if not partial :
-            path = "dists/%s/%s" % ( self.version , path )
-        return path
+        if partial :
+            return ""
+        return "dists/%s" % self.version
 
     def get_master_file ( self , _params , keep=False ) :
 
@@ -171,9 +170,9 @@ class DebianComponent ( SimpleComponent ) :
 
     def metadata_path ( self , partial=False ) :
         path = "%s/binary-%s/" % ( self.compname , self.archname )
-        if not partial :
-            path = "dists/%s/%s" % ( self.version , path )
-        return path
+        if partial :
+            return path
+        return "dists/%s/%s" % ( self.version , path )
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
