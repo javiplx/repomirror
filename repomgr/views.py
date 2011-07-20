@@ -1,4 +1,6 @@
 
+from django.shortcuts import render_to_response
+
 from repolib.config import MirrorConf
 
 from django.http import HttpResponse
@@ -8,23 +10,16 @@ import os
 
 def index ( request ) :
 
-    response = HttpResponse()
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
+        response = HttpResponse()
         response.write( "Server Error\n" )
         return response
     sections = config.sections()
     if config.has_section( "global" ) :
         sections.pop( sections.index( "global" ) )
     keylist =  ( 'type' , 'url' , 'version' , 'architectures' )
-    response.write( "<table>\n" )
-    response.write( "<thead>\n" )
-    response.write( "<tr>\n" )
-    response.write( "<th>Name</th>\n" )
-    for key in keylist :
-        response.write( "<th>%s</th>\n" % key )
-    response.write( "</tr>\n" )
-    response.write( "</thead>\n" )
+    response = render_to_response( 'templates/index.html' , { 'keylist':keylist } )
     response.write( "<tbody>\n" )
     for section in sections :
         repo = MirrorConf( section )
