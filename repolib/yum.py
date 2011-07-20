@@ -335,7 +335,7 @@ class FedoraComponent ( YumComponent ) :
     def path_extend ( self ) :
         return "%s/os/" % self.arch()
 
-class fedora_update_repository ( fedora_repository ) :
+class fedora_update_repository ( yum_repository ) :
 
     def build_subrepo ( self , config , archname ) :
         return FedoraUpdateComponent( config , archname )
@@ -343,7 +343,7 @@ class fedora_update_repository ( fedora_repository ) :
     def base_url_extend ( self ) :
         return "%s/" % self.version
 
-class FedoraUpdateComponent ( FedoraComponent ) :
+class FedoraUpdateComponent ( YumComponent ) :
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -351,7 +351,7 @@ class FedoraUpdateComponent ( FedoraComponent ) :
     def path_extend ( self ) :
         return "%s/" % self.arch()
 
-class centos_repository ( fedora_repository ) :
+class centos_repository ( yum_repository ) :
 
     def build_subrepo ( self , config , archname ) :
         return CentosComponent( config , archname )
@@ -364,7 +364,7 @@ class CentosComponent ( YumComponent ) :
     def path_extend ( self ) :
         return "os/%s/" % self.arch()
 
-class centos_update_repository ( centos_repository ) :
+class centos_update_repository ( yum_repository ) :
 
     def build_subrepo ( self , config , archname ) :
         return CentosUpdateComponent( config , archname )
