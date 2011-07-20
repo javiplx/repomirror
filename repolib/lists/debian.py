@@ -5,7 +5,7 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 
 import tempfile
 
-from repolib.lists import *
+from repolib.lists import PackageListInterface , AbstractDownloadThread , AbstractDownloadList
 
 
 def safe_encode ( str ) :

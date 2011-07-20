@@ -9,7 +9,7 @@ import config , utils
 
 
 import repolib
-from repolib.package_lists import PackageList , DownloadThread
+from lists import *
 
 
 class feed_build_repository ( repolib.BuildRepository ) :

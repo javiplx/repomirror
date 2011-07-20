@@ -1,5 +1,5 @@
 
-__all__ = [ "AbstractDownloadThread" , "PackageListInterface" , "AbstractDownloadList" ]
+__all__ = [ "PackageList" , "DownloadThread" ]
 
 import os
 

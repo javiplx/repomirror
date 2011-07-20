@@ -3,7 +3,7 @@ __all__ = [ "YumDownloadThread" , "YumPackageFile" , "YumDownloadList" , "YumXML
 
 import tempfile
 
-from repolib.lists import *
+from repolib.lists import PackageListInterface , AbstractDownloadThread , AbstractDownloadList
 
 
 class _YumPackageFile :
