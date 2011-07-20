@@ -81,7 +81,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def get_master_file ( self , _params , keep=False ) :
         return { '':'' }
 
-    def metadata_path ( self , subrepo=None , partial=False ) :
+    def metadata_path ( self , partial=False ) :
         return ""
 
     def write_master_file ( self , release_file ) :
