@@ -125,7 +125,7 @@ class debian_repository ( MirrorRepository ) :
                 os.rename( release_file[''] , local )
             except OSError , ex :
                 if ex.errno != errno.EXDEV :
-                    print "OSError: %s" % ex
+                    repolib.logger.critical( "OSError: %s" % ex )
                     sys.exit(1)
                 shutil.move( release_file[''] , local )
 

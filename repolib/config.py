@@ -136,7 +136,7 @@ def read_mirror_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        print "Could not find a valid configuration file"
+        repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
     conf = MirrorConf( repo_name )
@@ -155,7 +155,7 @@ def get_all_configs ( key=None , value=None ) :
     for file in ( "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ) :
         config.read( file )
     if not config.sections() :
-        print "Could not find a valid configuration file"
+        repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
     conflist = []
@@ -188,7 +188,7 @@ def read_build_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( [ "/etc/buildrepo.conf" , os.path.expanduser("~/.buildrepo") ] ) :
-        print "Could not find a valid configuration file"
+        repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
     conf = BuildConf( repo_name )
