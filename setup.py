@@ -14,7 +14,7 @@ setup(
     scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' , 'checkmirror' ],
     data_files = [
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] ) ,
-                 ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' ] ) ,
+                 ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/index.html' ] ) ,
                  ( 'share/repomgr' , [ 'repomgr/repomgr.conf' ] )
                  ],
     packages = [ 'repolib' , 'repolib.lists' , 'repomgr' ],

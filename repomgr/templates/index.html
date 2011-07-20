@@ -7,3 +7,14 @@
 {% endfor %}
 </tr>
 </thead>
+<tbody>
+{% for repo in repos.values %}
+    <tr>
+    <td><a href={{ repo.section }}>{{ repo.name }}</a></td>
+    {% for value in repo.values %}
+            <td>{{ value }}</td>
+    {% endfor %}
+    </tr>
+{% endfor %}
+</tbody>
+</table>

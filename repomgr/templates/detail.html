@@ -1,0 +1,16 @@
+<h3>{{ repo.name }}</h3>
+<ul>
+  <li><b>type</b> - {{ repo.type }}
+  <li><b>mode</b> - {{ repo.mode }}
+    if repo['detached'] :
+{% if repo.detached %}
+  <li><b>detached</b> - {{ repo.detached }}
+  <li><b>destdir</b> - {{ repo.destdir }}
+{% endif %}
+  <li><b>version</b> - {{ repo.version }}
+  <li><b>architectures</b> - {{ repo.architectures }}
+  <li><b>components</b> - {{ repo.components }}
+  <li><b>url</b> - {{ repo.url }}
+</ul>
+<h4>Extra values</h4>
+<ul>
