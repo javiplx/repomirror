@@ -19,4 +19,5 @@ buildrepo.conf
 repomgr/__init__.py
 repomgr/settings.py
 repomgr/urls.py
+repomgr/views.py
 repomgr/repomgr.conf
