@@ -17,8 +17,10 @@ class yum_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             self.subrepos.append( self.build_subrepo( config , archname ) )
         self.repo_url += self.base_url_extend()
+        self.repomd = {}
         for subrepo in self.subrepos :
             subrepo.repo_url += self.base_url_extend()
+            self.repomd[subrepo.arch()] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def build_subrepo ( self , config , archname ) :
         return YumComponent( config , archname )
@@ -48,7 +50,8 @@ class yum_repository ( repolib.MirrorRepository ) :
       repomd = {}
 
       for subrepo in self.subrepos :
-        metafile = self.get_signed_metafile( params , "%srepomd.xml" % subrepo.metadata_path() , ".asc" , keep )
+        arch = subrepo.arch()
+        metafile = self.get_signed_metafile( params , self.repomd[arch] , ".asc" , keep )
 
         if not metafile :
             repolib.logger.error( "Repository for version %s is not available" % self.version )
@@ -68,7 +71,7 @@ class yum_repository ( repolib.MirrorRepository ) :
                     metafile = False
     
         # NOTE : the initial implementation did return an empty dictionary if metafile is false
-        repomd[ subrepo.arch() ] = metafile
+        repomd[ arch ] = metafile
 
       return repomd
 
@@ -79,14 +82,14 @@ class yum_repository ( repolib.MirrorRepository ) :
         for subrepo in self.subrepos :
             arch = subrepo.arch()
             if repomd_file[arch] :
-                local[ arch ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
                 try :
-                    os.rename( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+                    os.rename( repomd_file[arch] , os.path.join( subrepo.repo_path() , self.repomd[arch] ) )
                 except OSError , ex :
                     if ex.errno != errno.EXDEV :
                         print "OSError: %s" % ex
                         sys.exit(1)
-                    shutil.move( repomd_file[arch] , os.path.join( local[arch] , "repodata/repomd.xml" ) )
+                    shutil.move( repomd_file[arch] , os.path.join( subrepo.repo_path() , self.repomd[arch] ) )
+                local[ arch ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
             else :
                 local[ arch ] = False
 
