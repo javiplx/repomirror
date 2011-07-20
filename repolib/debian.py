@@ -4,6 +4,7 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 import errno , shutil
 
 import os , sys
+import stat
 
 
 import config , utils
@@ -127,6 +128,8 @@ class debian_repository ( MirrorRepository ) :
                     repolib.logger.critical( "OSError: %s" % ex )
                     sys.exit(1)
                 shutil.move( release_file[''] , local )
+
+            os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 
         return { '' : os.path.dirname( local ) }
 
