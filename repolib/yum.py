@@ -7,7 +7,7 @@ import gzip
 import os , sys
 
 import repolib
-from yum_lists import YumDownloadThread , YumPackageFile , YumDownloadList , YumXMLPackageList
+from lists.yum import *
 
 
 class yum_repository ( repolib.MirrorRepository ) :

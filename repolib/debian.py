@@ -10,7 +10,7 @@ import config , utils
 
 
 from repolib import MirrorRepository , BuildRepository , logger
-from debian_lists import DebianPackageList , DebianDownloadList , DebianDownloadThread
+from lists.debian import *
 
 
 class debian_repository ( MirrorRepository ) :

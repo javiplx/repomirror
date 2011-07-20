@@ -1,9 +1,11 @@
 
+__all__ = [ "DebianPackageList" , "DebianDownloadList" , "DebianDownloadThread" ]
+
 import debian_bundle.deb822 , debian_bundle.debian_support
 
 import tempfile
 
-from package_lists import AbstractDownloadThread , PackageListInterface , AbstractDownloadList
+from repolib.lists import *
 
 
 def safe_encode ( str ) :

@@ -1,7 +1,9 @@
 
+__all__ = [ "AbstractDownloadThread" , "PackageListInterface" , "AbstractDownloadList" ]
+
 import os
 
-import utils
+import repolib.utils
 
 
 class PackageListInterface :
@@ -67,7 +69,7 @@ Used in while loop context to enable element extraction"""
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            if utils.integrity_check( destname , pkg ) is False :
+            if repolib.utils.integrity_check( destname , pkg ) is False :
                 os.unlink( destname )
             else :
                 return
