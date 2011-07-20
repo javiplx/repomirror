@@ -54,19 +54,14 @@ class yum_repository ( repolib.MirrorRepository ) :
         metafile = self.get_signed_metafile( params , self.repomd[arch] , ".asc" , keep )
 
         if not metafile :
-            repolib.logger.error( "Repository for version %s is not available" % self.version )
+            repolib.logger.error( "Repository for %s is not available" % self.version )
         else :
             if metafile is not True :
                 repolib.logger.info( "Content verification of metafile %s" % metafile )
                 item , filelist = filelist_xmlparser.get_filelist( metafile )
 
-                if not item :
-                    repolib.logger.error( "No primary node within repomd file" )
-                    os.unlink( metafile )
-                    metafile = False
-
-                if not filelist :
-                    repolib.logger.error( "No filelists node within repomd file" )
+                if not item or not filelist :
+                    repolib.logger.error( "No primary or filelist node within repomd file" )
                     os.unlink( metafile )
                     metafile = False
     
