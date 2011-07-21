@@ -108,9 +108,15 @@ class MirrorConf ( RepoConf ) :
                 repolib.logger.warning( "Appending trailing '/' to url, missing on configuration file" )
                 self['url'] += "/"
         else :
-            scheme = config.get( self.__name__ , "scheme" )
+            if config.has_option( self.__name__ , "scheme" ) :
+                scheme = config.get( self.__name__ , "scheme" )
+            else :
+                scheme = "http"
             server = config.get( self.__name__ , "server" )
-            base_path = config.get( self.__name__ , "base_path" )
+            if config.has_option( self.__name__ , "base_path" ) :
+                base_path = config.get( self.__name__ , "base_path" )
+            else :
+                base_path = ""
             self.set_url( scheme , server , base_path )
 
         if config.has_option( self.__name__ , "filters" ) :
