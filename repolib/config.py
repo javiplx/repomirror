@@ -1,5 +1,6 @@
 
 import os
+import glob
 
 import utils , repolib
 import ConfigParser
@@ -150,15 +151,18 @@ class MirrorConf ( RepoConf ) :
 
 def read_mirror_config ( repo_name ) :
 
+    conffiles = [ mirrorconf ]
+    conffiles.extend( glob.glob( os.path.join( mirrordir , "*" ) ) )
+
     config = ConfigParser.RawConfigParser()
-    if not config.read( mirrorconf ) :
+    if not config.read( conffiles ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
     try :
         conf = MirrorConf( repo_name , config )
     except Exception , ex :
-        repolib.logger.error( "Exception while reading mirror configuration : %s" % ex )
+        repolib.logger.error( ex )
         return False
 
     return conf
@@ -166,9 +170,11 @@ def read_mirror_config ( repo_name ) :
 
 def get_all_configs ( key=None , value=None ) :
 
+    conffiles = [ mirrorconf ]
+    conffiles.extend( glob.glob( os.path.join( mirrordir , "*" ) ) )
+
     config = ConfigParser.RawConfigParser()
-    config.read( mirrorconf )
-    if not config.sections() :
+    if not config.read( conffiles ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
@@ -181,7 +187,7 @@ def get_all_configs ( key=None , value=None ) :
                 if not key or conf[key] == value :
                     conflist.append( conf )
             except Exception , ex :
-                repolib.logger.error( "Exception while reading configuration : %s" % ex )
+                repolib.logger.error( ex )
 
     return conflist
 
@@ -199,15 +205,18 @@ class BuildConf ( RepoConf ) :
 
 def read_build_config ( repo_name ) :
 
+    conffiles = [ buildconf ]
+    conffiles.extend( glob.glob( os.path.join( builddir , "*" ) ) )
+
     config = ConfigParser.RawConfigParser()
-    if not config.read( buildconf ) :
+    if not config.read( conffiles ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
     try :
         conf = BuildConf( repo_name , config )
     except Exception , ex :
-        repolib.logger.error( "Exception while reading build configuration : %s" % ex )
+        repolib.logger.error( ex )
         return False
 
     return conf
