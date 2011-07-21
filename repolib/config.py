@@ -5,6 +5,12 @@ import utils , repolib
 import ConfigParser
 
 
+mirrorconf = "/etc/repomirror.conf"
+mirrordir  = "/etc/repomirror.d"
+
+buildconf = "/etc/buildrepo.conf"
+builddir  = "/etc/buildrepo.d"
+
 # FIXME : Include standard plain os.open??
 mimetypes = {}
 
@@ -141,7 +147,7 @@ class MirrorConf ( RepoConf ) :
 def read_mirror_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
+    if not config.read( mirrorconf ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
@@ -158,8 +164,7 @@ def read_mirror_config ( repo_name ) :
 def get_all_configs ( key=None , value=None ) :
 
     config = ConfigParser.RawConfigParser()
-    for file in ( "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ) :
-        config.read( file )
+    config.read( mirrorconf )
     if not config.sections() :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
@@ -193,7 +198,7 @@ class BuildConf ( RepoConf ) :
 def read_build_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/buildrepo.conf" , os.path.expanduser("~/.buildrepo") ] ) :
+    if not config.read( buildconf ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
