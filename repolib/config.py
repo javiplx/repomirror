@@ -47,18 +47,20 @@ default_params['pkgvflags'] = "SKIP_NONE"
 
 class RepoConf ( dict ) :
 
-    def __init__ ( self , reponame , filename=None ) :
+    def __init__ ( self , reponame , config , filename ) :
         self.__file__ = filename
         self.name = reponame
         dict.__init__( self )
+        self.read( config )
+
+    def read ( self , config ) :
+
         self['type'] = None
         self['destdir'] = None
         self['detached'] = None
         self['version'] = None
         self['architectures'] = None
         self['components'] = None
-
-    def read ( self , config ) :
 
         if self.name not in config.sections() :
             raise Exception( "Repository '%s' is not configured" % self.name )
@@ -89,21 +91,23 @@ class RepoConf ( dict ) :
 
 class MirrorConf ( RepoConf ) :
 
-    def __init__ ( self , reponame , filename=None ) :
-        RepoConf.__init__( self , reponame , filename )
-        self['url'] = None
-        self.url_parts = None
-        self['mode'] = default_mode
-        self['filters'] = {}
-        self['params'] = {}
-        self['params'].update( default_params )
+    def __init__ ( self , reponame , config ) :
+        RepoConf.__init__( self , reponame , config , mirrorconf )
 
     def set_url ( self , scheme , server , base_path ) :
         self.url_parts = ( scheme , server , base_path )
         self['url'] = utils.unsplit( scheme , server , "%s/" % base_path )
 
     def read ( self , config ) :
+
         RepoConf.read( self , config )
+
+        self['url'] = None
+        self.url_parts = None
+        self['mode'] = default_mode
+        self['filters'] = {}
+        self['params'] = {}
+        self['params'].update( default_params )
 
         if config.has_option ( self.name , "mode" ) :
             self['mode'] = config.get( self.name , "mode" )
@@ -151,9 +155,8 @@ def read_mirror_config ( repo_name ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
-    conf = MirrorConf( repo_name )
     try :
-        conf.read( config )
+        conf = MirrorConf( repo_name , config )
     except Exception , ex :
         repolib.logger.error( "Exception while reading mirror configuration : %s" % ex )
         return False
@@ -174,8 +177,7 @@ def get_all_configs ( key=None , value=None ) :
     for name in config.sections() :
         if name != "global" :
             try :
-                conf = MirrorConf( name )
-                conf.read( config )
+                conf = MirrorConf( name , config )
                 if not key or conf[key] == value :
                     conflist.append( conf )
             except Exception , ex :
@@ -186,8 +188,8 @@ def get_all_configs ( key=None , value=None ) :
 
 class BuildConf ( RepoConf ) :
 
-    def __init__ ( self , reponame , filename=None ) :
-        RepoConf.__init__( self , reponame , filename )
+    def __init__ ( self , reponame , config ) :
+        RepoConf.__init__( self , reponame , config , buildconf )
 
     def read ( self , config ) :
         RepoConf.read( self , config )
@@ -202,9 +204,8 @@ def read_build_config ( repo_name ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
-    conf = BuildConf( repo_name )
     try :
-        conf.read( config )
+        conf = BuildConf( repo_name , config )
     except Exception , ex :
         repolib.logger.error( "Exception while reading build configuration : %s" % ex )
         return False
