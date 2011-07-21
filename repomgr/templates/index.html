@@ -8,9 +8,9 @@
 </tr>
 </thead>
 <tbody>
-{% for repo in repos.values %}
+{% for repo in repos %}
     <tr>
-    <td><a href={{ repo.section }}>{{ repo.name }}</a></td>
+    <td><a href={{ repo.name }}>{{ repo.name }}</a></td>
     {% for value in repo.values %}
             <td>{{ value }}</td>
     {% endfor %}

@@ -1,7 +1,7 @@
 
 from django.shortcuts import render_to_response
 
-from repolib.config import MirrorConf
+from repolib.config import MirrorConf , get_all_configs
 
 from django.http import HttpResponse
 
@@ -10,22 +10,13 @@ import os
 
 def index ( request ) :
 
-    config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        response = HttpResponse()
-        response.write( "Server Error\n" )
-        return response
-    sections = config.sections()
-    if config.has_section( "global" ) :
-        sections.pop( sections.index( "global" ) )
     keylist =  ( 'type' , 'url' , 'version' , 'architectures' )
-    repos = {}
-    for section in sections :
-        repo = MirrorConf( section )
-        repo.read( config )
-        repos[ section ] = { 'section':section , 'name':repo.__name__ , 'values':[] }
+    repos = []
+    for repo in get_all_configs() :
+        repodesc = { 'name':repo.__name__ , 'values':[] }
         for key in keylist :
-            repos[ section ]['values'].append( repo[key] )
+            repodesc['values'].append( repo[key] )
+        repos.append( repodesc )
     return render_to_response( 'templates/index.html' , { 'keylist':keylist , 'repos':repos } )
 
 
