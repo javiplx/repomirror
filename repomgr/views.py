@@ -34,13 +34,9 @@ def detail ( request , repo_name ) :
     if repo.url_parts :
         keys.extend( ( 'scheme' , 'server' , 'base_path' ) )
         repo['url'] += " (ro)"
-    response = render_to_response( 'templates/detail.html' , { 'repo':repo , 'keys':keys } )
+    extras = {}
     for key in repo.keys() :
         if key not in keys :
-            response.write( "<li><b>%s</b> - %s\n" % ( key , repo[key] ) )
-    response.write( "</ul>\n" )
-
-    response.write( "<a href=./>Go to main page</a>\n" )
-
-    return response
+            extras[ key ] = repo[key]
+    return render_to_response( 'templates/detail.html' , { 'repo':repo , 'keys':keys , 'extras':extras } )
 

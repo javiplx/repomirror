@@ -13,3 +13,8 @@
 </ul>
 <h4>Extra values</h4>
 <ul>
+{% for k,v in extras.iteritems %}
+  <li><b>{{ k }}</b> - {{ v }}
+{% endfor %}
+</ul>
+<a href=./>Go to main page</a>
