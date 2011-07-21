@@ -43,7 +43,7 @@ class RepoConf ( dict ) :
 
     def __init__ ( self , reponame , filename=None ) :
         self.__file__ = filename
-        self.__name__ = reponame
+        self.name = reponame
         dict.__init__( self )
         self['type'] = None
         self['destdir'] = None
@@ -54,12 +54,12 @@ class RepoConf ( dict ) :
 
     def read ( self , config ) :
 
-        if self.__name__ not in config.sections() :
-            raise Exception( "Repository '%s' is not configured" % self.__name__ )
+        if self.name not in config.sections() :
+            raise Exception( "Repository '%s' is not configured" % self.name )
 
-        if config.has_option( self.__name__ , "destdir" ) :
+        if config.has_option( self.name , "destdir" ) :
 
-            self['destdir'] = config.get( self.__name__ , "destdir" )
+            self['destdir'] = config.get( self.name , "destdir" )
             self['detached'] = True
 
         else :
@@ -73,12 +73,12 @@ class RepoConf ( dict ) :
             self['destdir'] = config.get( "global" , "destdir" )
             self['detached'] = False
 
-        self['type'] = config.get( self.__name__ , "type" )
+        self['type'] = config.get( self.name , "type" )
 
-        self['version'] = config.get( self.__name__ , "version" )
-        self['architectures'] = config.get( self.__name__ , "architectures" ).split()
-        if config.has_option( self.__name__ , "components" ) :
-            self['components'] = config.get( self.__name__ , "components" ).split()
+        self['version'] = config.get( self.name , "version" )
+        self['architectures'] = config.get( self.name , "architectures" ).split()
+        if config.has_option( self.name , "components" ) :
+            self['components'] = config.get( self.name , "components" ).split()
 
 
 class MirrorConf ( RepoConf ) :
@@ -99,30 +99,30 @@ class MirrorConf ( RepoConf ) :
     def read ( self , config ) :
         RepoConf.read( self , config )
 
-        if config.has_option ( self.__name__ , "mode" ) :
-            self['mode'] = config.get( self.__name__ , "mode" )
+        if config.has_option ( self.name , "mode" ) :
+            self['mode'] = config.get( self.name , "mode" )
 
-        if config.has_option ( self.__name__ , "url" ) :
-            self['url'] = config.get( self.__name__ , "url" )
+        if config.has_option ( self.name , "url" ) :
+            self['url'] = config.get( self.name , "url" )
             if not self['url'].endswith("/") :
                 repolib.logger.warning( "Appending trailing '/' to url, missing on configuration file" )
                 self['url'] += "/"
         else :
-            if config.has_option( self.__name__ , "scheme" ) :
-                scheme = config.get( self.__name__ , "scheme" )
+            if config.has_option( self.name , "scheme" ) :
+                scheme = config.get( self.name , "scheme" )
             else :
                 scheme = "http"
-            server = config.get( self.__name__ , "server" )
-            if config.has_option( self.__name__ , "base_path" ) :
-                base_path = config.get( self.__name__ , "base_path" )
+            server = config.get( self.name , "server" )
+            if config.has_option( self.name , "base_path" ) :
+                base_path = config.get( self.name , "base_path" )
             else :
                 base_path = ""
             self.set_url( scheme , server , base_path )
 
-        if config.has_option( self.__name__ , "filters" ) :
-            for subfilter in config.get( self.__name__ , "filters" ).split() :
-                if config.has_option( self.__name__ , subfilter ) :
-                    self['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( self.__name__ , subfilter ).split() )
+        if config.has_option( self.name , "filters" ) :
+            for subfilter in config.get( self.name , "filters" ).split() :
+                if config.has_option( self.name , subfilter ) :
+                    self['filters'][subfilter] = map( lambda x : x.replace("_"," ") , config.get( self.name , subfilter ).split() )
 
         for key in self['params'].keys() :
             if config.has_option( "global" , key ) :
@@ -130,11 +130,11 @@ class MirrorConf ( RepoConf ) :
                     self['params'][ key ] = config.getboolean( "global" , key )
                 except ValueError , ex :
                     self['params'][ key ] = config.get( "global" , key )
-            if config.has_option( self.__name__ , key ) :
+            if config.has_option( self.name , key ) :
                 try :
-                    self['params'][ key ] = config.getboolean( self.__name__ , key )
+                    self['params'][ key ] = config.getboolean( self.name , key )
                 except ValueError , ex :
-                    self['params'][ key ] = config.get( self.__name__ , key )
+                    self['params'][ key ] = config.get( self.name , key )
 
         self['params']['pkgvflags'] = eval( "utils.%s" % self['params']['pkgvflags'] )
 
@@ -187,8 +187,8 @@ class BuildConf ( RepoConf ) :
     def read ( self , config ) :
         RepoConf.read( self , config )
 
-        if config.has_option( self.__name__ , "extensions" ) :
-            self['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( self.__name__ , "extensions" ).split() )
+        if config.has_option( self.name , "extensions" ) :
+            self['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( self.name , "extensions" ).split() )
 
 def read_build_config ( repo_name ) :
 

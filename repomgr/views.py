@@ -13,7 +13,7 @@ def index ( request ) :
     keylist =  ( 'type' , 'url' , 'version' , 'architectures' )
     repos = []
     for repo in get_all_configs() :
-        repodesc = { 'name':repo.__name__ , 'values':[] }
+        repodesc = { 'name':repo.name , 'values':[] }
         for key in keylist :
             repodesc['values'].append( repo[key] )
         repos.append( repodesc )
@@ -29,7 +29,6 @@ def detail ( request , repo_name ) :
         return response
     repo = MirrorConf( repo_name )
     repo.read( config )
-    repo['name'] = repo.__name__
     keys = [ 'name' , 'type' , 'mode' , 'detached' , 'destdir' , 'version' , 'architectures' , 'components' , 'url' ]
     if repo.url_parts :
         keys.extend( ( 'scheme' , 'server' , 'base_path' ) )

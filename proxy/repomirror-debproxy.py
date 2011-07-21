@@ -23,7 +23,7 @@ source_url = {}
 
 def load_confs () :
     for repo in repolib.config.get_all_configs( 'type' , 'deb' ) :
-        source_url[ repo.__name__ ] = repo['url']
+        source_url[ repo.name ] = repo['url']
 
 
 def handler ( req ) :
