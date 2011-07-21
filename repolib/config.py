@@ -73,7 +73,7 @@ class RepoConf ( dict ) :
 
         self['type'] = None
         self['destdir'] = None
-        self['detached'] = None
+        self['detached'] = False
         self['version'] = None
         self['architectures'] = None
         self['components'] = None
@@ -95,7 +95,6 @@ class RepoConf ( dict ) :
                 raise Exception( "Broken configuration, missing destination directory" )
 
             self['destdir'] = config.get( "global" , "destdir" )
-            self['detached'] = False
 
         self['type'] = config.get( self.name , "type" )
 

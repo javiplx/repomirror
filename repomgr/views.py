@@ -24,6 +24,8 @@ def detail ( request , repo_name ) :
 
     repo = read_mirror_config( repo_name )
     keys = [ 'name' , 'type' , 'mode' , 'detached' , 'destdir' , 'version' , 'architectures' , 'components' , 'url' ]
+    if not repo['detached'] :
+        repo['destdir'] += " (ro)"
     if repo.url_parts :
         keys.extend( ( 'scheme' , 'server' , 'base_path' ) )
         repo['url'] += " (ro)"
