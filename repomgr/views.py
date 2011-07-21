@@ -1,7 +1,7 @@
 
 from django.shortcuts import render_to_response
 
-from repolib.config import MirrorConf , get_all_configs
+from repolib.config import read_mirror_config , get_all_configs
 
 from django.http import HttpResponse
 
@@ -22,13 +22,7 @@ def index ( request ) :
 
 def detail ( request , repo_name ) :
 
-    config = ConfigParser.RawConfigParser()
-    if not config.read( [ "/etc/repomirror.conf" , os.path.expanduser("~/.repomirror") ] ) :
-        response = HttpResponse()
-        response.write( "Server Error\n" )
-        return response
-    repo = MirrorConf( repo_name )
-    repo.read( config )
+    repo = read_mirror_config( repo_name )
     keys = [ 'name' , 'type' , 'mode' , 'detached' , 'destdir' , 'version' , 'architectures' , 'components' , 'url' ]
     if repo.url_parts :
         keys.extend( ( 'scheme' , 'server' , 'base_path' ) )
