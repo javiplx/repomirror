@@ -46,6 +46,21 @@ except :
 default_params['pkgvflags'] = "SKIP_NONE"
 
 
+# NOTE : if a section name is duplicated in the same file, ConfigParser does not allow to detect it
+def get_file ( section , conffiles ) :
+    filename = []
+    for file in conffiles :
+        config = ConfigParser.RawConfigParser()
+        config.read( file )
+        if config.has_section( section ) :
+            filename.append( file )
+    if not filename :
+        raise Exception( "Definition for '%s' not found" % section )
+    if len(filename) > 1 :
+        raise Exception( "Multiple definitions of '%s' in %s" % ( section , " , ".join(filename) ) )
+    return filename[0]
+
+
 class RepoConf ( dict ) :
 
     def __init__ ( self , reponame , config , filename ) :
@@ -91,9 +106,6 @@ class RepoConf ( dict ) :
 
 
 class MirrorConf ( RepoConf ) :
-
-    def __init__ ( self , reponame , config ) :
-        RepoConf.__init__( self , reponame , config , mirrorconf )
 
     def set_url ( self , scheme , server , base_path ) :
         self.url_parts = ( scheme , server , base_path )
@@ -160,7 +172,7 @@ def read_mirror_config ( repo_name ) :
         return False
 
     try :
-        conf = MirrorConf( repo_name , config )
+        conf = MirrorConf( repo_name , config , get_file( repo_name , conffiles ) )
     except Exception , ex :
         repolib.logger.error( ex )
         return False
@@ -183,7 +195,7 @@ def get_all_configs ( key=None , value=None ) :
     for name in config.sections() :
         if name != "global" :
             try :
-                conf = MirrorConf( name , config )
+                conf = MirrorConf( name , config , get_file( name , conffiles ) )
                 if not key or conf[key] == value :
                     conflist.append( conf )
             except Exception , ex :
@@ -193,9 +205,6 @@ def get_all_configs ( key=None , value=None ) :
 
 
 class BuildConf ( RepoConf ) :
-
-    def __init__ ( self , reponame , config ) :
-        RepoConf.__init__( self , reponame , config , buildconf )
 
     def read ( self , config ) :
         RepoConf.read( self , config )
@@ -214,7 +223,7 @@ def read_build_config ( repo_name ) :
         return False
 
     try :
-        conf = BuildConf( repo_name , config )
+        conf = BuildConf( repo_name , config , get_file( repo_name , conffiles ) )
     except Exception , ex :
         repolib.logger.error( ex )
         return False
