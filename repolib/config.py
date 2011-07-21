@@ -171,13 +171,7 @@ def read_mirror_config ( repo_name ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
-    try :
-        conf = MirrorConf( repo_name , config , get_file( repo_name , conffiles ) )
-    except Exception , ex :
-        repolib.logger.error( ex )
-        return False
-
-    return conf
+    return MirrorConf( repo_name , config , get_file( repo_name , conffiles ) )
 
 
 def get_all_configs ( key=None , value=None ) :
@@ -222,13 +216,7 @@ def read_build_config ( repo_name ) :
         repolib.logger.error( "Could not find a valid configuration file" )
         return False
 
-    try :
-        conf = BuildConf( repo_name , config , get_file( repo_name , conffiles ) )
-    except Exception , ex :
-        repolib.logger.error( ex )
-        return False
-
-    return conf
+    return BuildConf( repo_name , config , get_file( repo_name , conffiles ) )
 
 if __name__ == "__main__" :
     print get_all_configs()
