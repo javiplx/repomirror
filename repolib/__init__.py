@@ -179,7 +179,13 @@ processing is required
 
         if params['usegpg'] and sign_ext :
           if isinstance(release_file,str) :
+           try :
             os.rename( signature_file , release_file + sign_ext )
+           except OSError , ex :
+            if ex.errno != errno.EXDEV :
+                repolib.logger.critical( "OSError: %s" % ex )
+                sys.exit(1)
+            shutil.move( signature_file , release_file + sign_ext )
           else :
             os.unlink( signature_file )
 
