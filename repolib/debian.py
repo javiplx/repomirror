@@ -240,6 +240,21 @@ that the current copy is ok.
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
+        _name = "%sRelease" % self.metadata_path()
+        localname = os.path.join( self.repo_path() , _name )
+
+        if os.path.isfile( localname ) :
+            _name = "%sRelease" % self.metadata_path(True)
+            if not self.verify( localname , _name , release , params ) :
+                os.unlink( localname )
+
+        if not os.path.isfile( localname ) :
+            url = "%sRelease" % self.metadata_path()
+            if self.downloadRawFile( url , localname ) :
+                _name = "%sRelease" % self.metadata_path(True)
+                if not self.verify( localname , _name , release , params ) :
+                    logger.warning( "Missing Release file for %s" % self )
+
         localname = False
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
