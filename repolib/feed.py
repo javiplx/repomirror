@@ -143,6 +143,19 @@ fresh download is mandatory, and exception is raised if not specified"""
             repolib.logger.error( "No Valid Packages file found for %s" % self )
             localname = False
 
+        if extension != ".gz" :
+            # Forced gz download because debian-installer seems unable to use the bz2 versions
+            extension = ".gz"
+
+            url = "%sPackages%s" % ( self.metadata_path() , extension )
+            _localname = os.path.join( self.repo_path() , url )
+
+            if self.downloadRawFile( url , _localname ) :
+                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
+                repolib.logger.error( "Esto es mirinda %s %s" % ( _localname , _name ) )
+                if not self.verify( _localname , _name , metafile , params ) :
+                    os.unlink( _localname )
+
         if isinstance(localname,bool) :
             return localname
 
