@@ -23,3 +23,6 @@ repomgr/views.py
 repomgr/repomgr.conf
 repomgr/templates/index.html
 repomgr/templates/detail.html
+repocache/__init__.py
+repocache/cache.py
+repocache/repocache.conf

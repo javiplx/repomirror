@@ -16,30 +16,8 @@ from mod_python import apache
 import urllib2
 import os
 
-import repolib.config
 
-source_url = {}
-
-
-def load_confs () :
-    for repo in repolib.config.get_all_configs( 'type' , 'deb' ) :
-        source_url[ repo.name ] = repo['url']
-
-
-def handler ( req ) :
-
-    local_path = req.filename
-    _subpath = local_path.replace( req.hlist.directory , "" , 1 )
-    # FIXME : top directory (debian) must be created by hand or an error happens
-    reponame , subpath = _subpath.split("/",1)
-    if not source_url.has_key( reponame ) :
-        req.log_error( "Reloading configurations" )
-        load_confs()
-    remote_url = source_url[reponame]
-
-    if req.used_path_info :
-        local_path += req.path_info
-        remote_url = urllib2.urlparse.urljoin( remote_url , subpath + req.path_info )
+def get_file ( req , local_path ) :
 
     if not os.path.isdir( os.path.dirname(local_path) ) :
         try :
@@ -83,6 +61,4 @@ def handler ( req ) :
         req.sendfile(local_path)
 
     return apache.OK
-
-load_confs()
 
