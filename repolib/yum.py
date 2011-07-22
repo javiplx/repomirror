@@ -84,6 +84,16 @@ class yum_repository ( repolib.MirrorRepository ) :
                         repolib.logger.critical( "OSError: %s" % ex )
                         sys.exit(1)
                     shutil.move( repomd_file[arch] , os.path.join( subrepo.repo_path() , self.repomd[arch] ) )
+
+                if os.path.isfile( repomd_file[arch] + ".asc" ) :
+                    try :
+                        os.rename( repomd_file[arch] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[arch] + ".asc" ) )
+                    except OSError , ex :
+                        if ex.errno != errno.EXDEV :
+                            print "OSError: %s" % ex
+                            sys.exit(1)
+                        shutil.move( repomd_file[arch] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[arch] + ".asc" ) )
+
                 local[ arch ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
             else :
                 local[ arch ] = False

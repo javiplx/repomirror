@@ -149,6 +149,7 @@ processing is required
                         release_file = ""
                     else :
                         os.unlink( release_file )
+                        os.unlink( release_file + sign_ext )
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
@@ -177,6 +178,9 @@ processing is required
                         release_file = False
 
         if params['usegpg'] and sign_ext :
+          if isinstance(release_file,str) :
+            os.rename( signature_file , release_file + sign_ext )
+          else :
             os.unlink( signature_file )
 
         return release_file

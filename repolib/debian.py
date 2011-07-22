@@ -132,6 +132,17 @@ class debian_repository ( MirrorRepository ) :
 
             os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 
+            if os.path.isfile( release_file[''] + ".gpg" ) :
+                try :
+                    os.rename( release_file[''] + ".gpg" , local + ".gpg" )
+                except OSError , ex :
+                    if ex.errno != errno.EXDEV :
+                        print "OSError: %s" % ex
+                        sys.exit(1)
+                    shutil.move( release_file[''] + ".gpg" , local + ".gpg" )
+
+                os.chmod( local + ".gpg" , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
+
         return { '' : os.path.dirname( local ) }
 
     def info ( self , release_file ) :
