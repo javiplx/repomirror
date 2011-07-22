@@ -88,6 +88,8 @@ class debian_repository ( MirrorRepository ) :
 
             if self.components :
                 for comp in self.components :
+                    if comp.endswith( "/debian-installer" ) :
+                        comp = comp[:-17]
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         return { '':False }

@@ -152,7 +152,6 @@ fresh download is mandatory, and exception is raised if not specified"""
 
             if self.downloadRawFile( url , _localname ) :
                 _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
-                repolib.logger.error( "Esto es mirinda %s %s" % ( _localname , _name ) )
                 if not self.verify( _localname , _name , metafile , params ) :
                     os.unlink( _localname )
 
