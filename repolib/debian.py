@@ -40,6 +40,12 @@ class debian_repository ( MirrorRepository ) :
             return ""
         return "dists/%s" % self.version
 
+    def __subrepo_dict ( self , value ) :
+        d = {}
+        for k in self.subrepos :
+            d[str(k)] = value
+        return d
+
     def get_master_file ( self , _params , keep=False ) :
 
         params = self.params
@@ -50,9 +56,9 @@ class debian_repository ( MirrorRepository ) :
         version = self.version.split("/")[0].split("-")[0].lower()
         if not release_file :
             logger.error( "No valid Release file for '%s'" % ( self.version ) )
-            return { '':release_file }
+            return self.__subrepo_dict( release_file )
         elif release_file is True :
-            return { '':True }
+            return self.__subrepo_dict( True )
 
         logger.info( "Content verification of metafile %s" % release_file )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
@@ -69,12 +75,12 @@ class debian_repository ( MirrorRepository ) :
         if suite != codename and suite == version :
             logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, codename ) )
             os.unlink( release_file )
-            return { '':False }
+            return self.__subrepo_dict( False )
 
         if codename != version :
             logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, codename ) )
             os.unlink( release_file )
-            return { '':False }
+            return self.__subrepo_dict( False )
 
 
         # We get sure that all the requested components are defined in the
@@ -92,14 +98,15 @@ class debian_repository ( MirrorRepository ) :
                         comp = comp[:-17]
                     if comp not in release_comps :
                         logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
-                        return { '':False }
+                        # FIXME : only this component should get marked as unavailable
+                        return self.__subrepo_dict( False )
             else :
                 logger.warning( "No components specified, selected all components from Release file" )
                 self.components = release_comps
 
         elif self.components :
             logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
-            return { '':False }
+            return self.__subrepo_dict( False )
         else :
             logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
@@ -113,43 +120,46 @@ class debian_repository ( MirrorRepository ) :
         for arch in self.architectures :
             if arch not in release_archs :
                 logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
-                return { '':False }
+                # FIXME : only this architecture should get marked as unavailable
+                return self.__subrepo_dict( False )
 
 
-        return { '':release_file }
+        return self.__subrepo_dict( release_file )
 
-    def write_master_file ( self , release_file ) :
+    def write_master_file ( self , meta_files ) :
 
         # Path for local copy must be created in advance by build_local_tree
         local = os.path.join( self.repo_path() , self.release )
 
+        release_file = meta_files.values()[0]
         if not os.path.exists( local ) :
             try :
-                os.rename( release_file[''] , local )
+                os.rename( temp_file , local )
             except OSError , ex :
                 if ex.errno != errno.EXDEV :
                     repolib.logger.critical( "OSError: %s" % ex )
                     sys.exit(1)
-                shutil.move( release_file[''] , local )
+                shutil.move( temp_file , local )
 
             os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 
-            if os.path.isfile( release_file[''] + ".gpg" ) :
+            if os.path.isfile( temp_file + ".gpg" ) :
                 try :
-                    os.rename( release_file[''] + ".gpg" , local + ".gpg" )
+                    os.rename( temp_file + ".gpg" , local + ".gpg" )
                 except OSError , ex :
                     if ex.errno != errno.EXDEV :
                         print "OSError: %s" % ex
                         sys.exit(1)
-                    shutil.move( release_file[''] + ".gpg" , local + ".gpg" )
+                    shutil.move( temp_file + ".gpg" , local + ".gpg" )
 
                 os.chmod( local + ".gpg" , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 
-        return { '' : os.path.dirname( local ) }
+        return self.__subrepo_dict( os.path.dirname( local ) )
 
-    def info ( self , release_file ) :
+    def info ( self , meta_files ) :
 
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file[''] , "Release" ) ) )
+        release_file = meta_files.values()[0]
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file , "Release" ) ) )
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :
@@ -236,9 +246,9 @@ that the current copy is ok.
         params.update( _params )
 
         if download :
-            master_file = os.path.join( metafile[''] , "Release" )
+            master_file = os.path.join( metafile[str(self)] , "Release" )
         else :
-            master_file = metafile['']
+            master_file = metafile[str(self)]
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
