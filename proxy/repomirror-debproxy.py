@@ -56,7 +56,11 @@ def handler ( req ) :
         except Exception , ex :
             req.log_error( "Cannot download remote %s : %s" % ( remote_url , ex ) )
             return apache.HTTP_NOT_FOUND
-        local = open( local_path , 'wb' )
+        try :
+            local = open( local_path , 'wb' )
+        except Exception , ex :
+            req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
+            return apache.HTTP_NOT_FOUND
 
         # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
         file_size = int( remote.info().getheaders("Content-Length")[0] )
