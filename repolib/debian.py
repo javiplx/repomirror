@@ -47,6 +47,7 @@ class debian_repository ( MirrorRepository ) :
 
         release_file = self.get_signed_metafile ( params , self.release , ".gpg" , keep )
 
+        version = self.version.split("/")[0].split("-")[0].lower()
         if not release_file :
             logger.error( "No valid Release file for '%s'" % ( self.version ) )
             return { '':release_file }
