@@ -9,7 +9,6 @@ import config , utils
 
 
 import repolib
-from lists import *
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -72,9 +71,6 @@ class feed_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             self.subrepos.append( SimpleComponent( config , archname ) )
 
-    def base_url ( self ) :
-        return self.repo_url
-
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
 
@@ -90,16 +86,13 @@ class feed_repository ( repolib.MirrorRepository ) :
     def info ( self , release_file ) :
         str  = "Mirroring %s\n" % self.name
         str += "Architectures : %s\n" % " ".join(self.architectures)
-        str += "unused - version %s\n" % ( self.version )
+        if self.version : str += "Version %s\n" % ( self.version )
         return str
 
     def get_download_list( self ) :
         return DownloadThread( self )
 
 class SimpleComponent ( repolib.MirrorComponent ) :
-
-    def base_url ( self ) :
-        return self.repo_url
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
@@ -108,7 +101,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
         return ""
 
     def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('sections') and pkginfo['Section'] not in filters['sections'] :
+        if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
             return False
         if filters.has_key('priorities') and pkginfo.has_key('Priority') and pkginfo['Priority'] not in filters['priorities'] :
             return False
@@ -116,7 +109,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
             return False
         return True
 
-    def check_packages_file( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 
@@ -124,6 +117,9 @@ fresh download is mandatory, and exception is raised if not specified"""
 
         params = self.params
         params.update( _params )
+
+        if not download :
+            repolib.logger.warning( "Forcing download mode on %s.get_metafile()" % self )
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
@@ -152,10 +148,10 @@ fresh download is mandatory, and exception is raised if not specified"""
                 if not self.verify( _localname , _name , metafile , params ) :
                     os.unlink( _localname )
 
-        if isinstance(localname,bool) :
-            return localname
+        if isinstance(localname,str) :
+            return read_handler( localname )
 
-        return read_handler( localname )
+        return localname
 
     def verify( self , filename , _name , release , params ) :
         return True
@@ -168,11 +164,12 @@ fresh download is mandatory, and exception is raised if not specified"""
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = PackageList()
-        rejected_pkgs = PackageList() 
+        download_pkgs = self.pkg_list()
+        rejected_pkgs = self.pkg_list()
 
         if fd :
-            packages = debian_bundle.debian_support.PackageFile( fd.filename , fd )
+            fdname = fd.filename
+            packages = debian_bundle.debian_support.PackageFile( fdname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach

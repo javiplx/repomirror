@@ -60,7 +60,7 @@ missing_pkgs = []
 
 for subrepo in repo.subrepos :
 
-    packages = subrepo.check_packages_file( local_repodata , params )
+    packages = subrepo.get_metafile( local_repodata , params )
 
     if packages is True :
         continue

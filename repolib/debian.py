@@ -27,10 +27,8 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Not strictly required, but kept as member for convenience
         self.release = os.path.join( self.metadata_path() , "Release" )
 
-    def base_url ( self ) :
-        return self.repo_url
-
     def repo_path ( self ) :
+        # NOTE : we don't append the repository name to allow sharing of packages pool
         return self.destdir
 
     def metadata_path ( self , partial=False ) :
@@ -175,9 +173,6 @@ class DebianComponent ( SimpleComponent ) :
     def __str__ ( self ) :
         return "%s/%s" % ( self.archname , self.compname )
 
-    def base_url ( self ) :
-        return self.repo_url
-
     def repo_path ( self ) :
         return self.destdir
 
@@ -187,21 +182,7 @@ class DebianComponent ( SimpleComponent ) :
             return path
         return "dists/%s/%s" % ( self.version , path )
 
-    def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('sections') and pkginfo.has_key('Section') and pkginfo['Section'] not in filters['sections'] :
-            return False
-        if filters.has_key('priorities') and pkginfo.has_key('Priority') and pkginfo['Priority'] not in filters['priorities'] :
-            return False
-        if filters.has_key('tags') and pkginfo.has_key('Tag') and pkginfo['Tag'] not in filters['tags'] :
-            return False
-        return True
-
     def verify( self , filename , _name , release , params ) :
-        #
-        # IMPROVEMENT : For Release at least, and _multivalued in general : Multivalued fields returned as dicts instead of lists
-        #
-        # FIXME : 'size' element should be a number !!!
-        #
         _item = {}
         for type in ( 'MD5Sum' , 'SHA1' , 'SHA256' ) :
             if release.has_key(type) :
@@ -219,7 +200,7 @@ class DebianComponent ( SimpleComponent ) :
             repolib.logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def check_packages_file( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params , download=True ) :
         """
 Verifies checksums and optionally downloads the Packages file for a component.
 Returns the full pathname for the file in its final destination or False when
@@ -276,7 +257,7 @@ that the current copy is ok.
 
             repolib.logger.warning( "No local Packages file exist for %s. Downloading." % self )
 
-            localname = SimpleComponent.check_packages_file( self , release , _params , True )
+            localname = SimpleComponent.get_metafile( self , release , _params , True )
 
           else :
             localname = False
@@ -285,6 +266,9 @@ that the current copy is ok.
             return read_handler( localname )
 
         return localname
+
+    def pkg_list( self ) :
+        return DebianPackageList()
 
     def get_package_list ( self , fd , _params , filters ) :
 
@@ -299,8 +283,8 @@ that the current copy is ok.
         all_pkgs = {}
         all_requires = {}
 
-        download_pkgs = DebianPackageList()
-        rejected_pkgs = DebianPackageList()
+        download_pkgs = self.pkg_list()
+        rejected_pkgs = self.pkg_list()
 
         if fd :
             if 'name' in dir(fd) :
@@ -367,9 +351,6 @@ that the current copy is ok.
                     missing_pkgs.append( pkgname )
 
         return download_size , download_pkgs , missing_pkgs
-
-    def get_download_list( self ) :
-        return DebianDownloadThread( self )
 
 
 class debian_build_repository ( repolib.BuildRepository ) :

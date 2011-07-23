@@ -30,9 +30,6 @@ class yum_repository ( repolib.MirrorRepository ) :
     def path_extend ( self ) :
         return ""
 
-    def base_url ( self ) :
-        return self.repo_url
-
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
 
@@ -87,17 +84,17 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def info ( self , metafile ) :
         str  = "Mirroring version %s\n" % self.version
-        str += "Source at %s\n" % self.base_url()
+        str += "Source at %s\n" % self.repo_url
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
+
+    def get_download_list( self ) :
+        return YumDownloadThread( self )
 
 class YumComponent ( repolib.MirrorComponent ) :
 
     def path_extend ( self ) :
         return ""
-
-    def base_url ( self ) :
-        return self.repo_url
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -112,7 +109,7 @@ class YumComponent ( repolib.MirrorComponent ) :
             return False
         return True
 
-    def check_packages_file( self , metafiles , _params , download=True ) :
+    def get_metafile( self , metafiles , _params , download=True ) :
         """
 Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
@@ -197,14 +194,17 @@ that the current copy is ok.
     
         return primary , secondary
 
+    def pkg_list( self ) :
+        return YumPackageFile( self )
+
     def get_package_list ( self , local_repodata , _params , filters ) :
 
         params = self.params
         params.update( _params )
 
         download_size = 0
-        download_pkgs = YumPackageFile()
-        rejected_pkgs = YumPackageFile()
+        download_pkgs = self.pkg_list()
+        rejected_pkgs = self.pkg_list()
         missing_pkgs = []
 
         fd = gzip.open( local_repodata[0] )
@@ -304,9 +304,6 @@ that the current copy is ok.
         repolib.logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
 
         return download_size , download_pkgs , missing_pkgs
-
-    def get_download_list( self ) :
-        return YumDownloadThread( self )
 
 class fedora_repository ( yum_repository ) :
 

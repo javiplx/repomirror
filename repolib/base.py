@@ -10,6 +10,7 @@ import urllib2
 
 import repolib
 import utils
+from lists import *
 
 class _repository :
 
@@ -42,9 +43,6 @@ class _mirror ( _repository ) :
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
 
-    def base_url ( self ) :
-        raise Exception( "Calling an abstract method" )
-
     def metadata_path ( self , partial=False ) :
         raise Exception( "Calling an abstract method" )
 
@@ -56,7 +54,7 @@ class _mirror ( _repository ) :
 
         Returns the local file name or False if errors"""
 
-        remote = utils.urljoin( self.base_url() , remote ) 
+        remote = utils.urljoin( self.repo_url , remote ) 
 
         if not local :
             (handle, fname) = tempfile.mkstemp()
@@ -96,7 +94,7 @@ class MirrorRepository ( _mirror ) :
         elif _config['type'] == "feed" :
             return repolib.feed_repository( _config )
         else :
-            Exception( "Unknown repository type '%s'" % _config['type'] )
+            raise Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
 
     def __init__ ( self , config ) :
@@ -140,7 +138,6 @@ processing is required
                         os.unlink( release_file )
                         os.unlink( release_file + sign_ext )
                 else :
-                    # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
                         repolib.logger.info( "Existing metadata file is valid, skipping" )
                         os.unlink( signature_file )
@@ -211,7 +208,7 @@ class MirrorComponent ( _mirror ) :
     def __hash__ ( self ) :
         return hash(str(self))
 
-    def check_packages_file( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params , download=True ) :
         raise Exception( "Calling an abstract method" )
 
     def match_filters( self , pkginfo , filters ) :
@@ -223,8 +220,8 @@ class MirrorComponent ( _mirror ) :
     def verify( self , filename , _name , release , params ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_download_list( self ) :
-        return DownloadThread( self )
+    def pkg_list( self ) :
+        return PackageList()
 
 
 class BuildRepository ( _repository ) :
@@ -236,6 +233,6 @@ class BuildRepository ( _repository ) :
         elif _config['type'] == "feed" :
             return repolib.feed_build_repository( _config , name )
         else :
-            Exception( "Unknown repository build type '%s'" % _config['type'] )
+            raise Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )
 

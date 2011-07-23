@@ -167,8 +167,7 @@ def read_mirror_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
-        repolib.logger.error( "Could not find a valid configuration file" )
-        return False
+        raise Exception( "Could not find a valid configuration file" )
 
     return MirrorConf( repo_name , config , get_file( repo_name , conffiles ) )
 
@@ -180,8 +179,7 @@ def get_all_configs ( key=None , value=None ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
-        repolib.logger.error( "Could not find a valid configuration file" )
-        return False
+        raise Exception( "Could not find a valid configuration file" )
 
     conflist = []
 
@@ -212,8 +210,7 @@ def read_build_config ( repo_name ) :
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
-        repolib.logger.error( "Could not find a valid configuration file" )
-        return False
+        raise Exception( "Could not find a valid configuration file" )
 
     return BuildConf( repo_name , config , get_file( repo_name , conffiles ) )
 
