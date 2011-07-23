@@ -4,14 +4,14 @@ from distutils.core import setup
 
 setup(
     name = 'repomirror',
-    version = '1.3.3',
+    version = '1.5',
     description = 'Generic repository mirroring tool',
     author = 'Javier Palacios',
     author_email = 'javiplx@gmail.com',
     license = 'GPLv2',
     url = 'http://github.com/javiplx/repomirror',
     download_url = 'http://r26936.ovh.net/repomirror',
-    scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' , 'checkmirror' ],
+    scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' , 'checkmirror' , 'get_meta' ],
     data_files = [
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] ) ,
                  ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/detail.html' ] ) ,
