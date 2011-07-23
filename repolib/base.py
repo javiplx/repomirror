@@ -103,7 +103,7 @@ class MirrorRepository ( _mirror ) :
 	_mirror.__init__( self , config )
         self.subrepos = []
 
-    def get_master_file ( self , params , keep=False ) :
+    def get_master_file ( self , params=None , keep=False ) :
         raise Exception( "Calling an abstract method" )
 
     def get_signed_metafile ( self , params , meta_file , keep=False ) :
@@ -214,7 +214,7 @@ class MirrorComponent ( _mirror ) :
     def __hash__ ( self ) :
         return hash(str(self))
 
-    def get_metafile( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params=None , download=True ) :
         raise Exception( "Calling an abstract method" )
 
     def match_filters( self , pkginfo , filters ) :

@@ -74,7 +74,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
 
-    def get_master_file ( self , _params , keep=False ) :
+    def get_master_file ( self , _params=None , keep=False ) :
         return { '':'' }
 
     def metadata_path ( self , partial=False ) :
@@ -109,14 +109,14 @@ class SimpleComponent ( repolib.MirrorComponent ) :
             return False
         return True
 
-    def get_metafile( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params=None , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
 fresh download is mandatory, and exception is raised if not specified"""
 
         localname = False
 
         params = self.params
-        params.update( _params )
+        if _params : params.update( _params )
 
         if not download :
             repolib.logger.warning( "Forcing download mode on %s.get_metafile()" % self )

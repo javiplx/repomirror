@@ -40,10 +40,10 @@ class yum_repository ( repolib.MirrorRepository ) :
             return self.path_extend()
         return "%srepodata/" % self.path_extend()
 
-    def get_master_file ( self , _params , keep=False ) :
+    def get_master_file ( self , _params=None , keep=False ) :
 
       params = self.params
-      params.update( _params )
+      if _params : params.update( _params )
 
       repomd = {}
 
@@ -111,7 +111,7 @@ class YumComponent ( repolib.MirrorComponent ) :
             return False
         return True
 
-    def get_metafile( self , metafiles , _params , download=True ) :
+    def get_metafile( self , metafiles , _params=None , download=True ) :
         """
 Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
@@ -122,7 +122,7 @@ that the current copy is ok.
 
         # Currently unused, but relevant to verification flags
         params = self.params
-        params.update( _params )
+        if _params : params.update( _params )
 
         if not metafiles[self] :
             return False

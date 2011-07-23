@@ -44,10 +44,10 @@ class debian_repository ( repolib.MirrorRepository ) :
             d[k] = value
         return d
 
-    def get_master_file ( self , _params , keep=False ) :
+    def get_master_file ( self , _params=None , keep=False ) :
 
         params = self.params
-        params.update( _params )
+        if _params : params.update( _params )
 
         release_file = self.get_signed_metafile ( params , self.release , keep )
 
@@ -202,7 +202,7 @@ class DebianComponent ( SimpleComponent ) :
             repolib.logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def get_metafile( self , metafile , _params , download=True ) :
+    def get_metafile( self , metafile , _params=None , download=True ) :
         """
 Verifies checksums and optionally downloads the Packages file for a component.
 Returns the full pathname for the file in its final destination or False when
@@ -212,7 +212,7 @@ that the current copy is ok.
 
         # Currently unused, but relevant to verification flags
         params = self.params
-        params.update( _params )
+        if _params : params.update( _params )
 
         if download :
             master_file = os.path.join( metafile[self] , "Release" )
