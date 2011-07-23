@@ -98,9 +98,6 @@ class feed_repository ( repolib.MirrorRepository ) :
 
 class SimpleComponent ( repolib.MirrorComponent ) :
 
-    def arch ( self ) :
-        return self.architectures[0]
-
     def base_url ( self ) :
         return self.repo_url
 

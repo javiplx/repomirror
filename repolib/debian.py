@@ -43,7 +43,7 @@ class debian_repository ( MirrorRepository ) :
     def __subrepo_dict ( self , value ) :
         d = {}
         for k in self.subrepos :
-            d[str(k)] = value
+            d[k] = value
         return d
 
     def get_master_file ( self , _params , keep=False ) :
@@ -246,9 +246,9 @@ that the current copy is ok.
         params.update( _params )
 
         if download :
-            master_file = os.path.join( metafile[str(self)] , "Release" )
+            master_file = os.path.join( metafile[self] , "Release" )
         else :
-            master_file = metafile[str(self)]
+            master_file = metafile[self]
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 

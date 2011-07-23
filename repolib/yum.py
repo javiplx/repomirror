@@ -20,7 +20,7 @@ class yum_repository ( repolib.MirrorRepository ) :
         self.repomd = {}
         for subrepo in self.subrepos :
             subrepo.repo_url += self.base_url_extend()
-            self.repomd[subrepo.arch()] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
+            self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def build_subrepo ( self , config , archname ) :
         return YumComponent( config , archname )
@@ -50,8 +50,7 @@ class yum_repository ( repolib.MirrorRepository ) :
       repomd = {}
 
       for subrepo in self.subrepos :
-        arch = subrepo.arch()
-        metafile = self.get_signed_metafile( params , self.repomd[arch] , ".asc" , keep )
+        metafile = self.get_signed_metafile( params , self.repomd[subrepo] , ".asc" , keep )
 
         if not metafile :
             repolib.logger.error( "Repository for %s is not available" % self.version )
@@ -66,7 +65,7 @@ class yum_repository ( repolib.MirrorRepository ) :
                     metafile = False
     
         # NOTE : the initial implementation did return an empty dictionary if metafile is false
-        repomd[ arch ] = metafile
+        repomd[ subrepo ] = metafile
 
       return repomd
 
@@ -75,28 +74,27 @@ class yum_repository ( repolib.MirrorRepository ) :
         local = {}
 
         for subrepo in self.subrepos :
-            arch = subrepo.arch()
-            if repomd_file[arch] :
+            if repomd_file[subrepo] :
                 try :
-                    os.rename( repomd_file[arch] , os.path.join( subrepo.repo_path() , self.repomd[arch] ) )
+                    os.rename( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
                 except OSError , ex :
                     if ex.errno != errno.EXDEV :
                         repolib.logger.critical( "OSError: %s" % ex )
                         sys.exit(1)
-                    shutil.move( repomd_file[arch] , os.path.join( subrepo.repo_path() , self.repomd[arch] ) )
+                    shutil.move( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
 
-                if os.path.isfile( repomd_file[arch] + ".asc" ) :
+                if os.path.isfile( repomd_file[subrepo] + ".asc" ) :
                     try :
-                        os.rename( repomd_file[arch] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[arch] + ".asc" ) )
+                        os.rename( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
                     except OSError , ex :
                         if ex.errno != errno.EXDEV :
                             print "OSError: %s" % ex
                             sys.exit(1)
-                        shutil.move( repomd_file[arch] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[arch] + ".asc" ) )
+                        shutil.move( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
 
-                local[ arch ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
+                local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
             else :
-                local[ arch ] = False
+                local[ subrepo ] = False
 
         return local
 
@@ -107,10 +105,6 @@ class yum_repository ( repolib.MirrorRepository ) :
         return str
 
 class YumComponent ( repolib.MirrorComponent ) :
-
-    # NOTE : this method should return a value suitable for dictionary key
-    def arch ( self ) :
-        return self.architectures[0]
 
     def path_extend ( self ) :
         return ""
@@ -144,17 +138,15 @@ that the current copy is ok.
         params = self.params
         params.update( _params )
 
-        arch = self.arch()
-
-        if not metafiles[arch] :
+        if not metafiles[self] :
             return False
 
         if download :
-            local_repodata = metafiles[arch]
+            local_repodata = metafiles[self]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
         else :
             local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
-            master_file = metafiles[arch]
+            master_file = metafiles[self]
 
         item , filelist = filelist_xmlparser.get_filelist( master_file )
 
@@ -175,7 +167,7 @@ that the current copy is ok.
     
         if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
     
-            repolib.logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            repolib.logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , self ) )
     
             url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
     
@@ -184,7 +176,7 @@ that the current copy is ok.
                     os.unlink( primary )
                     primary = False
             else :
-                repolib.logger.error( "Problems downloading primary file for %s-%s" % ( self.version , arch ) )
+                repolib.logger.error( "Problems downloading primary file for %s-%s" % ( self.version , self ) )
                 primary = False
     
         secondary = os.path.join( local_repodata , filelist['href'] )
@@ -204,7 +196,7 @@ that the current copy is ok.
     
         if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
     
-            repolib.logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , arch ) )
+            repolib.logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , self ) )
     
             url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
     
@@ -213,7 +205,7 @@ that the current copy is ok.
                     os.unlink( secondary )
                     secondary = False
             else :
-                repolib.logger.error( "Problems downloading filelists for %s-%s" % ( self.version , arch ) )
+                repolib.logger.error( "Problems downloading filelists for %s-%s" % ( self.version , self ) )
                 secondary = False
     
         return primary , secondary
@@ -343,7 +335,7 @@ class FedoraComponent ( YumComponent ) :
         return os.path.join( self.destdir , self.version , "Fedora" )
 
     def path_extend ( self ) :
-        return "%s/os/" % self.arch()
+        return "%s/os/" % self
 
 class fedora_update_repository ( yum_repository ) :
 
@@ -359,7 +351,7 @@ class FedoraUpdateComponent ( YumComponent ) :
         return os.path.join( self.destdir , self.version )
 
     def path_extend ( self ) :
-        return "%s/" % self.arch()
+        return "%s/" % self
 
 class centos_repository ( yum_repository ) :
 
@@ -372,7 +364,7 @@ class centos_repository ( yum_repository ) :
 class CentosComponent ( YumComponent ) :
 
     def path_extend ( self ) :
-        return "os/%s/" % self.arch()
+        return "os/%s/" % self
 
 class centos_update_repository ( yum_repository ) :
 
@@ -385,5 +377,5 @@ class centos_update_repository ( yum_repository ) :
 class CentosUpdateComponent ( YumComponent ) :
 
     def path_extend ( self ) :
-        return "%s/" % self.arch()
+        return "%s/" % self
 
