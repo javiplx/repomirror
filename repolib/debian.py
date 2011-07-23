@@ -270,87 +270,8 @@ that the current copy is ok.
     def pkg_list( self ) :
         return DebianPackageList()
 
-    def get_package_list ( self , fd , _params , filters ) :
-
-        params = self.params
-        params.update( _params )
-
-        # NOTE : Downloading Package Release file is quite redundant
-
-        download_size = 0
-        missing_pkgs = []
-
-        all_pkgs = {}
-        all_requires = {}
-
-        download_pkgs = self.pkg_list()
-        rejected_pkgs = self.pkg_list()
-
-        if fd :
-            if 'name' in dir(fd) :
-                fdname = fd.name
-            else :
-                fdname = fd.filename
-            packages = debian_bundle.debian_support.PackageFile( fdname , fd )
-
-# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
-#         Solution : Disable filtering on first approach
-#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
-
-            repolib.logger.warning( "Scanning available packages for minor filters" )
-            for pkg in packages :
-                pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
-                pkginfo['Name'] = pkginfo['Package']
-
-                # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
-                # SOLUTION : Create a second and separate Category with the last part (filename) of Section
-                # For now, we kept the simplest way
-# FIXME : Remaining reference to subrepo
-#                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
-#                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
-
-                if not self.match_filters( pkginfo , filters ) :
-                    rejected_pkgs.append( pkginfo )
-                    continue
-
-                all_pkgs[ pkginfo['Package'] ] = 1
-                download_pkgs.append( pkginfo )
-                # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkginfo['Size'] )
-
-                if pkginfo.has_key( 'Depends' ) :
-                    for deplist in pkginfo['Depends'].split(',') :                            
-                        # When we found 'or' in Depends, we will download all of them
-                        for depitem in deplist.split('|') :
-                            # We keep only the package name, more or less safer within a repository
-                            pkgname = depitem.strip().split(None,1)
-                            all_requires[ pkgname[0] ] = 1
-
-            fd.close()
-            del packages
-
-            for pkginfo in rejected_pkgs :
-
-                # FIXME : We made no attempt to go into a full depenceny loop
-                if all_requires.has_key( pkginfo['Package'] ) :
-                    all_pkgs[ pkginfo['Package'] ] = 1
-                    download_pkgs.append( pkginfo )
-                    # FIXME : This might cause a ValueError exception ??
-                    download_size += int( pkginfo['Size'] )
-
-                    if pkginfo.has_key( 'Depends' ) :
-                        for deplist in pkginfo['Depends'].split(',') :                            
-                            # When we found 'or' in Depends, we will download all of them
-                            for depitem in deplist.split('|') :
-                                # We keep only the package name, more or less safer within a repository
-                                pkgname = depitem.strip().split(None,1)
-                                all_requires[ pkgname[0] ] = 1
-
-            for pkgname in all_requires.keys() :
-                if not all_pkgs.has_key( pkgname ) :
-                    missing_pkgs.append( pkgname )
-
-        return download_size , download_pkgs , missing_pkgs
+    def forward( self , fd ) :
+        pass
 
 
 class debian_build_repository ( repolib.BuildRepository ) :

@@ -156,7 +156,14 @@ fresh download is mandatory, and exception is raised if not specified"""
     def verify( self , filename , _name , release , params ) :
         return True
 
+    def forward( self , fd ) :
+        # At least for the sample feed, double empty lines are used
+        fd.readline()
+
     def get_package_list ( self , fd , _params , filters ) :
+
+        params = self.params
+        params.update( _params )
 
         download_size = 0
         missing_pkgs = []
@@ -168,7 +175,10 @@ fresh download is mandatory, and exception is raised if not specified"""
         rejected_pkgs = self.pkg_list()
 
         if fd :
-            fdname = fd.filename
+            if 'name' in dir(fd) :
+                fdname = fd.name
+            else :
+                fdname = fd.filename
             packages = debian_bundle.debian_support.PackageFile( fdname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
@@ -177,8 +187,7 @@ fresh download is mandatory, and exception is raised if not specified"""
 
             repolib.logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
-                # At least for the sample feed, double empty lines are used
-                fd.readline()
+                self.forward( fd )
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
                 # On debian repos, we add this key while writting into PackageList
