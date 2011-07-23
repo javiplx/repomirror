@@ -14,6 +14,8 @@ from lists.debian import *
 
 class debian_repository ( repolib.MirrorRepository ) :
 
+    sign_ext = ".gpg"
+
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
 
@@ -47,7 +49,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         params = self.params
         params.update( _params )
 
-        release_file = self.get_signed_metafile ( params , self.release , ".gpg" , keep )
+        release_file = self.get_signed_metafile ( params , self.release , keep )
 
         version = self.version.split("/")[0].split("-")[0].lower()
         if not release_file :

@@ -97,6 +97,8 @@ class MirrorRepository ( _mirror ) :
             raise Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
 
+    sign_ext = False
+
     def __init__ ( self , config ) :
 	_mirror.__init__( self , config )
         self.subrepos = []
@@ -104,7 +106,7 @@ class MirrorRepository ( _mirror ) :
     def get_master_file ( self , params , keep=False ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_signed_metafile ( self , params , meta_file , sign_ext=None , keep=False ) :
+    def get_signed_metafile ( self , params , meta_file , keep=False ) :
         """Verifies with gpg and/or downloads a metadata file.
 Returns path to metadata file on success, and False if error occurs. If the
 verification is not successfull, stored metadata is removed.
@@ -120,9 +122,9 @@ are up to date."""
 
         release_file = os.path.join( self.repo_path() , meta_file )
 
-        if sign_ext :
+        if self.sign_ext :
 
-          signature_file = self.downloadRawFile( meta_file + sign_ext )
+          signature_file = self.downloadRawFile( meta_file + self.sign_ext )
 
           if not signature_file :
                 repolib.logger.critical( "Signature file for version '%s' not found." % ( self.version ) )
@@ -137,7 +139,7 @@ are up to date."""
                         release_file = ""
                     else :
                         os.unlink( release_file )
-                        os.unlink( release_file + sign_ext )
+                        os.unlink( release_file + self.sign_ext )
                 else :
                     if self.mode == "update" :
                         repolib.logger.info( "Existing metadata file is valid, skipping" )
@@ -145,13 +147,13 @@ are up to date."""
                         return True
 
         # If gpg is not enabled, metafile is removed to force fresh download
-        if not sign_ext or not params['usegpg'] :
+        if not self.sign_ext or not params['usegpg'] :
             if os.path.isfile( release_file ) :
                 if keep :
                     release_file = ""
                 else :
                     os.unlink( release_file )
-                    if sign_ext : os.unlink( release_file + sign_ext )
+                    if self.sign_ext : os.unlink( release_file + self.sign_ext )
 
 
         if not os.path.isfile( release_file ) :
@@ -159,16 +161,16 @@ are up to date."""
             release_file = self.downloadRawFile( meta_file )
 
             if release_file :
-                if sign_ext and params['usegpg'] :
+                if self.sign_ext and params['usegpg'] :
                     if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
                         os.unlink( release_file )
-                        os.unlink( release_file + sign_ext )
+                        os.unlink( release_file + self.sign_ext )
                         release_file = False
 
-        if sign_ext :
+        if self.sign_ext :
           if isinstance(release_file,str) :
             # FIXME : if stored metadata is gpg OK, we might left the temporary signature behind
-            self.safe_rename( signature_file , release_file + sign_ext )
+            self.safe_rename( signature_file , release_file + self.sign_ext )
           else :
             os.unlink( signature_file )
 

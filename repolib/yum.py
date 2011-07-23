@@ -11,6 +11,8 @@ from lists.yum import *
 
 class yum_repository ( repolib.MirrorRepository ) :
 
+    sign_ext = ".asc"
+
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
@@ -46,7 +48,7 @@ class yum_repository ( repolib.MirrorRepository ) :
       repomd = {}
 
       for subrepo in self.subrepos :
-        metafile = self.get_signed_metafile( params , self.repomd[subrepo] , ".asc" , keep )
+        metafile = self.get_signed_metafile( params , self.repomd[subrepo] , keep )
 
         if not metafile :
             repolib.logger.error( "Repository for %s is not available" % self.version )
@@ -307,6 +309,8 @@ that the current copy is ok.
 
 class fedora_repository ( yum_repository ) :
 
+    sign_ext = False
+
     def build_subrepo ( self , config , archname ) :
         return FedoraComponent( config , archname )
 
@@ -322,6 +326,8 @@ class FedoraComponent ( YumComponent ) :
         return "%s/os/" % self
 
 class fedora_update_repository ( yum_repository ) :
+
+    sign_ext = False
 
     def build_subrepo ( self , config , archname ) :
         return FedoraUpdateComponent( config , archname )
@@ -339,6 +345,8 @@ class FedoraUpdateComponent ( YumComponent ) :
 
 class centos_repository ( yum_repository ) :
 
+    sign_ext = False
+
     def build_subrepo ( self , config , archname ) :
         return CentosComponent( config , archname )
 
@@ -351,6 +359,8 @@ class CentosComponent ( YumComponent ) :
         return "os/%s/" % self
 
 class centos_update_repository ( yum_repository ) :
+
+    sign_ext = False
 
     def build_subrepo ( self , config , archname ) :
         return CentosUpdateComponent( config , archname )
