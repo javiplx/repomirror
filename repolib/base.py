@@ -1,5 +1,5 @@
 
-__all__ = [ 'mirror_repository' , 'mirror_component' , 'build_repository' ]
+__all__ = [ 'MirrorRepository' , 'MirrorComponent' , 'BuildRepository' ]
 
 import os
 import tempfile
@@ -8,7 +8,7 @@ import shutil , errno
 import urllib2
 
 
-from repolib import logger
+import repolib
 import utils
 
 class _repository :
@@ -71,13 +71,33 @@ class _mirror ( _repository ) :
                 data = response.read(256)
             os.close(handle)
         except Exception ,ex :
-            logger.error( "Exception : %s" % ex )
+            repolib.logger.error( "Exception : %s" % ex )
             os.close(handle)
             os.unlink(fname)
             return False
         return fname
 
-class mirror_repository ( _mirror ) :
+class MirrorRepository ( _mirror ) :
+
+    def new ( name ) :
+        _config = repolib.config.read_mirror_config( name )
+        if _config['type'] == "yum" :
+            return repolib.yum_repository( _config )
+        elif _config['type'] == "fedora" :
+            return repolib.fedora_repository( _config )
+        elif _config['type'] == "centos" :
+            return repolib.centos_repository( _config )
+        elif _config['type'] == "fedora_upd" :
+            return repolib.fedora_update_repository( _config )
+        elif _config['type'] == "centos_upd" :
+            return repolib.centos_update_repository( _config )
+        elif _config['type'] == "deb" :
+            return repolib.debian_repository( _config )
+        elif _config['type'] == "feed" :
+            return repolib.feed_repository( _config )
+        else :
+            Exception( "Unknown repository type '%s'" % _config['type'] )
+    new = staticmethod( new )
 
     def __init__ ( self , config ) :
 	_mirror.__init__( self , config )
@@ -108,11 +128,11 @@ processing is required
             signature_file = self.downloadRawFile( meta_file + sign_ext )
 
             if not signature_file :
-                logger.error( "Signature file for version '%s' not found." % ( self.version ) )
+                repolib.logger.error( "Signature file for version '%s' not found." % ( self.version ) )
                 return False
 
             if os.path.isfile( release_file ) :
-                if not utils.gpg_verify( signature_file , release_file , logger.warning ) :
+                if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
                     # NOTE : The keep flag is a different approach to the behaviour wanted by update mode
                     if keep :
                         release_file = ""
@@ -122,7 +142,7 @@ processing is required
                 else :
                     # FIXME : If we consider that our mirror is complete, it is safe to exit here
                     if self.mode == "update" :
-                        logger.info( "Existing metadata file is valid, skipping" )
+                        repolib.logger.info( "Existing metadata file is valid, skipping" )
                         os.unlink( signature_file )
                         return True
 
@@ -140,8 +160,8 @@ processing is required
 
             if release_file :
                 if params['usegpg'] and sign_ext :
-                    if not utils.gpg_verify( signature_file , release_file , logger.error ) :
-                        logger.error( errstr )
+                    if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
+                        repolib.logger.error( errstr )
                         os.unlink( release_file )
                         release_file = False
 
@@ -179,7 +199,7 @@ processing is required
         return DownloadThread( self )
 
 
-class mirror_component ( _mirror ) :
+class MirrorComponent ( _mirror ) :
 
     def __init__ ( self , config , compname ) :
         _mirror.__init__( self , config )
@@ -207,6 +227,15 @@ class mirror_component ( _mirror ) :
         return DownloadThread( self )
 
 
-class build_repository ( _repository ) :
-    pass
+class BuildRepository ( _repository ) :
+
+    def new ( name ) :
+        _config = repolib.config.read_build_config( name )
+        if _config['type'] == "deb" :
+            return repolib.debian_build_repository( _config )
+        elif _config['type'] == "feed" :
+            return repolib.feed_build_repository( _config , name )
+        else :
+            Exception( "Unknown repository build type '%s'" % _config['type'] )
+    new = staticmethod( new )
 
