@@ -195,7 +195,7 @@ that the current copy is ok.
         return primary , secondary
 
     def pkg_list( self ) :
-        return YumPackageFile( self )
+        return YumPackageFile()
 
     def get_package_list ( self , local_repodata , _params , filters ) :
 
