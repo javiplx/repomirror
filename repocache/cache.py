@@ -17,7 +17,7 @@ import urllib2
 import os
 
 
-def get_file ( req , local_path ) :
+def get_file ( req , local_path , remote_url ) :
 
     if not os.path.isdir( os.path.dirname(local_path) ) :
         try :
@@ -42,7 +42,8 @@ def get_file ( req , local_path ) :
 
         # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
         file_size = int( remote.info().getheaders("Content-Length")[0] )
-        req.content_type = remote.info().getheader('Content-Type')
+        if 'content-type' in remote.info().keys() :
+            req.content_type = remote.info().getheader('Content-Type')
 
         file_size_dl = 0
         block_sz = 8192
