@@ -27,3 +27,5 @@ repomgr/templates/detail.html
 repocache/__init__.py
 repocache/cache.py
 repocache/repocache.conf
+repocache/debcache.py
+repocache/debcache.conf

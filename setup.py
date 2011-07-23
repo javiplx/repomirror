@@ -15,7 +15,7 @@ setup(
     data_files = [
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] ) ,
                  ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/detail.html' ] ) ,
-                 ( 'share/repocache' , [ 'repocache/repocache.conf' ] )
+                 ( 'share/repocache' , [ 'repocache/repocache.conf' , 'repocache/debcache.conf' ] ) ,
                  ( 'share/repomgr' , [ 'repomgr/repomgr.conf' ] )
                  ],
     packages = [ 'repolib' , 'repolib.lists' , 'repomgr' , 'repocache' ],
