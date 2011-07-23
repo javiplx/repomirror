@@ -105,29 +105,30 @@ class MirrorRepository ( _mirror ) :
         raise Exception( "Calling an abstract method" )
 
     def get_signed_metafile ( self , params , meta_file , sign_ext=None , keep=False ) :
-        """
-Verifies with gpg and/or downloads a metadata file. Return the full pathname
-of metadata file on success and False if any error occur. In the signature
-verification is not successfull, the local copy is removed and the file is
-dowloaded into a temporary location. This behaviour can be disabled by setting
-the keep option, and is usually done to avoid the break of already downloaded
-repositories.
+        """Verifies with gpg and/or downloads a metadata file.
+Returns path to metadata file on success, and False if error occurs. If the
+verification is not successfull, stored metadata is removed.
 
-The returned file is always and off-tree temporary one except when the file
-did already exists and signature was successfully verified. When working on
-update mode, the special value True is returned to signal that no further
-processing is required
-"""
+The returned value is an off-tree temporary path except when the metadata file
+did already exists and verification succeeds, which returns the path to stored
+metadata, or True if repository is in update mode.
+
+The 'keep' flag avoids removal of stored copies if verification fails, while
+forcing download of current metadata. This behaviour is intended to avoid
+breaking already downloaded repositories when only checking whether they
+are up to date."""
 
         release_file = os.path.join( self.repo_path() , meta_file )
 
-        if params['usegpg'] and sign_ext :
+        if sign_ext :
 
-            signature_file = self.downloadRawFile( meta_file + sign_ext )
+          signature_file = self.downloadRawFile( meta_file + sign_ext )
 
-            if not signature_file :
-                repolib.logger.error( "Signature file for version '%s' not found." % ( self.version ) )
+          if not signature_file :
+                repolib.logger.critical( "Signature file for version '%s' not found." % ( self.version ) )
                 return False
+
+          if params['usegpg'] :
 
             if os.path.isfile( release_file ) :
                 if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
@@ -143,27 +144,30 @@ processing is required
                         os.unlink( signature_file )
                         return True
 
-        else :
-            # If gpg is not enabled, the metafile is removed to force fresh download
+        # If gpg is not enabled, metafile is removed to force fresh download
+        if not sign_ext or not params['usegpg'] :
             if os.path.isfile( release_file ) :
                 if keep :
                     release_file = ""
                 else :
                     os.unlink( release_file )
+                    if sign_ext : os.unlink( release_file + sign_ext )
+
 
         if not os.path.isfile( release_file ) :
 
             release_file = self.downloadRawFile( meta_file )
 
             if release_file :
-                if params['usegpg'] and sign_ext :
+                if sign_ext and params['usegpg'] :
                     if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
-                        repolib.logger.error( errstr )
                         os.unlink( release_file )
+                        os.unlink( release_file + sign_ext )
                         release_file = False
 
-        if params['usegpg'] and sign_ext :
+        if sign_ext :
           if isinstance(release_file,str) :
+            # FIXME : if stored metadata is gpg OK, we might left the temporary signature behind
             self.safe_rename( signature_file , release_file + sign_ext )
           else :
             os.unlink( signature_file )
