@@ -1,8 +1,6 @@
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
-import errno , shutil
-
 import os , sys
 import stat
 
@@ -131,26 +129,14 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Path for local copy must be created in advance by build_local_tree
         local = os.path.join( self.repo_path() , self.release )
 
-        release_file = meta_files.values()[0]
+        temp_file = meta_files.values()[0]
         if not os.path.exists( local ) :
-            try :
-                os.rename( temp_file , local )
-            except OSError , ex :
-                if ex.errno != errno.EXDEV :
-                    repolib.logger.critical( "OSError: %s" % ex )
-                    sys.exit(1)
-                shutil.move( temp_file , local )
+            self.safe_rename( temp_file , local )
 
             os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 
             if os.path.isfile( temp_file + ".gpg" ) :
-                try :
-                    os.rename( temp_file + ".gpg" , local + ".gpg" )
-                except OSError , ex :
-                    if ex.errno != errno.EXDEV :
-                        print "OSError: %s" % ex
-                        sys.exit(1)
-                    shutil.move( temp_file + ".gpg" , local + ".gpg" )
+                self.safe_rename( temp_file + ".gpg" , local + ".gpg" )
 
                 os.chmod( local + ".gpg" , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
 

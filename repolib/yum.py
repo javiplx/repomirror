@@ -1,7 +1,6 @@
 
 import filelist_xmlparser
 
-import errno , shutil
 import gzip
 
 import os , sys
@@ -75,22 +74,10 @@ class yum_repository ( repolib.MirrorRepository ) :
 
         for subrepo in self.subrepos :
             if repomd_file[subrepo] :
-                try :
-                    os.rename( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
-                except OSError , ex :
-                    if ex.errno != errno.EXDEV :
-                        repolib.logger.critical( "OSError: %s" % ex )
-                        sys.exit(1)
-                    shutil.move( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
+                self.safe_rename( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
 
                 if os.path.isfile( repomd_file[subrepo] + ".asc" ) :
-                    try :
-                        os.rename( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
-                    except OSError , ex :
-                        if ex.errno != errno.EXDEV :
-                            print "OSError: %s" % ex
-                            sys.exit(1)
-                        shutil.move( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
+                    self.safe_rename( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
 
                 local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
             else :

@@ -150,17 +150,20 @@ processing is required
 
         if params['usegpg'] and sign_ext :
           if isinstance(release_file,str) :
-           try :
-            os.rename( signature_file , release_file + sign_ext )
-           except OSError , ex :
-            if ex.errno != errno.EXDEV :
-                repolib.logger.critical( "OSError: %s" % ex )
-                sys.exit(1)
-            shutil.move( signature_file , release_file + sign_ext )
+            self.safe_rename( signature_file , release_file + sign_ext )
           else :
             os.unlink( signature_file )
 
         return release_file
+
+    def safe_rename ( self , src , dst ) :
+        try :
+            os.rename( src , dst )
+        except OSError , ex :
+            if ex.errno != errno.EXDEV :
+                repolib.logger.critical( "OSError: %s" % ex )
+                sys.exit(1)
+            shutil.move( src , dst )
 
     def info ( self , release_file ) :
         raise Exception( "Calling an abstract method" )
