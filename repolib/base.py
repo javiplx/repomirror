@@ -112,9 +112,7 @@ processing is required
                 return False
 
             if os.path.isfile( release_file ) :
-                errstr = utils.gpg_error( signature_file , release_file )
-                if errstr :
-                    logger.warning( errstr )
+                if not utils.gpg_verify( signature_file , release_file , logger.warning ) :
                     # NOTE : The keep flag is a different approach to the behaviour wanted by update mode
                     if keep :
                         release_file = ""
@@ -142,8 +140,7 @@ processing is required
 
             if release_file :
                 if params['usegpg'] and sign_ext :
-                    errstr = utils.gpg_error( signature_file , release_file )
-                    if errstr :
+                    if not utils.gpg_verify( signature_file , release_file , logger.error ) :
                         logger.error( errstr )
                         os.unlink( release_file )
                         release_file = False

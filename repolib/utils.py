@@ -98,10 +98,21 @@ import md5 , sha
 cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha , 'sha':calc_sha }
 
 
-def gpg_error( signature , file , full_verification=False ) :
+# NOTE : full_verification is never used. What was the purpose ??
+def gpg_verify( signature , file , reporter=None , full_verification=False ) :
+    """Function to verify a file signature.
+If a reporter callback is supplied, it is used to send back any relevant
+output messages in case of error. If the signature was made with multiple
+keys, success in a single verification is reported as global success unless
+full verification is requested, which means that every single signature
+must be sucessfully verified"""
 
     if full_verification :
-        return _gpg_error( signature , file )
+        err = gpg_error( signature , file )
+        if not err :
+            return True
+        if reporter : reporter( err )
+        return False
 
     (sigfd, signature_file ) = tempfile.mkstemp()
     fd = open( signature )
@@ -110,19 +121,24 @@ def gpg_error( signature , file , full_verification=False ) :
         os.write( sigfd , line )
         if line[:-1] == "-----END PGP SIGNATURE-----" :
             os.close( sigfd )
-            if not _gpg_error( signature_file , file ) :
+            if not gpg_error( signature_file , file ) :
                 fd.close()
                 os.unlink( signature_file )
-                return False
+                return True
             sigfd = os.open( signature_file , os.O_WRONLY | os.O_TRUNC )
         line = fd.readline()
     else :
         os.close( sigfd )
     fd.close()
+    if reporter : reporter( "All signatures failed" )
     os.unlink( signature_file )
-    return "All signatures failed"
+    return False
 
-def _gpg_error( signature , file ) :
+def gpg_error( signature , file ) :
+    """This function returns the error occurred during GPG verification. In case of
+success, it returns False. The reason behind this reversed logic is to make
+easy reporting back a descriptive string for the error"""
+
     gpgerror = "Not verified"
     try :
         result = GnuPGInterface.GnuPG().run( [ "--verify", signature , file ] )
