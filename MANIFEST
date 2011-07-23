@@ -2,6 +2,7 @@ setup.py
 repomirror
 checkmirror
 repolib/__init__.py
+repolib/base.py
 repolib/utils.py
 repolib/debian.py
 repolib/feed.py

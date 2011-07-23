@@ -10,14 +10,14 @@ import stat
 import config , utils
 
 
-from repolib import MirrorRepository , BuildRepository , logger
+import repolib
 from lists.debian import *
 
 
-class debian_repository ( MirrorRepository ) :
+class debian_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
-        MirrorRepository.__init__( self , config )
+        repolib.MirrorRepository.__init__( self , config )
 
         # Stored for later use during Release file checks
         self.components = config.get( "components" , None )
@@ -55,12 +55,12 @@ class debian_repository ( MirrorRepository ) :
 
         version = self.version.split("/")[0].split("-")[0].lower()
         if not release_file :
-            logger.error( "No valid Release file for '%s'" % ( self.version ) )
+            repolib.logger.error( "No valid Release file for '%s'" % ( self.version ) )
             return self.__subrepo_dict( release_file )
         elif release_file is True :
             return self.__subrepo_dict( True )
 
-        logger.info( "Content verification of metafile %s" % release_file )
+        repolib.logger.info( "Content verification of metafile %s" % release_file )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
 
@@ -73,12 +73,12 @@ class debian_repository ( MirrorRepository ) :
         codename = release['Codename']
 
         if suite != codename and suite == version :
-            logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, codename ) )
+            repolib.logger.error( "You have supplied suite '%s'. Please use codename '%s' instead" % ( self.version, codename ) )
             os.unlink( release_file )
             return self.__subrepo_dict( False )
 
         if codename != version :
-            logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, codename ) )
+            repolib.logger.error( "Requested version '%s' does not match with codename from Release file ('%s')" % ( self.version, codename ) )
             os.unlink( release_file )
             return self.__subrepo_dict( False )
 
@@ -97,18 +97,18 @@ class debian_repository ( MirrorRepository ) :
                     if comp.endswith( "/debian-installer" ) :
                         comp = comp[:-17]
                     if comp not in release_comps :
-                        logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
+                        repolib.logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         # FIXME : only this component should get marked as unavailable
                         return self.__subrepo_dict( False )
             else :
-                logger.warning( "No components specified, selected all components from Release file" )
+                repolib.logger.warning( "No components specified, selected all components from Release file" )
                 self.components = release_comps
 
         elif self.components :
-            logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
+            repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
             return self.__subrepo_dict( False )
         else :
-            logger.warning( "Component list undefined, setting to main" )
+            repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
 
 
@@ -119,7 +119,7 @@ class debian_repository ( MirrorRepository ) :
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
             if arch not in release_archs :
-                logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
+                repolib.logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 # FIXME : only this architecture should get marked as unavailable
                 return self.__subrepo_dict( False )
 
@@ -230,7 +230,7 @@ class DebianComponent ( SimpleComponent ) :
             return True
 
         else :
-            logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
+            repolib.logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
     def check_packages_file( self , metafile , _params , download=True ) :
@@ -265,7 +265,7 @@ that the current copy is ok.
             if self.downloadRawFile( url , localname ) :
                 _name = "%sRelease" % self.metadata_path(True)
                 if not self.verify( localname , _name , release , params ) :
-                    logger.warning( "Missing Release file for %s" % self )
+                    repolib.logger.warning( "Missing Release file for %s" % self )
 
         localname = False
 
@@ -278,7 +278,7 @@ that the current copy is ok.
                 _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
                 if self.verify( localname , _name , release , params ) :
                     if self.mode == "update" :
-                        logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
+                        repolib.logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
                         return True
                     break
                 continue
@@ -288,7 +288,7 @@ that the current copy is ok.
           if download :
             # NOTE : Download of Package Release file is quite redundant
 
-            logger.warning( "No local Packages file exist for %s. Downloading." % self )
+            repolib.logger.warning( "No local Packages file exist for %s. Downloading." % self )
 
             localname = SimpleComponent.check_packages_file( self , release , _params , True )
 
@@ -327,7 +327,7 @@ that the current copy is ok.
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            logger.warning( "Scanning available packages for minor filters" )
+            repolib.logger.warning( "Scanning available packages for minor filters" )
             for pkg in packages :
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
                 pkginfo['Name'] = pkginfo['Package']
@@ -386,11 +386,11 @@ that the current copy is ok.
         return DebianDownloadThread( self )
 
 
-class debian_build_repository ( BuildRepository ) :
+class debian_build_repository ( repolib.BuildRepository ) :
 
     def __init__ ( self , config ) :
 
-        BuildRepository.__init__( self , config )
+        repolib.BuildRepository.__init__( self , config )
 
         self.components = config.get( "components" , None )
 
