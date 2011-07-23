@@ -13,7 +13,7 @@
 
 import urllib2
 
-from repocache.cache import *
+from cache import *
 import repolib.config
 
 source_url = {}

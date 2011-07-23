@@ -14,6 +14,13 @@
 
 from BaseHTTPServer import BaseHTTPRequestHandler , HTTPServer
 
+from cache import *
+
+try :
+    from mod_python import apache
+except :
+    import apcompat as apache
+
 import os , urllib2
 
 
@@ -36,7 +43,7 @@ class Handler ( BaseHTTPRequestHandler ) :
     def write ( self , msg ) :
         self.wfile.write( msg )
 
-    def log_error ( self , msg , severity="ERROR" ) :
+    def log_error ( self , msg , severity=apache.APLOG_ERROR ) :
         BaseHTTPRequestHandler.log_error( self , "%s : %s" % ( severity , msg ) )
 
     def do_GET ( self ) :
@@ -48,7 +55,7 @@ class Handler ( BaseHTTPRequestHandler ) :
 
         if not remote_url.endswith('/') :
             remote_url += "/"
-            req.log_error( "Fix configuration, source_url should have a trailing '/'" , "INFO" ) # apache.APLOG_INFO )
+            req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
 
         remote_url = urllib2.urlparse.urljoin( remote_url , uri )
 
@@ -65,53 +72,6 @@ class Handler ( BaseHTTPRequestHandler ) :
             self.send_header( "Content-Type" , self.content_type )
 
         self.end_headers()
-
-
-def get_file ( req , local_path , remote_url ) :
-
-    if not os.path.isdir( os.path.dirname(local_path) ) :
-        try :
-            os.makedirs( os.path.dirname(local_path) )
-        except OSError , ex :
-            req.log_error( "Cannot create destination hierarchy %s" % os.path.dirname(local_path) )
-            req.status = 500 # apache.HTTP_INTERNAL_SERVER_ERROR
-            return False # apache.DONE
-
-    if not os.path.exists( local_path ) :
-        try :
-            req.log_error( "Downloading %s" % remote_url , "INFO" ) # apache.APLOG_INFO )
-            remote = urllib2.urlopen( remote_url )
-        except Exception , ex :
-            req.log_error( "Cannot download remote %s : %s" % ( remote_url , ex ) )
-            return 404 # apache.HTTP_NOT_FOUND
-        try :
-            local = open( local_path , 'wb' )
-        except Exception , ex :
-            req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
-            return 404 # apache.HTTP_NOT_FOUND
-
-        # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
-        file_size = int( remote.info().getheaders("Content-Length")[0] )
-        if 'content-type' in remote.info().keys() :
-            req.content_type = remote.info().getheader('Content-Type')
-
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buffer = remote.read(block_sz)
-            if not buffer:
-                break
-
-            file_size_dl += block_sz
-            local.write(buffer)
-            req.write(buffer)
-
-        remote.close()
-        local.close()
-    else :
-        req.sendfile(local_path)
-
-    return 200 # apache.OK
 
 
 try :

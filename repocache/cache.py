@@ -11,7 +11,10 @@
 # General Public License for more details.
 
 
-from mod_python import apache
+try :
+    from mod_python import apache
+except :
+    import apcompat as apache
 
 import urllib2
 import os

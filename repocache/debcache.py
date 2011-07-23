@@ -11,7 +11,7 @@
 # General Public License for more details.
 
 
-from repocache.cache import *
+from cache import *
 
 import urllib2
 

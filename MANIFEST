@@ -29,3 +29,5 @@ repocache/cache.py
 repocache/repocache.conf
 repocache/debcache.py
 repocache/debcache.conf
+repocache/httpd.py
+repocache/apcompat.py
