@@ -43,6 +43,9 @@ class _mirror ( _repository ) :
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
 
+    def base_url ( self ) :
+        return self.repo_url
+
     def metadata_path ( self , partial=False ) :
         raise Exception( "Calling an abstract method" )
 
@@ -54,7 +57,7 @@ class _mirror ( _repository ) :
 
         Returns the local file name or False if errors"""
 
-        remote = utils.urljoin( self.repo_url , remote ) 
+        remote = utils.urljoin( self.base_url() , remote ) 
 
         if not local :
             (handle, fname) = tempfile.mkstemp()

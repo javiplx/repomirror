@@ -17,10 +17,8 @@ class yum_repository ( repolib.MirrorRepository ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
             self.subrepos.append( self.build_subrepo( config , archname ) )
-        self.repo_url += self.base_url_extend()
         self.repomd = {}
         for subrepo in self.subrepos :
-            subrepo.repo_url += self.base_url_extend()
             self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def build_subrepo ( self , config , archname ) :
@@ -31,6 +29,9 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def path_extend ( self ) :
         return ""
+
+    def base_url ( self ) :
+        return repolib.MirrorRepository.base_url(self) + self.base_url_extend()
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -86,7 +87,7 @@ class yum_repository ( repolib.MirrorRepository ) :
 
     def info ( self , metafile ) :
         str  = "Mirroring version %s\n" % self.version
-        str += "Source at %s\n" % self.repo_url
+        str += "Source at %s\n" % self.base_url()
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
 
@@ -94,6 +95,9 @@ class yum_repository ( repolib.MirrorRepository ) :
         return YumDownloadThread( self )
 
 class YumComponent ( repolib.MirrorComponent ) :
+
+    def base_url_extend ( self ) :
+        return ""
 
     def path_extend ( self ) :
         return ""
@@ -325,6 +329,9 @@ class FedoraComponent ( YumComponent ) :
     def path_extend ( self ) :
         return "%s/os/" % self
 
+    def base_url_extend ( self ) :
+        return "%s/Fedora/" % self.version
+
 class fedora_update_repository ( yum_repository ) :
 
     sign_ext = False
@@ -343,6 +350,9 @@ class FedoraUpdateComponent ( YumComponent ) :
     def path_extend ( self ) :
         return "%s/" % self
 
+    def base_url_extend ( self ) :
+        return "%s/" % self.version
+
 class centos_repository ( yum_repository ) :
 
     sign_ext = False
@@ -358,6 +368,9 @@ class CentosComponent ( YumComponent ) :
     def path_extend ( self ) :
         return "os/%s/" % self
 
+    def base_url_extend ( self ) :
+        return "%s/" % self.version
+
 class centos_update_repository ( yum_repository ) :
 
     sign_ext = False
@@ -372,4 +385,7 @@ class CentosUpdateComponent ( YumComponent ) :
 
     def path_extend ( self ) :
         return "%s/" % self
+
+    def base_url_extend ( self ) :
+        return "%s/updates/" % self.version
 
