@@ -54,7 +54,6 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         release_file = self.get_signed_metafile ( params , self.release , keep )
 
-        version = self.version.split("/")[0].split("-")[0].lower()
         if not release_file :
             repolib.logger.error( "No valid Release file for '%s'" % ( self.version ) )
             return self.__subrepo_dict( release_file )
@@ -69,7 +68,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         # will enforce mirroring based on codenames
         # FIXME : Is sensible to use in any way the version from Release?
 
-        version = self.version.split("/").pop(0)
+        version = self.version.split("/").pop(0).split("-").pop(0)
         suite = release['Suite']
         codename = release['Codename']
 
