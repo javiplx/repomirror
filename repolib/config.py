@@ -97,6 +97,9 @@ class RepoConf ( dict ) :
 
             self['destdir'] = config.get( "global" , "destdir" )
 
+        if not config.has_option( self.name , "type" ) or not config.has_option( self.name , "version" ) or not config.has_option( self.name , "architectures" ) :
+            raise Exception( "Broken '%s' configuration" % self.name )
+
         self['type'] = config.get( self.name , "type" )
 
         self['version'] = config.get( self.name , "version" )
@@ -140,6 +143,8 @@ class MirrorConf ( RepoConf ) :
                 scheme = config.get( self.name , "scheme" )
             else :
                 scheme = "http"
+            if not config.has_option( self.name , "server" ) :
+                raise Exception( "Broken '%s' configuration" % self.name )
             server = config.get( self.name , "server" )
             if config.has_option( self.name , "base_path" ) :
                 base_path = config.get( self.name , "base_path" )

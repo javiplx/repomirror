@@ -1,0 +1,44 @@
+
+The configuration files are INI-style ones, and setting up a new mirror means
+adding a new section either to the main configuration (/etc/repomirror.conf),
+or with a file in the configurations directory (/etc/repomirror.d).
+
+
+Although in principle any keyword can be used anywhere, it is recommended to
+define a 'global' section, whose contents will affect to all the configured
+repositories. The values typically defined in this global section are:
+
+destdir   - default top directory for all the mirrored respositories
+usegpg    - enable/disable GPG verification of primary metadata files
+pkgvflags - define required checks for secondary files (Packages, primary.xml)
+
+
+Appart from a destdir keyword, there are some othe mandatory values to be
+defined in a mirror:
+
+type          - type of mirror (primary ones deb/yum, but subtypes exists)
+version       - version to mirror (not required for some repo types)
+architectures - list of architectures to mirror
+url           - url for the repository toplevel, without version identification
+                can be specified as server, plus optional scheme and base_path
+
+Optional keywords, appart from those mentioned for the global section, do
+currently only have sense for debian repositories:
+
+components - name of debian components to mirror
+subdir     - name of subdirectory for mirror (default is section name)
+
+
+Finally, the keyword 'filters' can be also specified, and should contain the
+names of other keywords that should be used to decide if a single package will
+be mirrored or not. This block is very type specific, so a couple of examples
+are shown below
+
+type = deb
+filters = sections
+priorities = standard required important
+
+type = yum
+filters = groups
+groups = System/Libraries System_Environment/Base User_Interface/X
+
