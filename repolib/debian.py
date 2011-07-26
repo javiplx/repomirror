@@ -22,6 +22,8 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Stored for later use during Release file checks
         self.components = config.get( "components" , None )
 
+        self.subdir = config["subdir"]
+
         for archname in self.architectures :
             for compname in self.components :
                 self.subrepos.append( DebianComponent( config , ( archname , compname ) ) )
@@ -30,8 +32,8 @@ class debian_repository ( repolib.MirrorRepository ) :
         self.release = os.path.join( self.metadata_path() , "Release" )
 
     def repo_path ( self ) :
-        if self["subdir"] :
-            return os.path.join( self.destdir , self["subdir"] )
+        if self.subdir :
+            return os.path.join( self.destdir , self.subdir )
         return repolib.MirrorRepository.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
@@ -175,6 +177,7 @@ from feed import SimpleComponent
 class DebianComponent ( SimpleComponent ) :
 
     def __init__ ( self , config , ( arch , comp ) ) :
+        self.subdir = config["subdir"]
         self.archname , self.compname = arch, comp
         SimpleComponent.__init__( self , config , ( arch , comp ) )
 
@@ -182,8 +185,8 @@ class DebianComponent ( SimpleComponent ) :
         return "%s/%s" % ( self.archname , self.compname )
 
     def repo_path ( self ) :
-        if self["subdir"] :
-            return os.path.join( self.destdir , self["subdir"] )
+        if self.subdir :
+            return os.path.join( self.destdir , self.subdir )
         return SimpleComponent.repo_path(self)
 
     def metadata_path ( self , partial=False ) :

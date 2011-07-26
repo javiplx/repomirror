@@ -108,7 +108,7 @@ class RepoConf ( dict ) :
             self['components'] = config.get( self.name , "components" ).split()
 
         if config.has_option( self.name , "subdir" ) :
-            if self['type'] != "deb" :
+            if not self['type'] == "deb" :
                 repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
             self['subdir'] = config.get( self.name , "subdir" )
 
