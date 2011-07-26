@@ -30,8 +30,9 @@ class debian_repository ( repolib.MirrorRepository ) :
         self.release = os.path.join( self.metadata_path() , "Release" )
 
     def repo_path ( self ) :
-        # NOTE : we don't append the repository name to allow sharing of packages pool
-        return self.destdir
+        if self["subdir"] :
+            return os.path.join( self.destdir , self["subdir"] )
+        return repolib.MirrorRepository.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
         if partial :
@@ -181,8 +182,9 @@ class DebianComponent ( SimpleComponent ) :
         return "%s/%s" % ( self.archname , self.compname )
 
     def repo_path ( self ) :
-        # NOTE : we don't append the repository name to allow sharing of packages pool
-        return self.destdir
+        if self["subdir"] :
+            return os.path.join( self.destdir , self["subdir"] )
+        return SimpleComponent.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
         path = "%s/binary-%s/" % ( self.compname , self.archname )

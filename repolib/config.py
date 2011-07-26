@@ -77,6 +77,7 @@ class RepoConf ( dict ) :
         self['version'] = None
         self['architectures'] = None
         self['components'] = None
+        self['subdir'] = False
 
         if self.name not in config.sections() :
             raise Exception( "Repository '%s' is not configured" % self.name )
@@ -102,6 +103,11 @@ class RepoConf ( dict ) :
         self['architectures'] = config.get( self.name , "architectures" ).split()
         if config.has_option( self.name , "components" ) :
             self['components'] = config.get( self.name , "components" ).split()
+
+        if config.has_option( self.name , "subdir" ) :
+            if self['type'] != "deb" :
+                repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
+            self['subdir'] = config.get( self.name , "subdir" )
 
 
 class MirrorConf ( RepoConf ) :
