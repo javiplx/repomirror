@@ -129,8 +129,13 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Path for local copy must be created in advance by build_local_tree
         local = os.path.join( self.repo_path() , self.release )
 
-        temp_file = meta_files.values()[0]
-        if not os.path.exists( local ) :
+        temp_files = set( meta_files.values() )
+
+        if len(temp_files) > 1 :
+            repolib.logger.warning( "Too many different Release files returned" )
+
+        for temp_file in temp_files :
+          if not os.path.exists( local ) :
             self.safe_rename( temp_file , local )
 
             os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
