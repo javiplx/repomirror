@@ -36,7 +36,16 @@ class _repository :
 class _mirror ( _repository ) :
     """Convenience class primarily created only to avoid moving download method into base _repository"""
 
+    required = ( 'destdir' , 'type' , 'url' , 'version' , 'architectures' )
+
     def __init__ ( self , config ) :
+        missing = []
+        for key in self.required :
+            if not config.get(key) :
+                missing.append( key )
+        if missing :
+            raise Exception( "Broken '%s' configuration : missing %s." % ( config.name , ", ".join(missing) ) )
+
 	_repository.__init__( self , config )
         self.repo_url = config[ "url" ]
         self.mode = config[ "mode" ]

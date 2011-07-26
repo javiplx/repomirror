@@ -97,9 +97,6 @@ class RepoConf ( dict ) :
 
             self['destdir'] = config.get( "global" , "destdir" )
 
-        if not config.has_option( self.name , "type" ) or not config.has_option( self.name , "version" ) or not config.has_option( self.name , "architectures" ) :
-            raise Exception( "Broken '%s' configuration" % self.name )
-
         self['type'] = config.get( self.name , "type" )
 
         self['version'] = config.get( self.name , "version" )

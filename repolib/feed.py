@@ -60,6 +60,8 @@ class feed_build_repository ( repolib.BuildRepository ) :
 
 class feed_repository ( repolib.MirrorRepository ) :
 
+    required = ( 'destdir' , 'type' , 'url' , 'architectures' )
+
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
