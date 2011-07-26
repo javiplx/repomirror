@@ -18,7 +18,6 @@ class feed_build_repository ( repolib.BuildRepository ) :
         repolib.BuildRepository.__init__( self , config )
 
         self.name = name
-        self.detached = config['detached']
         if config.has_key( "extensions" ) :
             self.valid_extensions = config['extensions']
         else :
@@ -28,11 +27,6 @@ class feed_build_repository ( repolib.BuildRepository ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
         self.components = config.get( "components" , None )
-
-    def repo_path ( self ) :
-        if self.detached :
-            return self.destdir
-        return os.path.join( self.destdir , self.name )
 
     def build ( self ) :
 
@@ -71,9 +65,6 @@ class feed_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             self.subrepos.append( SimpleComponent( config , archname ) )
 
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.name )
-
     def get_master_file ( self , _params=None , keep=False ) :
         return { '':'' }
 
@@ -93,9 +84,6 @@ class feed_repository ( repolib.MirrorRepository ) :
         return DownloadThread( self )
 
 class SimpleComponent ( repolib.MirrorComponent ) :
-
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.name )
 
     def metadata_path ( self , partial=False ) :
         return ""

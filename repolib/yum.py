@@ -33,9 +33,6 @@ class yum_repository ( repolib.MirrorRepository ) :
     def base_url ( self ) :
         return repolib.MirrorRepository.base_url(self) + self.base_url_extend()
 
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version )
-
     def metadata_path ( self , partial=False ) :
         if partial :
             return self.path_extend()
@@ -101,9 +98,6 @@ class YumComponent ( repolib.MirrorComponent ) :
 
     def path_extend ( self ) :
         return ""
-
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , partial=False ) :
         if partial :
@@ -324,7 +318,7 @@ class fedora_repository ( yum_repository ) :
 class FedoraComponent ( YumComponent ) :
 
     def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version , "Fedora" )
+        return  os.path.join( YumComponent.repo_path( self ) , "Fedora" )
 
     def path_extend ( self ) :
         return "%s/os/" % self
@@ -343,9 +337,6 @@ class fedora_update_repository ( yum_repository ) :
         return "%s/" % self.version
 
 class FedoraUpdateComponent ( YumComponent ) :
-
-    def repo_path ( self ) :
-        return os.path.join( self.destdir , self.version )
 
     def path_extend ( self ) :
         return "%s/" % self

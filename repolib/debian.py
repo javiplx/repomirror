@@ -181,6 +181,7 @@ class DebianComponent ( SimpleComponent ) :
         return "%s/%s" % ( self.archname , self.compname )
 
     def repo_path ( self ) :
+        # NOTE : we don't append the repository name to allow sharing of packages pool
         return self.destdir
 
     def metadata_path ( self , partial=False ) :

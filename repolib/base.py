@@ -43,6 +43,9 @@ class _mirror ( _repository ) :
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
 
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.name )
+
     def base_url ( self ) :
         return self.repo_url
 
@@ -244,4 +247,10 @@ class BuildRepository ( _repository ) :
         else :
             raise Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )
+
+    def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
+        return os.path.join( self.destdir , self.name )
+
 
