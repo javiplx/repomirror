@@ -1,0 +1,27 @@
+
+To setup a debian cached repository, the first step is to configure the
+repository as done with any other repository. The only step where the
+standard procedure changes is that the 'subdir' key is required. The primary
+use of this keyword is to map to a different apache webserver <Directory />
+directive, which in turns means use distinct URL value for the packages source.
+
+So, it is possible to share the same subdir on multiple repositories, such as
+multiple debian suites, or ubuntu base and update repositories. The only
+condition is that the url must be the same for each repository to share subdir,
+and means that security repositories cannot usually be merged.
+
+
+Once the repository metadata is downloaded, populating the 'dists' directory,
+apache webserver must be configured to get access to the upstream sources. And
+this goal is achived by setting the proper value for source_url in the apache
+configuration.
+
+And the final step is to grant permissions to the webserver user for writing
+under the repository tree. The safer way is to manually create the pool
+directory, setting ownership to the user that apache webserver run as.
+
+NOTE : Is it possible to run everything with the user of apache, but it is not
+recommended to allow uncontrolled updates under the metadata tree, as would
+happen if, for example, an apt client is configured with a component which is
+not configured for mirroring.
+
