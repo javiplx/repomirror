@@ -171,7 +171,7 @@ class MirrorConf ( RepoConf ) :
 def read_mirror_config ( repo_name ) :
 
     conffiles = [ mirrorconf ]
-    conffiles.extend( glob.glob( os.path.join( mirrordir , "*" ) ) )
+    conffiles.extend( glob.glob( os.path.join( mirrordir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -183,7 +183,7 @@ def read_mirror_config ( repo_name ) :
 def get_all_configs ( key=None , value=None ) :
 
     conffiles = [ mirrorconf ]
-    conffiles.extend( glob.glob( os.path.join( mirrordir , "*" ) ) )
+    conffiles.extend( glob.glob( os.path.join( mirrordir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -214,7 +214,7 @@ class BuildConf ( RepoConf ) :
 def read_build_config ( repo_name ) :
 
     conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*" ) ) )
+    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
