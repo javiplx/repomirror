@@ -1,10 +1,8 @@
 
-* General cleaning in repolib module
 * Implement exceptions on repolib
 * Basic command line option parsing
 
 * Extend with yum-1.x(rhn?) type
 
-* Move download thread to submodule using logger
 * Encapsulate download exceptions, and move file download to submodule
 

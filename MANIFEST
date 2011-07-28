@@ -31,3 +31,10 @@ repocache/debcache.py
 repocache/debcache.conf
 repocache/httpd.py
 repocache/apcompat.py
+docs/create_a_mirror.txt
+docs/debcache_setup.txt
+docs/debcache_setup/repomirror.conf
+docs/debcache_setup/repomirror.d
+docs/debcache_setup/repomirror.d/debian.conf
+docs/debcache_setup/repomirror.d/ubuntu.conf
+docs/debcache_setup/repomirror-debproxy.conf
