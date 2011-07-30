@@ -1,6 +1,7 @@
 setup.py
 repomirror
 checkmirror
+get_meta
 repolib/__init__.py
 repolib/base.py
 repolib/utils.py
