@@ -6,11 +6,18 @@ import utils , repolib
 import ConfigParser
 
 
+# Names of main configuration files and configuration subdirectories
+
 mirrorconf = "/etc/repomirror.conf"
 mirrordir  = "/etc/repomirror.d"
 
 buildconf = "/etc/buildrepo.conf"
 builddir  = "/etc/buildrepo.d"
+
+
+
+# mimetypes dictionary includes extension and open handlers for available
+#   metadata file formats. Only meaningful for debian & feed repositories.
 
 # FIXME : Include standard plain os.open??
 mimetypes = {}
@@ -28,12 +35,19 @@ except :
     pass
 
 
+
+# Values stored on default_params dictionary decides the verifications to be
+#   done on metadata files after downloading. All knwon parameters are
+#   included here, despite of the type of object they affect. Hardcoded values
+#   are overriden by definitions at global section, and later modified by
+#   settings within the repository definition.
+# Currently known parameters are:
+#   usegpg (MirrorRepository, boolean) - enable verification of PGP signatures
+#   pkgvflags (MirrorComponent) - verifications to be skipped. Must be a
+#     combination of SKIP_* names defined at utils.py. Only used on yum type.
+
 default_params = {}
 
-# mode (update|init) - decides if we stop processing for unchanged metadata files
-default_mode = "update"
-
-# usegpg. To disable verification of PGP signatures, and force the download of master file every run
 default_params['usegpg'] = True
 try :
     import GnuPGInterface
@@ -41,12 +55,17 @@ try :
 except :
     default_params['usegpg'] = False
 
-
-# pkgvflags. To specify special flags for verification of downloaded packages
 default_params['pkgvflags'] = "SKIP_NONE"
 
 
-# NOTE : if a section name is duplicated in the same file, ConfigParser does not allow to detect it
+
+# (update|init) - decides if we stop processing for unchanged metadata files
+default_mode = "update"
+
+
+
+# NOTE : if a section name is duplicated in the same file,
+#   ConfigParser does not allow to detect it
 def get_file ( section , conffiles ) :
     filename = []
     for file in conffiles :
