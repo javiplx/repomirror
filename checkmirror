@@ -22,7 +22,10 @@ except Exception , ex :
     print "Exception : %s" % ex
     sys.exit(255)
 
-if not subrepo in repo.subrepos :
+for _subrepo in repo.subrepos :
+    if subrepo == str(_subrepo) :
+        break
+else :
     print "Specified subrepo %s does not exists" % ( subrepo, )
     sys.exit(255)
 
@@ -45,7 +48,7 @@ if meta_files.get('') is True :
     msg = "Subrepo is up to date"
     retcode = 0
 
-if retcode and repo.get_metafile( subrepo , meta_files , download=False ) :
+if retcode and _subrepo.get_metafile( meta_files , download=False ) :
     msg = "Subrepo is up to date"
     retcode = 0
 
