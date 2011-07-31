@@ -26,7 +26,7 @@ except Exception , ex :
     sys.exit(255)
 
 
-meta_files = repo.get_master_file( params )
+meta_files = repo.get_metafile( params )
 
 # FIXME : debian - identify error from updated repositories
 # FIXME : yum - only errors produce empty output

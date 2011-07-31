@@ -47,12 +47,12 @@ class debian_repository ( repolib.MirrorRepository ) :
             d[k] = value
         return d
 
-    def get_master_file ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None , keep=False ) :
 
         params = self.params
         if _params : params.update( _params )
 
-        release_file = self.get_signed_metafile ( params , self.release , keep )
+        release_file = repolib.MirrorRepository.get_metafile( self , self.release , params , keep )
 
         if not release_file :
             repolib.logger.error( "No valid Release file for '%s'" % ( self.version ) )

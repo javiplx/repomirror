@@ -39,7 +39,7 @@ def purge ( filesdict ) :
 
 repo.mode = "update"
 
-meta_files = repo.get_master_file( keep=True )
+meta_files = repo.get_metafile( keep=True )
 
 msg = "Outdated subrepo"
 retcode = 1

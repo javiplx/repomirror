@@ -29,7 +29,7 @@ if not os.path.isdir( repo.destdir ) :
     sys.exit(2)
 
 
-meta_files = repo.get_master_file()
+meta_files = repo.get_metafile()
 
 if meta_files.values().count( False ) == len(meta_files) :
     repolib.logger.critical( "No valid metadata files found, exiting" )

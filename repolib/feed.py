@@ -67,7 +67,7 @@ class feed_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             self.subrepos.append( repolib.MirrorComponent.new( archname , config ) )
 
-    def get_master_file ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None , keep=False ) :
         return { '':'' }
 
     def metadata_path ( self , partial=False ) :

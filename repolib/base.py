@@ -118,10 +118,7 @@ class MirrorRepository ( _mirror ) :
 	_mirror.__init__( self , config )
         self.subrepos = []
 
-    def get_master_file ( self , params=None , keep=False ) :
-        raise Exception( "Calling an abstract method" )
-
-    def get_signed_metafile ( self , params , meta_file , keep=False ) :
+    def get_metafile ( self , metafile , _params=None , keep=False ) :
         """Verifies with gpg and/or downloads a metadata file.
 Returns path to metadata file on success, and False if error occurs. If the
 verification is not successfull, stored metadata is removed.
@@ -135,17 +132,17 @@ forcing download of current metadata. This behaviour is intended to avoid
 breaking already downloaded repositories when only checking whether they
 are up to date."""
 
-        release_file = os.path.join( self.repo_path() , meta_file )
+        release_file = os.path.join( self.repo_path() , metafile )
 
         if self.sign_ext :
 
-          signature_file = self.downloadRawFile( meta_file + self.sign_ext )
+          signature_file = self.downloadRawFile( metafile + self.sign_ext )
 
           if not signature_file :
                 repolib.logger.critical( "Signature file for version '%s' not found." % ( self.version ) )
                 return False
 
-          if params['usegpg'] :
+          if _params['usegpg'] :
 
             if os.path.isfile( release_file ) :
                 if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
@@ -162,7 +159,7 @@ are up to date."""
                         return True
 
         # If gpg is not enabled, metafile is removed to force fresh download
-        if not self.sign_ext or not params['usegpg'] :
+        if not self.sign_ext or not _params['usegpg'] :
             if os.path.isfile( release_file ) :
                 if keep :
                     release_file = ""
@@ -173,10 +170,10 @@ are up to date."""
 
         if not os.path.isfile( release_file ) :
 
-            release_file = self.downloadRawFile( meta_file )
+            release_file = self.downloadRawFile( metafile )
 
             if release_file :
-                if self.sign_ext and params['usegpg'] :
+                if self.sign_ext and _params['usegpg'] :
                     if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
                         os.unlink( release_file )
                         os.unlink( release_file + self.sign_ext )

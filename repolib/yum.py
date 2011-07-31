@@ -35,7 +35,7 @@ class yum_repository ( repolib.MirrorRepository ) :
             return self.path_extend()
         return "%srepodata/" % self.path_extend()
 
-    def get_master_file ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None , keep=False ) :
 
       params = self.params
       if _params : params.update( _params )
@@ -43,7 +43,7 @@ class yum_repository ( repolib.MirrorRepository ) :
       repomd = {}
 
       for subrepo in self.subrepos :
-        metafile = self.get_signed_metafile( params , self.repomd[subrepo] , keep )
+        metafile = repolib.MirrorRepository.get_metafile( self , self.repomd[subrepo] , params , keep )
 
         if not metafile :
             repolib.logger.error( "Repository for %s is not available" % self.version )
