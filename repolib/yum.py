@@ -16,13 +16,10 @@ class yum_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
-            self.subrepos.append( self.build_subrepo( config , archname ) )
+            self.subrepos.append( repolib.MirrorComponent.new( archname , config ) )
         self.repomd = {}
         for subrepo in self.subrepos :
             self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
-
-    def build_subrepo ( self , config , archname ) :
-        return YumComponent( config , archname )
 
     def base_url_extend ( self ) :
         return ""
@@ -309,9 +306,6 @@ class fedora_repository ( yum_repository ) :
 
     sign_ext = False
 
-    def build_subrepo ( self , config , archname ) :
-        return FedoraComponent( config , archname )
-
     def base_url_extend ( self ) :
         return "%s/Fedora/" % self.version
 
@@ -330,9 +324,6 @@ class fedora_update_repository ( yum_repository ) :
 
     sign_ext = False
 
-    def build_subrepo ( self , config , archname ) :
-        return FedoraUpdateComponent( config , archname )
-
     def base_url_extend ( self ) :
         return "%s/" % self.version
 
@@ -348,9 +339,6 @@ class centos_repository ( yum_repository ) :
 
     sign_ext = False
 
-    def build_subrepo ( self , config , archname ) :
-        return CentosComponent( config , archname )
-
     def base_url_extend ( self ) :
         return "%s/" % self.version
 
@@ -365,9 +353,6 @@ class CentosComponent ( YumComponent ) :
 class centos_update_repository ( yum_repository ) :
 
     sign_ext = False
-
-    def build_subrepo ( self , config , archname ) :
-        return CentosUpdateComponent( config , archname )
 
     def base_url_extend ( self ) :
         return "%s/updates/" % self.version

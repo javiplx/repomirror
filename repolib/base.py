@@ -219,11 +219,21 @@ are up to date."""
 
 class MirrorComponent ( _mirror ) :
 
-    def new ( compname , _config ) :
-        if _config['type'] == "deb" :
-            return repolib.DebianComponent( _config , compname )
+    def new ( name , _config ) :
+        if _config['type'] == "yum" :
+            return repolib.YumComponent( name , _config )
+        elif _config['type'] == "fedora" :
+            return repolib.FedoraComponent( name , _config )
+        elif _config['type'] == "fedora_upd" :
+            return repolib.FedoraUpdateComponent( name , _config )
+        elif _config['type'] == "centos" :
+            return repolib.CentosComponent( name , _config )
+        elif _config['type'] == "centos_upd" :
+            return repolib.CentosUpdateComponent( name , _config )
+        elif _config['type'] == "deb" :
+            return repolib.DebianComponent( _config , name )
         elif _config['type'] == "feed" :
-            return repolib.SimpleComponent( _config , compname )
+            return repolib.SimpleComponent( _config , name )
         else :
             raise Exception( "Unknown component type '%s'" % _config['type'] )
     new = staticmethod( new )
