@@ -219,6 +219,15 @@ are up to date."""
 
 class MirrorComponent ( _mirror ) :
 
+    def new ( compname , _config ) :
+        if _config['type'] == "deb" :
+            return repolib.DebianComponent( _config , compname )
+        elif _config['type'] == "feed" :
+            return repolib.SimpleComponent( _config , compname )
+        else :
+            raise Exception( "Unknown component type '%s'" % _config['type'] )
+    new = staticmethod( new )
+
     def __init__ ( self , config , compname ) :
         _mirror.__init__( self , config )
         self.architectures = [ compname ]

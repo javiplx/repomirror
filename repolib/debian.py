@@ -26,7 +26,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         for archname in self.architectures :
             for compname in self.components :
-                self.subrepos.append( DebianComponent( config , ( archname , compname ) ) )
+                self.subrepos.append( repolib.MirrorComponent.new( ( archname , compname ) , config ) )
 
         # Not strictly required, but kept as member for convenience
         self.release = os.path.join( self.metadata_path() , "Release" )

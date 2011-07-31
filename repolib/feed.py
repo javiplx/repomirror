@@ -65,7 +65,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
-            self.subrepos.append( SimpleComponent( config , archname ) )
+            self.subrepos.append( repolib.MirrorComponent( archname , config ) )
 
     def get_master_file ( self , _params=None , keep=False ) :
         return { '':'' }
