@@ -175,10 +175,10 @@ from feed import SimpleComponent
 
 class DebianComponent ( SimpleComponent ) :
 
-    def __init__ ( self , config , ( arch , comp ) ) :
+    def __init__ ( self , ( arch , comp ) , config ) :
         self.subdir = config["subdir"]
         self.archname , self.compname = arch, comp
-        SimpleComponent.__init__( self , config , ( arch , comp ) )
+        SimpleComponent.__init__( self , ( arch , comp ) , config )
 
     def __str__ ( self ) :
         return "%s/%s" % ( self.archname , self.compname )

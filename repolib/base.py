@@ -231,14 +231,14 @@ class MirrorComponent ( _mirror ) :
         elif _config['type'] == "centos_upd" :
             return repolib.CentosUpdateComponent( name , _config )
         elif _config['type'] == "deb" :
-            return repolib.DebianComponent( _config , name )
+            return repolib.DebianComponent( name , _config )
         elif _config['type'] == "feed" :
-            return repolib.SimpleComponent( _config , name )
+            return repolib.SimpleComponent( name , _config )
         else :
             raise Exception( "Unknown component type '%s'" % _config['type'] )
     new = staticmethod( new )
 
-    def __init__ ( self , config , compname ) :
+    def __init__ ( self , compname , config ) :
         _mirror.__init__( self , config )
         self.architectures = [ compname ]
 
