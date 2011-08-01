@@ -273,6 +273,10 @@ class BuildRepository ( _repository ) :
             raise Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )
 
+    def __init__ ( self , config ) :
+        _repository.__init__( self , config )
+        self.detached = config['detached']
+
     def repo_path ( self ) :
         if self.detached :
             return self.destdir
