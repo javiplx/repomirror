@@ -1,0 +1,50 @@
+
+NOTE : although repository building is mostly independend of mirroring, this
+       document assumes you are familiar with the available documentation
+       for repomirror.
+
+
+NOTE : version 1.5 only supports feed repositories (aka simple debian)
+
+
+Configuration files follow the same rules than those for repomirror. They are
+ini-style, there is a main one and can be hosted under a .d subdirectory.
+
+
+The only variable expected in the global section is 'destdir', which has
+a similar meaning than for repomirror, and points to the parent directory
+of those containing the packages. The directory actually searched for
+packages is built by concatenating the repository name to this toplevel
+directory.
+
+
+Definitions of build repositories currently allow much less keywords than
+repomirror does. The most important keyword is 'type', and defines the kind
+of repository to be built. As for version 1.5, only feed repositories are
+supported (aka simple debian).
+Keywords 'version' and 'architectures' are also required, although their
+values are currently unused.
+
+The list of indexed extensions defaults to opk & ipk for feeds, but can
+be modified by defining an optional 'extensions' keyword.
+And if 'destdir' is used within the repository definition, it set the full
+path for package search, without appending repository name.
+
+
+A sample repo building configuration is shown below
+
+[global]
+destdir = /home/repomirror
+
+[mybook-oe]
+type = feed
+version = 1.18
+architectures = armv5te
+
+[javiplx]
+destdir = /home/in-house/javiplx
+type = feed
+extensions = .deb
+version = lenny
+architectures = i386 amd64
+

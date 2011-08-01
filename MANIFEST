@@ -39,3 +39,4 @@ docs/debcache_setup/repomirror.d
 docs/debcache_setup/repomirror.d/debian.conf
 docs/debcache_setup/repomirror.d/ubuntu.conf
 docs/debcache_setup/repomirror-debproxy.conf
+docs/create_a_local_repository.txt
