@@ -29,6 +29,9 @@ class yum_repository ( repolib.MirrorRepository ) :
     def path_prefix ( self ) :
         return ""
 
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
+
     def base_url ( self ) :
         return repolib.MirrorRepository.base_url(self) + self.base_url_extend()
 
@@ -98,6 +101,9 @@ class YumComponent ( repolib.MirrorComponent ) :
 
     def path_prefix ( self ) :
         return ""
+
+    def repo_path ( self ) :
+        return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , partial=False ) :
         path = self.path_prefix()
@@ -338,12 +344,12 @@ class centos_repository ( yum_repository ) :
     sign_ext = False
 
     def base_url_extend ( self ) :
-        return "%s/os/" % self.version
+        return "%s/" % self.version
 
 class CentosComponent ( YumComponent ) :
 
     def path_prefix ( self ) :
-        return "%s/" % self
+        return "os/%s/" % self
 
 class centos_update_repository ( yum_repository ) :
 
