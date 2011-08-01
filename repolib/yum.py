@@ -9,7 +9,23 @@ import repolib
 from lists.yum import *
 
 
-class yum_repository ( repolib.MirrorRepository ) :
+class path_handler :
+    """This object is intended to allow reworking of local and remote paths.
+Main purpose is to allow base and update repositories to share a common url,
+while enabling finding proper paths from that location. It is needed for YUM
+repositories because repositories are usually decoupled.
+This functionality has been extracted to a separate class to increase
+visibility of methods overloaded on yum_repository object.
+"""
+
+    def base_url_extend ( self ) :
+        return ""
+
+    def path_prefix ( self ) :
+        return ""
+
+
+class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
     sign_ext = ".asc"
 
@@ -22,12 +38,6 @@ class yum_repository ( repolib.MirrorRepository ) :
         self.repomd = {}
         for subrepo in self.subrepos :
             self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
-
-    def base_url_extend ( self ) :
-        return ""
-
-    def path_prefix ( self ) :
-        return ""
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -94,13 +104,7 @@ class yum_repository ( repolib.MirrorRepository ) :
     def get_download_list( self ) :
         return YumDownloadThread( self )
 
-class YumComponent ( repolib.MirrorComponent ) :
-
-    def base_url_extend ( self ) :
-        return ""
-
-    def path_prefix ( self ) :
-        return ""
+class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -117,8 +121,7 @@ class YumComponent ( repolib.MirrorComponent ) :
         return True
 
     def get_metafile( self , metafiles , _params=None , download=True ) :
-        """
-Verifies checksums and optionally downloads primary and filelist files for
+        """Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
 Returns the full pathname for the file in its final destination or False when
 error ocurrs. When the repository is in update mode, True is returned to signal
