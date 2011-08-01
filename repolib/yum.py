@@ -16,7 +16,9 @@ class yum_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
-            self.subrepos.append( repolib.MirrorComponent.new( archname , config ) )
+            subrepo = repolib.MirrorComponent.new( archname , config )
+            subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
+            self.subrepos.append( subrepo )
         self.repomd = {}
         for subrepo in self.subrepos :
             self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
@@ -24,16 +26,17 @@ class yum_repository ( repolib.MirrorRepository ) :
     def base_url_extend ( self ) :
         return ""
 
-    def path_extend ( self ) :
+    def path_prefix ( self ) :
         return ""
 
     def base_url ( self ) :
         return repolib.MirrorRepository.base_url(self) + self.base_url_extend()
 
     def metadata_path ( self , partial=False ) :
-        if partial :
-            return self.path_extend()
-        return "%srepodata/" % self.path_extend()
+        path = self.path_prefix()
+        if not partial :
+            path += "repodata/"
+        return path
 
     def get_metafile ( self , _params=None , keep=False ) :
 
@@ -93,13 +96,14 @@ class YumComponent ( repolib.MirrorComponent ) :
     def base_url_extend ( self ) :
         return ""
 
-    def path_extend ( self ) :
+    def path_prefix ( self ) :
         return ""
 
     def metadata_path ( self , partial=False ) :
-        if partial :
-            return self.path_extend()
-        return "%srepodata/" % self.path_extend()
+        path = self.path_prefix()
+        if not partial :
+            path += "repodata/"
+        return path
 
     def match_filters( self , pkginfo , filters ) :
         if filters.has_key('groups') and pkginfo.has_key('groups') and pkginfo['group'] not in filters['groups'] :
@@ -307,48 +311,39 @@ class fedora_repository ( yum_repository ) :
     sign_ext = False
 
     def base_url_extend ( self ) :
-        return "%s/Fedora/" % self.version
+        return "releases/%s/Fedora/" % self.version
 
 class FedoraComponent ( YumComponent ) :
 
-    def repo_path ( self ) :
-        return  os.path.join( YumComponent.repo_path( self ) , "Fedora" )
-
-    def path_extend ( self ) :
+    def path_prefix ( self ) :
         return "%s/os/" % self
 
     def base_url_extend ( self ) :
-        return "%s/Fedora/" % self.version
+        return self.architectures[0]
 
 class fedora_update_repository ( yum_repository ) :
 
     sign_ext = False
 
     def base_url_extend ( self ) :
-        return "%s/" % self.version
+        return "updates/%s/" % self.version
 
 class FedoraUpdateComponent ( YumComponent ) :
 
-    def path_extend ( self ) :
+    def path_prefix ( self ) :
         return "%s/" % self
-
-    def base_url_extend ( self ) :
-        return "%s/" % self.version
 
 class centos_repository ( yum_repository ) :
 
     sign_ext = False
 
     def base_url_extend ( self ) :
-        return "%s/" % self.version
+        return "%s/os/" % self.version
 
 class CentosComponent ( YumComponent ) :
 
-    def path_extend ( self ) :
-        return "os/%s/" % self
-
-    def base_url_extend ( self ) :
-        return "%s/" % self.version
+    def path_prefix ( self ) :
+        return "%s/" % self
 
 class centos_update_repository ( yum_repository ) :
 
@@ -359,9 +354,6 @@ class centos_update_repository ( yum_repository ) :
 
 class CentosUpdateComponent ( YumComponent ) :
 
-    def path_extend ( self ) :
+    def path_prefix ( self ) :
         return "%s/" % self
-
-    def base_url_extend ( self ) :
-        return "%s/updates/" % self.version
 

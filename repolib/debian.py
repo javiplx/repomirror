@@ -37,9 +37,10 @@ class debian_repository ( repolib.MirrorRepository ) :
         return repolib.MirrorRepository.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
-        if partial :
-            return ""
-        return "dists/%s" % self.version
+        path = ""
+        if not partial :
+            path = "dists/%s" % self.version
+        return path
 
     def __subrepo_dict ( self , value ) :
         d = {}
@@ -190,9 +191,9 @@ class DebianComponent ( SimpleComponent ) :
 
     def metadata_path ( self , partial=False ) :
         path = "%s/binary-%s/" % ( self.compname , self.archname )
-        if partial :
-            return path
-        return "dists/%s/%s" % ( self.version , path )
+        if not partial :
+            path = "dists/%s/%s" % ( self.version , path )
+        return path
 
     def verify( self , filename , _name , release , params ) :
         _item = {}
