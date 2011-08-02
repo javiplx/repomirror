@@ -172,7 +172,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
 
-from feed import SimpleComponent
+from feed import SimpleComponent , feed_build_repository
 
 class DebianComponent ( SimpleComponent ) :
 
@@ -287,11 +287,13 @@ that the current copy is ok.
         pass
 
 
-class debian_build_repository ( repolib.BuildRepository ) :
+class debian_build_repository ( feed_build_repository ) :
 
-    def __init__ ( self , config ) :
+    valid_extensions = ( ".deb" ,)
 
-        repolib.BuildRepository.__init__( self , config )
+    def __init__ ( self , config , name ) :
+
+        feed_build_repository.__init__( self , config , name )
 
         self.components = config.get( "components" , None )
 

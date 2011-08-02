@@ -17,15 +17,17 @@ directory.
 
 Definitions of build repositories currently allow much less keywords than
 repomirror does. The most important keyword is 'type', and defines the kind
-of repository to be built. Allowed values are 'feed' for simple debian
-or feed repositories, and 'yum' to create repositories with createrepo.
-Keywords 'version' and 'architectures' are also required, although their
+of repository to be built. Three repository types are implemented:
+ - deb  - will create a 'simple' debian repository (only Packages file)
+ - feed - creates an OpenWrt feed repository (indexes ipk & opk files)
+ - yum  - builds a yum compatible repository using createrepo
+The keywords 'version' and 'architectures' are also required, although their
 values are currently unused.
 
 If 'destdir' is used within the repository definition, it sets the full path
 for package search, without appending repository name. Other optional keyword
-is 'extensions', defining which file extensions are indexed and available for
-feeds only (defauts to .opk & .ipk).
+for deb & feed repositories is 'extensions', which overrides the default file
+extensions indexed.
 
 
 A sample repo building configuration is shown below
@@ -40,8 +42,7 @@ architectures = armv5te
 
 [javiplx]
 destdir = /home/in-house/javiplx
-type = feed
-extensions = .deb
+type = deb
 version = lenny
 architectures = i386 amd64
 

@@ -266,7 +266,7 @@ class BuildRepository ( _repository ) :
     def new ( name ) :
         _config = repolib.config.read_build_config( name )
         if _config['type'] == "deb" :
-            return repolib.debian_build_repository( _config )
+            return repolib.debian_build_repository( _config , name )
         elif _config['type'] == "feed" :
             return repolib.feed_build_repository( _config , name )
         elif _config['type'] == "yum" :

@@ -13,6 +13,8 @@ import repolib
 
 class feed_build_repository ( repolib.BuildRepository ) :
 
+    valid_extensions = ( ".opk" , ".ipk" )
+
     def __init__ ( self , config , name ) :
 
         repolib.BuildRepository.__init__( self , config )
@@ -20,13 +22,9 @@ class feed_build_repository ( repolib.BuildRepository ) :
         self.name = name
         if config.has_key( "extensions" ) :
             self.valid_extensions = config['extensions']
-        else :
-            self.valid_extensions = ( ".opk" , ".ipk" )
 
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
-
-        self.components = config.get( "components" , None )
 
     def build ( self ) :
 
