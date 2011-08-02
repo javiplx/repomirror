@@ -8,6 +8,12 @@ import os , sys
 import repolib
 from lists.yum import *
 
+try :
+    sys.path.append( '/usr/share/createrepo' )
+    import genpkgmetadata
+except Exception , ex :
+    genpkgmetadata = False
+
 
 class path_handler :
     """This object is intended to allow reworking of local and remote paths.
@@ -365,4 +371,59 @@ class CentosUpdateComponent ( YumComponent ) :
 
     def path_prefix ( self ) :
         return "%s/" % self
+
+
+class yum_build_repository ( repolib.BuildRepository ) :
+
+    def __init__ ( self , config , name ) :
+
+        repolib.BuildRepository.__init__( self , config )
+
+        self.name = name
+
+        if not genpkgmetadata :
+            raise Exception( "Missing requierements : create repo is required to build yum repositories" )
+
+        if genpkgmetadata.__version__ != '0.4.9' :
+            repolib.logger.warning( "Found createrepo %s (expected 0.4.9), notify any error" % genpkgmetadata.__version__ )
+
+        if config.has_key( "extensions" ) :
+            repolib.logger.warning( "Fix configuration : 'extensions' is not a valid keyword for yum repositories" )
+
+	if not os.path.isdir( self.repo_path() ) :
+            raise Exception( "Repository directory %s does not exists" % self.repo_path() )
+
+    def build ( self ) :
+
+        cmds , directories = genpkgmetadata.parseArgs( [ "dummy" ] )
+        directory = os.path.basename( self.repo_path() )
+        cmds['quiet'] = True
+        cmds['basedir'] = os.path.dirname( self.repo_path() )
+        cmds['outputdir'] = self.repo_path()
+
+        olddir = os.path.join( self.repo_path() , cmds['olddir'] )
+        if os.path.exists( olddir ) :
+            repolib.logger.critical( "Old data directory exists, remove: %s" % olddir )
+            return
+
+        mdgen = genpkgmetadata.MetaDataGenerator(cmds)
+        if mdgen.checkTimeStamps( directory ):
+            repolib.logger.info( "repository '%s' is up to date" % self.name )
+            return
+
+        tempdir = os.path.join( self.repo_path() , cmds['tempdir'] )
+        if not os.path.isdir( tempdir ) :
+            os.mkdir( tempdir )
+
+        mdgen.doPkgMetadata( directory )
+        mdgen.doRepoMetadata()
+
+        finaldir = os.path.join( self.repo_path() , cmds['finaldir'] )
+        if os.path.exists( finaldir ) :
+            os.rename( finaldir , olddir )
+
+        os.rename( tempdir , finaldir )
+        if os.path.exists( olddir ) :
+            map( lambda x : os.unlink( os.path.join( olddir , x ) ) , os.listdir(olddir) )
+            os.rmdir( olddir )
 

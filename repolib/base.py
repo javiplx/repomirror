@@ -269,6 +269,8 @@ class BuildRepository ( _repository ) :
             return repolib.debian_build_repository( _config )
         elif _config['type'] == "feed" :
             return repolib.feed_build_repository( _config , name )
+        elif _config['type'] == "yum" :
+            return repolib.yum_build_repository( _config , name )
         else :
             raise Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )

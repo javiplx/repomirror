@@ -4,9 +4,6 @@ NOTE : although repository building is mostly independend of mirroring, this
        for repomirror.
 
 
-NOTE : version 1.5 only supports feed repositories (aka simple debian)
-
-
 Configuration files follow the same rules than those for repomirror. They are
 ini-style, there is a main one and can be hosted under a .d subdirectory.
 
@@ -20,15 +17,15 @@ directory.
 
 Definitions of build repositories currently allow much less keywords than
 repomirror does. The most important keyword is 'type', and defines the kind
-of repository to be built. As for version 1.5, only feed repositories are
-supported (aka simple debian).
+of repository to be built. Allowed values are 'feed' for simple debian
+or feed repositories, and 'yum' to create repositories with createrepo.
 Keywords 'version' and 'architectures' are also required, although their
 values are currently unused.
 
-The list of indexed extensions defaults to opk & ipk for feeds, but can
-be modified by defining an optional 'extensions' keyword.
-And if 'destdir' is used within the repository definition, it set the full
-path for package search, without appending repository name.
+If 'destdir' is used within the repository definition, it sets the full path
+for package search, without appending repository name. Other optional keyword
+is 'extensions', defining which file extensions are indexed and available for
+feeds only (defauts to .opk & .ipk).
 
 
 A sample repo building configuration is shown below
