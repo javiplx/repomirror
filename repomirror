@@ -14,7 +14,8 @@ import repolib
 import optparse
 
 def option_parser () :
-    parser = optparse.OptionParser( usage=__usage__ , version=__version__ )
+    version_string = "%%prog %s" % __version__
+    parser = optparse.OptionParser( usage=__usage__ , version=version_string )
     return parser
 
 def main () :
@@ -25,43 +26,49 @@ def main () :
         parser.print_help()
         sys.exit(1)
 
-    return args[0]
+    repo_name = args.pop()
 
-repo_name = main()
+    try :
+        repo = repolib.MirrorRepository.new( repo_name )
+    except Exception , ex :
+        print "Exception : %s" % ex
+        sys.exit(255)
 
-try :
-    repo = repolib.MirrorRepository.new( repo_name )
-except Exception , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
+    if not os.path.isdir( repo.destdir ) :
+        print "Destination directory '%s' does not exits" % repo.destdir
+        sys.exit(2)
 
-if not os.path.isdir( repo.destdir ) :
-    print "Destination directory '%s' does not exits" % repo.destdir
-    sys.exit(2)
+    return repo
 
 
-meta_files = repo.get_metafile()
+repo = main()
 
-if meta_files.values().count( False ) == len(meta_files) :
+
+def do_1st ( repo ) :
+
+  meta_files = repo.get_metafile()
+
+  if meta_files.values().count( False ) == len(meta_files) :
     repolib.logger.critical( "No valid metadata files found, exiting" )
     sys.exit(255)
 
-if meta_files.get('') is True :
+  if meta_files.get('') is True :
     repolib.logger.info( "Updated repository, no processing required" )
     sys.exit(0)
 
-# After verify all the mirroring parameters, it is safe to create directory tree
+  # After verify all the mirroring parameters, it is safe to create directory tree
+  repo.build_local_tree()
+  
+  # Once created, we move in the primary metadata file
+  local_repodata = repo.write_master_file( meta_files )
+  
+  repolib.logger.setLevel( repolib.logging.INFO )
+  map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
 
-repo.build_local_tree()
+  return local_repodata
 
-# Once created, we move in the primary metadata file
 
-local_repodata = repo.write_master_file( meta_files )
-
-repolib.logger.setLevel( repolib.logging.INFO )
-
-map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
-
+local_repodata = do_1st( repo )
 
 download_pkgs = repo.get_download_list()
 download_size = 0
