@@ -1,5 +1,17 @@
 #!/usr/bin/python
 
+# Copyright (C) 2010 Javier Palacios
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2
+# as published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+
+
 __version__ = "2.0"
 
 __usage__ = """%prog reponame"""
@@ -96,11 +108,10 @@ def do_2nd ( repo , local_repodata ) :
   return download_pkgs , missing_pkgs
 
 
-repo = main()
-local_repodata = do_1st( repo )
-download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
+def do_missing ( download_pkgs , missing_pkgs ) :
 
-if missing_pkgs :
+    if not missing_pkgs :
+        return
 
     _missing = {}
     for pkg in missing_pkgs :
@@ -110,7 +121,6 @@ if missing_pkgs :
     for pkg in download_pkgs :
         # NOTE : We don't break the loop to ensure we get all the available archs
         if pkg['name'] in _missing.keys() :
-            # repolib.logger.info( "FOUND %s" % pkg['name'] )
             found_pkgs[ pkg['name'] ] = pkg
     # NOTE : extending here is safer
     download_pkgs.queue( found_pkgs.values() )
@@ -122,6 +132,14 @@ if missing_pkgs :
     if missing :
         repolib.logger.warning( "There are %d missing requirements : %s " % ( len(missing) , missing[:5] ) )
 
-download_pkgs.start()
-download_pkgs.finish()
+
+if __name__ == "__main__" :
+
+    repo = main()
+    local_repodata = do_1st( repo )
+    download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
+    do_missing( download_pkgs , missing_pkgs )
+
+    download_pkgs.start()
+    download_pkgs.finish()
 
