@@ -59,11 +59,6 @@ default_params['pkgvflags'] = "SKIP_NONE"
 
 
 
-# (update|init) - decides if we stop processing for unchanged metadata files
-default_mode = "update"
-
-
-
 # NOTE : if a section name is duplicated in the same file,
 #   ConfigParser does not allow to detect it
 def get_file ( section , conffiles ) :
@@ -141,13 +136,9 @@ class MirrorConf ( RepoConf ) :
 
         self['url'] = None
         self.url_parts = None
-        self['mode'] = default_mode
         self['filters'] = {}
         self['params'] = {}
         self['params'].update( default_params )
-
-        if config.has_option ( self.name , "mode" ) :
-            self['mode'] = config.get( self.name , "mode" )
 
         if config.has_option ( self.name , "url" ) :
             self['url'] = config.get( self.name , "url" )

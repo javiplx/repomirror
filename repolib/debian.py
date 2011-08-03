@@ -257,10 +257,10 @@ that the current copy is ok.
             if os.path.isfile( localname ) :
                 _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
                 if self.verify( localname , _name , release , params ) :
-                    if self.mode == "update" :
-                        repolib.logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
-                        return True
-                    break
+                    if self.mode == "init" :
+                        break
+                    repolib.logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
+                    return True
                 continue
 
         else :

@@ -159,7 +159,7 @@ that the current copy is ok.
                 else :
                     os.unlink( primary )
             else :
-                if self.mode == "update" :
+                if self.mode != "init" :
                     primary = True
         else :
             if not download :
@@ -188,7 +188,7 @@ that the current copy is ok.
                 else :
                     os.unlink( secondary )
             else :
-                if self.mode == "update" :
+                if self.mode != "init" :
                     secondary = True
         else :
             if not download :

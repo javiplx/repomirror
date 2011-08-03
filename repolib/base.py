@@ -36,6 +36,9 @@ class _repository :
 class _mirror ( _repository ) :
     """Convenience class primarily created only to avoid moving download method into base _repository"""
 
+    # (update|init) - decides if we stop processing for unchanged metadata files
+    mode = "update"
+
     required = ( 'destdir' , 'type' , 'url' , 'version' , 'architectures' )
 
     def __init__ ( self , config ) :
@@ -48,7 +51,6 @@ class _mirror ( _repository ) :
 
 	_repository.__init__( self , config )
         self.repo_url = config[ "url" ]
-        self.mode = config[ "mode" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
 
@@ -153,7 +155,7 @@ are up to date."""
                         os.unlink( release_file )
                         os.unlink( release_file + self.sign_ext )
                 else :
-                    if self.mode == "update" :
+                    if self.mode != "init" :
                         repolib.logger.info( "Existing metadata file is valid, skipping" )
                         os.unlink( signature_file )
                         return True
