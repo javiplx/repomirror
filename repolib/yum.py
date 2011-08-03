@@ -208,6 +208,10 @@ that the current copy is ok.
                 repolib.logger.error( "Problems downloading filelists for %s-%s" % ( self.version , self ) )
                 secondary = False
     
+        # Workaround for easily detect True,True and False,False pairs
+        if primary == secondary and isinstance(primary,bool) :
+            return primary
+
         return primary , secondary
 
     def pkg_list( self ) :
