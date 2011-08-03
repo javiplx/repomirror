@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
-# FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
+__version__ = "2.0"
+
+__usage__ = """%prog reponame"""
 
 
 import os , sys
@@ -8,15 +10,24 @@ import os , sys
 
 import repolib
 
-if sys.argv[1:] :
-    if len(sys.argv) > 2 :
-        print "Too many arguments"
-        print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
-        sys.exit(2)
-    repo_name = sys.argv[1]
-else :
-    print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
-    sys.exit(1)
+
+import optparse
+
+def option_parser () :
+    parser = optparse.OptionParser( usage=__usage__ , version=__version__ )
+    return parser
+
+def main () :
+    parser = option_parser()
+    opts , args = parser.parse_args()
+
+    if not args or len(args) > 1 :
+        parser.print_help()
+        sys.exit(1)
+
+    return args[0]
+
+repo_name = main()
 
 try :
     repo = repolib.MirrorRepository.new( repo_name )
