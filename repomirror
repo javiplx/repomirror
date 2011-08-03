@@ -18,7 +18,9 @@ def option_parser () :
     parser = optparse.OptionParser( usage=__usage__ , version=version_string )
     return parser
 
+
 def main () :
+
     parser = option_parser()
     opts , args = parser.parse_args()
 
@@ -39,9 +41,6 @@ def main () :
         sys.exit(2)
 
     return repo
-
-
-repo = main()
 
 
 def do_1st ( repo ) :
@@ -68,13 +67,13 @@ def do_1st ( repo ) :
   return local_repodata
 
 
-local_repodata = do_1st( repo )
+def do_2nd ( repo , local_repodata ) :
 
-download_pkgs = repo.get_download_list()
-download_size = 0
-missing_pkgs = []
+  download_pkgs = repo.get_download_list()
+  download_size = 0
+  missing_pkgs = []
 
-for subrepo in repo.subrepos :
+  for subrepo in repo.subrepos :
 
     packages = subrepo.get_metafile( local_repodata )
 
@@ -88,12 +87,18 @@ for subrepo in repo.subrepos :
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )
 
-
-_size = download_size / 1024 / 1024
-if _size > 2048 :
+  _size = download_size / 1024 / 1024
+  if _size > 2048 :
     repolib.logger.info( "Total size to download : %.1f Gb" % ( _size / 1024 ) )
-else :
+  else :
     repolib.logger.info( "Total size to download : %.1f Mb" % _size )
+
+  return download_pkgs , missing_pkgs
+
+
+repo = main()
+local_repodata = do_1st( repo )
+download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
 
 if missing_pkgs :
 
