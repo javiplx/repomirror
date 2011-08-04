@@ -29,6 +29,11 @@ def option_parser () :
     version_string = "%%prog %s" % __version__
     parser = optparse.OptionParser( usage=__usage__ , version=version_string )
 
+    parser.add_option( "--quiet" , action="store_true" ,
+        help="Issue only critical messages" )
+    parser.add_option( "--verbose" , action="store_true" ,
+        help="Run in descriptive mode" )
+
     parser.add_option( "--init" , action="store_true" ,
         help="download packages" )
 
@@ -43,6 +48,11 @@ def main () :
     if not args or len(args) > 1 :
         parser.print_help()
         sys.exit(1)
+
+    if opts.verbose :
+        repolib.logger.setLevel( repolib.logging.INFO )
+    if opts.quiet :
+        repolib.logger.setLevel( repolib.logging.CRITICAL )
 
     repo_name = args.pop()
 
@@ -79,7 +89,6 @@ def do_1st ( repo ) :
   # Once created, we move in the primary metadata file
   local_repodata = repo.write_master_file( meta_files )
   
-  repolib.logger.setLevel( repolib.logging.INFO )
   map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
 
   return local_repodata
