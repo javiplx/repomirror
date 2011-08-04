@@ -120,6 +120,11 @@ class MirrorRepository ( _mirror ) :
 	_mirror.__init__( self , config )
         self.subrepos = []
 
+    def set_mode ( self , mode ) :
+        for subrepo in self.subrepos :
+            subrepo.mode = mode
+        self.mode = mode
+
     def get_metafile ( self , metafile , _params=None , keep=False ) :
         """Verifies with gpg and/or downloads a metadata file.
 Returns path to metadata file on success, and False if error occurs. If the
