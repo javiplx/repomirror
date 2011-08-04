@@ -28,6 +28,10 @@ import optparse
 def option_parser () :
     version_string = "%%prog %s" % __version__
     parser = optparse.OptionParser( usage=__usage__ , version=version_string )
+
+    parser.add_option( "--init" , action="store_true" ,
+        help="download packages" )
+
     return parser
 
 
@@ -44,7 +48,8 @@ def main () :
 
     try :
         repo = repolib.MirrorRepository.new( repo_name )
-        repo.set_mode( "init" )
+        if opts.init is True :
+            repo.set_mode( "init" )
     except Exception , ex :
         print "Exception : %s" % ex
         sys.exit(255)
