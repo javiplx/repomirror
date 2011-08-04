@@ -138,7 +138,9 @@ class debian_repository ( repolib.MirrorRepository ) :
             repolib.logger.warning( "Too many different Release files returned" )
 
         for temp_file in temp_files :
-          if not os.path.exists( local ) :
+          if isinstance(temp_file,bool) :
+            repolib.logger.info( "File %s is up to date, skipping" % ( os.path.basename(local) ) )
+          elif not os.path.exists( local ) :
             self.safe_rename( temp_file , local )
 
             os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
