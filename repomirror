@@ -44,6 +44,7 @@ def main () :
 
     try :
         repo = repolib.MirrorRepository.new( repo_name )
+        repo.set_mode( "init" )
     except Exception , ex :
         print "Exception : %s" % ex
         sys.exit(255)
