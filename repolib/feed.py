@@ -29,7 +29,6 @@ class feed_build_repository ( repolib.BuildRepository ) :
     def build ( self ) :
 
         config.mimetypes[''] = open
-        packages = []
 
         packages = []
         filename = os.path.join( self.repo_path() , "Packages" )

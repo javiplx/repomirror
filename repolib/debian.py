@@ -293,10 +293,28 @@ class debian_build_repository ( feed_build_repository ) :
 
     valid_extensions = ( ".deb" ,)
 
+
+class debian_component_repository ( debian_build_repository ) :
+
     def __init__ ( self , config , name ) :
 
-        feed_build_repository.__init__( self , config , name )
+        debian_build_repository.__init__( self , config , name )
 
-        self.components = config.get( "components" , None )
+        if not config['architectures'] or len(config['architectures']) > 1 :
+            raise Exception( "Broken '%s' configuration : single architecture required." % name )
+
+        if not config['components'] or len(config['components']) > 1 :
+            raise Exception( "Broken '%s' configuration : single component required." % name )
+
+        self.architecture , self.component = config['architectures'][0] , config['components'][0]
+
+    def build ( self ) :
+        feed_build_repository.build( self )
+        fd = open( os.path.join( self.repo_path() , "Release" ) , 'w' )
+        fd.write( "Version: %s\n" % self.version )
+        fd.write( "Component: %s\n" % self.component )
+        fd.write( "Architecture: %s\n" % self.architecture )
+        fd.close()
+
 
 
