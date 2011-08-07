@@ -18,33 +18,32 @@ else :
 
 try :
     repo = repolib.MirrorRepository.new( repo_name )
+    repo.mode = "update"
 except Exception , ex :
-    print "Exception : %s" % ex
+    repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
     sys.exit(255)
 
 for _subrepo in repo.subrepos :
     if subrepo == str(_subrepo) :
         break
 else :
-    print "Specified subrepo %s does not exists" % ( subrepo, )
+    repolib.logger.critical( "Repo %s : subrepo %s does not exists" % ( repo_name , subrepo ) )
     sys.exit(255)
 
 def purge ( filesdict ) :
     for subrepo in filesdict.keys() :
         file = filesdict[subrepo]
-        if file :
+        if not isinstance(file,bool) :
             os.unlink( file )
             filesdict.pop( subrepo )
 
-
-repo.mode = "update"
 
 meta_files = repo.get_metafile( keep=True )
 
 msg = "Outdated subrepo"
 retcode = 1
 
-if meta_files.get('') is True :
+if meta_files[ _subrepo ] is True :
     msg = "Subrepo is up to date"
     retcode = 0
 
