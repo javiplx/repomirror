@@ -34,8 +34,14 @@ def option_parser () :
     parser.add_option( "--verbose" , action="store_true" ,
         help="Run in descriptive mode" )
 
-    parser.add_option( "--init" , action="store_true" ,
-        help="download packages" )
+    modes = optparse.OptionGroup( parser , "Operation modes" ,
+        "Operation modes available for mirroring" )
+    modes.add_option( "--init" , action="store_true" ,
+        help="complete repository download" )
+    modes.add_option( "--metadata" , action="store_true" ,
+        help="download repository metadata [default]" )
+
+    parser.add_option_group( modes )
 
     return parser
 
@@ -49,6 +55,9 @@ def main () :
         parser.print_help()
         sys.exit(1)
 
+    if opts.init and opts.metadata :
+        parser.error( "Only one operation mode can be specified at a time" )
+
     if opts.verbose :
         repolib.logger.setLevel( repolib.logging.INFO )
     if opts.quiet :
@@ -60,6 +69,8 @@ def main () :
         repo = repolib.MirrorRepository.new( repo_name )
         if opts.init is True :
             repo.set_mode( "init" )
+        else :
+            repo.set_mode( "metadata" )
     except Exception , ex :
         print "Exception : %s" % ex
         sys.exit(255)
@@ -104,7 +115,7 @@ def do_2nd ( repo , local_repodata ) :
 
     packages = subrepo.get_metafile( local_repodata )
 
-    if packages is True :
+    if packages is True or repo.mode == "metadata" :
         continue
 
     repolib.logger.info( "Scanning %s" % ( subrepo , ) )
@@ -113,6 +124,9 @@ def do_2nd ( repo , local_repodata ) :
     download_size += _size
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )
+
+  if repo.mode == "metadata" :
+    return None , None
 
   _size = download_size / 1024 / 1024
   if _size > 2048 :
@@ -153,6 +167,9 @@ if __name__ == "__main__" :
     repo = main()
     local_repodata = do_1st( repo )
     download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
+    if not download_pkgs :
+        repolib.logger.info( "Nothing to download" )
+        sys.exit(0)
     do_missing( download_pkgs , missing_pkgs )
 
     download_pkgs.start()
