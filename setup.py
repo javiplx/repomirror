@@ -11,7 +11,7 @@ setup(
     license = 'GPLv2',
     url = 'http://github.com/javiplx/repomirror',
     download_url = 'http://r26936.ovh.net/repomirror',
-    scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' , 'checkmirror' , 'get_meta' ],
+    scripts = [ 'repomirror' , 'get_filters' , 'buildrepo' , 'checkmirror' , 'buildlive' ],
     data_files = [
                  ( 'share/repomirror' , [ 'repomirror.conf' , 'buildrepo.conf' ] ) ,
                  ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/detail.html' ] ) ,

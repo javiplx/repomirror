@@ -1,7 +1,7 @@
 setup.py
 repomirror
 checkmirror
-get_meta
+buildlive
 repolib/__init__.py
 repolib/base.py
 repolib/utils.py

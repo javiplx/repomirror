@@ -1,0 +1,139 @@
+#!/usr/bin/python
+
+# Copyright (C) 2011 Javier Palacios
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2
+# as published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+
+
+__version__ = "0.5"
+
+__usage__ = """%prog [options] reponame"""
+
+
+import os , sys
+
+import debian_bundle.deb822 , debian_bundle.debian_support
+
+#import repolib.lists.debian
+
+import urllib2
+
+
+import optparse
+
+def option_parser () :
+    version_string = "%%prog %s" % __version__
+    parser = optparse.OptionParser( usage=__usage__ , version=version_string )
+    parser.set_defaults( status_file = "/var/lib/dpkg/status" )
+
+    parser.add_option( "--status-file" , metavar="FILENAME" ,
+        help="Specify dpkg status file" )
+
+
+    return parser
+
+
+"""Snippet from a real status file
+Package: libxml-libxml-perl
+Status: install ok installed
+Priority: optional
+Section: perl
+Installed-Size: 1328
+Maintainer: Debian Perl Group <pkg-perl-maintainers@lists.alioth.debian.org>
+Architecture: amd64
+Version: 1.70.ds-1
+Replaces: libxml-libxml-common-perl
+Depends: perl (>= 5.10.1-5), perlapi-5.10.1, libc6 (>= 2.4), libxml2 (>= 2.7.4), zlib1g (>= 1:1.1.4), libxml-namespacesupport-
+perl, libxml-sax-perl
+Conflicts: libxml-libxml-common-perl
+Description: Perl interface to the libxml2 library
+ XML::LibXML is a Perl interface to the GNOME libxml2 library, which provides
+ interfaces for parsing and manipulating XML files. This module allows Perl
+ programmers to make use of the highly capable validating XML parser and the
+ high performance Document Object Model (DOM) implementation. Additionally, it
+ supports using the XML Path Language (XPath) to find and extract information.
+Homepage: http://search.cpan.org/dist/XML-LibXML/
+"""
+
+
+def buildpath ( pkg , compname="main" ) :
+
+    if pkg.has_key( 'Source' ) :
+        name = pkg['Source'].split()[0]
+    else :
+        name = pkg['Package']
+
+    if name.find( "lib" ) == 0 :
+        subdir = name[:4]
+    else :
+        subdir = name[0]
+
+    return "%s/%s/%s/" % ( compname , subdir , name )
+
+
+def buildname ( pkg ) :
+
+    version =  pkg['Version']
+    if version.find(':')!=-1 :
+        version = version.split(':',1)[1]
+    return "%s_%s_%s.deb" % ( pkg['Package'] , version , pkg['Architecture'] )
+
+
+
+# Thanks to http://stackoverflow.com/questions/107405/how-do-you-send-a-head-http-request-in-python/2070916#2070916
+class HeadRequest ( urllib2.Request ) :
+    def get_method(self):
+        return "HEAD"
+
+
+
+def main ( sources ) :
+
+    parser = option_parser()
+    opts , args = parser.parse_args()
+
+    if not args :
+        parser.print_help()
+        sys.exit(1)
+
+    packages = debian_bundle.debian_support.PackageFile( opts.status_file )
+
+    for pkg in packages :
+    #    pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+        _pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+        pkginfo = debian_bundle.deb822.Deb822( _pkginfo )
+
+        filename = buildname( pkginfo )
+
+        path = buildpath( pkginfo , "main" )
+        for name,baseurl in sources.items() :
+
+            filepath = urllib2.urlparse.urljoin( name , path )
+            pkginfo['Filename'] = urllib2.urlparse.urljoin( filepath , filename )
+
+            try :
+                url = urllib2.urlparse.urljoin( baseurl , pkginfo['Filename'] )
+                request = HeadRequest( url )
+                response = urllib2.urlopen( request )
+                pkginfo['Size'] = response.headers['Content-Length']
+                print pkginfo.dump()
+            #    print repolib.lists.debian.dump_package( pkginfo , fd )
+                break
+            except urllib2.HTTPError , ex :
+                pass
+        else :
+            print "Failed %s" % ( pkginfo['Filename'] )
+
+if __name__ == "__main__" :
+    sources = {}
+    sources['pool/'] = "http://ftp.es.debian.org/debian/"
+    sources['pool/updates/'] = "http://security.debian.org/"
+    main( sources )
+
