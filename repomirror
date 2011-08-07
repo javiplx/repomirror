@@ -82,10 +82,6 @@ def main () :
         print "Exception : %s" % ex
         sys.exit(255)
 
-    if not os.path.isdir( repo.destdir ) :
-        print "Destination directory '%s' does not exits" % repo.destdir
-        sys.exit(2)
-
     return repo
 
 
