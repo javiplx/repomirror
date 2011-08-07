@@ -69,7 +69,7 @@ def get_file ( section , conffiles ) :
         if config.has_section( section ) :
             filename.append( file )
     if not filename :
-        raise Exception( "Definition for '%s' not found" % section )
+        raise Exception( "Definition not found" )
     if len(filename) > 1 :
         raise Exception( "Multiple definitions of '%s' in %s" % ( section , " , ".join(filename) ) )
     return filename[0]

@@ -53,7 +53,7 @@ def main () :
     parser = option_parser()
     opts , args = parser.parse_args()
 
-    if not args or len(args) > 1 :
+    if not args :
         parser.print_help()
         sys.exit(1)
 
@@ -68,9 +68,13 @@ def main () :
     if opts.quiet :
         repolib.logger.setLevel( repolib.logging.CRITICAL )
 
-    repo_name = args.pop()
+    repolist = []
 
-    try :
+    while args :
+
+      repo_name = args.pop()
+
+      try :
         repo = repolib.MirrorRepository.new( repo_name )
         if opts.init :
             repo.set_mode( "init" )
@@ -78,11 +82,13 @@ def main () :
             repo.set_mode( "update" )
         else :
             repo.set_mode( "metadata" )
-    except Exception , ex :
-        print "Exception : %s" % ex
-        sys.exit(255)
+      except Exception , ex :
+        repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
+        continue
 
-    return repo
+      repolist.append( repo )
+
+    return repolist
 
 
 def do_1st ( repo ) :
@@ -167,7 +173,8 @@ def do_missing ( download_pkgs , missing_pkgs ) :
 
 if __name__ == "__main__" :
 
-    repo = main()
+  repolist = main()
+  for repo in repolist :
     local_repodata = do_1st( repo )
     download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
     if not download_pkgs :
