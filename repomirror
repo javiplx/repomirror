@@ -36,9 +36,11 @@ def option_parser () :
 
     modes = optparse.OptionGroup( parser , "Operation modes" ,
         "Operation modes available for mirroring" )
-    modes.add_option( "--init" , action="store_true" ,
+    modes.add_option( "--init" , action="count" , default=0 ,
         help="complete repository download" )
-    modes.add_option( "--metadata" , action="store_true" ,
+    modes.add_option( "--update" , action="count" , default=0 ,
+        help="download modified metadata and new packages" )
+    modes.add_option( "--metadata" , action="count" , default=0 ,
         help="download repository metadata [default]" )
 
     parser.add_option_group( modes )
@@ -55,8 +57,11 @@ def main () :
         parser.print_help()
         sys.exit(1)
 
-    if opts.init and opts.metadata :
+    if opts.init + opts.update + opts.metadata > 1 :
         parser.error( "Only one operation mode can be specified at a time" )
+
+    if opts.verbose and opts.quiet :
+        repolib.logger.warning( "Specified verbose and quiet simultaneously, switching to quiet" )
 
     if opts.verbose :
         repolib.logger.setLevel( repolib.logging.INFO )
@@ -67,8 +72,10 @@ def main () :
 
     try :
         repo = repolib.MirrorRepository.new( repo_name )
-        if opts.init is True :
+        if opts.init :
             repo.set_mode( "init" )
+        elif opts.update :
+            repo.set_mode( "update" )
         else :
             repo.set_mode( "metadata" )
     except Exception , ex :
