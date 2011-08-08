@@ -267,15 +267,13 @@ that the current copy is ok.
 
         else :
 
+          localname = False
+
           if download :
-            # NOTE : Download of Package Release file is quite redundant
 
             repolib.logger.warning( "No local Packages file exist for %s. Downloading." % self )
 
             localname = SimpleComponent.get_metafile( self , release , _params , True )
-
-          else :
-            localname = False
 
         if isinstance(localname,str) :
             return read_handler( localname )

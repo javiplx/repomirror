@@ -126,6 +126,13 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
             return False
         return True
 
+    def verify( self , filename , item , params ) :
+        # FIXME : no matching on filename vs. href within item is done
+        if repolib.utils.integrity_check( filename , item , params['pkgvflags'] ) is False :
+            os.unlink( filename )
+            return False
+        return True
+
     def get_metafile( self , metafiles , _params=None , download=True ) :
         """Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
@@ -148,65 +155,49 @@ that the current copy is ok.
             local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
             master_file = metafiles[self]
 
+        primary , secondary = False , False
+
         item , filelist = filelist_xmlparser.get_filelist( master_file )
 
-        primary = os.path.join( local_repodata , item['href'] )
+        _primary = os.path.join( local_repodata , item['href'] )
     
-        if os.path.isfile( primary ) :
-            if repolib.utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
-                if not download :
-                    primary = False
-                else :
-                    os.unlink( primary )
-            else :
-                if self.mode != "init" :
-                    primary = True
-        else :
-            if not download :
-                primary = False
+        if os.path.isfile( _primary ) :
+            if self.verify( _primary , item , params ) :
+                primary = True
+                if self.mode == "init" :
+                    primary = _primary
     
-        if not ( isinstance(primary,bool) or os.path.isfile( primary ) ) :
+        if not primary :
     
+          if download :
+
             repolib.logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , self ) )
     
             url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
     
-            if self.downloadRawFile( url , primary ) :
-                if repolib.utils.integrity_check( primary , item , params['pkgvflags'] ) is False :
-                    os.unlink( primary )
-                    primary = False
-            else :
-                repolib.logger.error( "Problems downloading primary file for %s-%s" % ( self.version , self ) )
-                primary = False
+            if self.downloadRawFile( url , _primary ) :
+                if self.verify( _primary , item , params ) :
+                    primary = _primary
     
-        secondary = os.path.join( local_repodata , filelist['href'] )
+        _secondary = os.path.join( local_repodata , filelist['href'] )
     
-        if os.path.isfile( secondary ) :
-            if repolib.utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
-                if not download :
-                    secondary = False
-                else :
-                    os.unlink( secondary )
-            else :
-                if self.mode != "init" :
-                    secondary = True
-        else :
-            if not download :
-                secondary = False
+        if os.path.isfile( _secondary ) :
+            if self.verify( _secondary , filelist , params ) :
+                secondary = True
+                if self.mode == "init" :
+                    secondary = _secondary
     
-        if not ( isinstance(secondary,bool) or os.path.isfile( secondary ) ) :
+        if not secondary :
     
+          if download :
+
             repolib.logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , self ) )
     
             url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
     
-            if self.downloadRawFile( url , secondary ) :
-                if repolib.utils.integrity_check( secondary , filelist , params['pkgvflags'] ) is False :
-                    os.unlink( secondary )
-                    secondary = False
-            else :
-                repolib.logger.error( "Problems downloading filelists for %s-%s" % ( self.version , self ) )
-                secondary = False
+            if self.downloadRawFile( url , _secondary ) :
+                if self.verify( _secondary , filelist , params ) :
+                    secondary = _secondary
     
         # Workaround for easily detect True,True and False,False pairs
         if primary == secondary and isinstance(primary,bool) :
