@@ -64,14 +64,20 @@ class feed_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             self.subrepos.append( repolib.MirrorComponent.new( archname , config ) )
 
+    def __subrepo_dict ( self , value ) :
+        d = {}
+        for k in self.subrepos :
+            d[k] = value
+        return d
+
     def get_metafile ( self , _params=None , keep=False ) :
-        return { '':'' }
+        return self.__subrepo_dict( '' )
 
     def metadata_path ( self , partial=False ) :
         return ""
 
     def write_master_file ( self , release_file ) :
-        return { '' : self.repo_path() }
+        return self.__subrepo_dict( self.repo_path() )
 
     def info ( self , metafile ) :
         str  = "Mirroring %s\n" % self.name
