@@ -99,10 +99,6 @@ def do_1st ( repo ) :
     repolib.logger.critical( "No valid metadata files found, exiting" )
     sys.exit(255)
 
-  if meta_files.get('') is True :
-    repolib.logger.info( "Updated repository, no processing required" )
-    sys.exit(0)
-
   # After verify all the mirroring parameters, it is safe to create directory tree
   repo.build_local_tree()
   
@@ -127,7 +123,7 @@ def do_2nd ( repo , local_repodata ) :
     if packages is True or repo.mode == "metadata" :
         continue
 
-    repolib.logger.info( "Scanning %s" % ( subrepo , ) )
+    repolib.logger.info( "Scanning %s" % subrepo )
 
     _size , _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
     download_size += _size
