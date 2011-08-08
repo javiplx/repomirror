@@ -92,8 +92,8 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             if repomd_file[subrepo] :
                 self.safe_rename( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
 
-                if os.path.isfile( repomd_file[subrepo] + ".asc" ) :
-                    self.safe_rename( repomd_file[subrepo] + ".asc" , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + ".asc" ) )
+                if sign_ext and os.path.isfile( repomd_file[subrepo] + sign_ext ) :
+                    self.safe_rename( repomd_file[subrepo] + sign_ext , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + sign_ext ) )
 
                 local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
             else :
