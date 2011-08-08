@@ -79,7 +79,6 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
                     os.unlink( metafile )
                     metafile = False
     
-        # NOTE : the initial implementation did return an empty dictionary if metafile is false
         repomd[ subrepo ] = metafile
 
       return repomd
@@ -89,15 +88,15 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         local = {}
 
         for subrepo in self.subrepos :
-            if repomd_file[subrepo] :
-                self.safe_rename( repomd_file[subrepo] , os.path.join( subrepo.repo_path() , self.repomd[subrepo] ) )
+            repomd = os.path.join( subrepo.repo_path() , self.repomd[subrepo] )
+            # FIXME : if destination exists, we might left behind a temporary file
+            if not isinstance(repomd_file[subrepo],bool) and not os.path.exists( repomd ) :
+                self.safe_rename( repomd_file[subrepo] , repomd )
 
                 if sign_ext and os.path.isfile( repomd_file[subrepo] + sign_ext ) :
                     self.safe_rename( repomd_file[subrepo] + sign_ext , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + sign_ext ) )
 
-                local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
-            else :
-                local[ subrepo ] = False
+            local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
 
         return local
 
@@ -145,9 +144,6 @@ that the current copy is ok.
         params = self.params
         if _params : params.update( _params )
 
-        if not metafile[self] :
-            return False
-
         if download :
             local_repodata = metafile[self]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
@@ -157,6 +153,7 @@ that the current copy is ok.
 
         primary , secondary = False , False
 
+        # FIXME : the same extraction was already performed on master.get_metafile()
         item , filelist = filelist_xmlparser.get_filelist( master_file )
 
         _primary = os.path.join( local_repodata , item['href'] )
