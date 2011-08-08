@@ -56,7 +56,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         release_file = repolib.MirrorRepository.get_metafile( self , self.release , params , keep )
 
         if not release_file :
-            repolib.logger.error( "No valid Release file for '%s'" % ( self.version ) )
+            repolib.logger.error( "Metadata for '%s' not found" % self.version )
             return self.__subrepo_dict( release_file )
         elif release_file is True :
             return self.__subrepo_dict( True )
@@ -100,6 +100,7 @@ class debian_repository ( repolib.MirrorRepository ) :
                     if comp not in release_comps :
                         repolib.logger.error( "Component '%s' is not available ( %s )" % ( comp , " ".join(release_comps) ) )
                         # FIXME : only this component should get marked as unavailable
+                        os.unlink( release_file )
                         return self.__subrepo_dict( False )
             else :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
@@ -107,6 +108,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
+            os.unlink( release_file )
             return self.__subrepo_dict( False )
         else :
             repolib.logger.warning( "Component list undefined, setting to main" )
@@ -122,6 +124,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             if arch not in release_archs :
                 repolib.logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
                 # FIXME : only this architecture should get marked as unavailable
+                os.unlink( release_file )
                 return self.__subrepo_dict( False )
 
 
@@ -152,10 +155,13 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         return self.__subrepo_dict( os.path.dirname( local ) )
 
-    def info ( self , meta_files ) :
+    def info ( self , metafile ) :
 
-        release_file = meta_files.values()[0]
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file , "Release" ) ) )
+        release_file = set(metafile.values())
+        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file.pop() , "Release" ) ) )
+
+        if release_file :
+            repolib.logger.warning( "Too many different Release files returned" )
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :

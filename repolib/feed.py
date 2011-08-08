@@ -73,7 +73,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def write_master_file ( self , release_file ) :
         return { '' : self.repo_path() }
 
-    def info ( self , release_file ) :
+    def info ( self , metafile ) :
         str  = "Mirroring %s\n" % self.name
         str += "Architectures : %s\n" % " ".join(self.architectures)
         if self.version : str += "Version %s\n" % ( self.version )

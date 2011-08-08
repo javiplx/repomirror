@@ -68,7 +68,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         metafile = repolib.MirrorRepository.get_metafile( self , self.repomd[subrepo] , params , keep )
 
         if not metafile :
-            repolib.logger.error( "Repository for %s is not available" % self.version )
+            repolib.logger.error( "Metadata for '%s' not found" % self.version )
         else :
             if metafile is not True :
                 repolib.logger.info( "Content verification of metafile %s" % metafile )
@@ -133,7 +133,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
             return False
         return True
 
-    def get_metafile( self , metafiles , _params=None , download=True ) :
+    def get_metafile( self , metafile , _params=None , download=True ) :
         """Verifies checksums and optionally downloads primary and filelist files for
 an architecture.
 Returns the full pathname for the file in its final destination or False when
@@ -145,15 +145,15 @@ that the current copy is ok.
         params = self.params
         if _params : params.update( _params )
 
-        if not metafiles[self] :
+        if not metafile[self] :
             return False
 
         if download :
-            local_repodata = metafiles[self]
+            local_repodata = metafile[self]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
         else :
             local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
-            master_file = metafiles[self]
+            master_file = metafile[self]
 
         primary , secondary = False , False
 
