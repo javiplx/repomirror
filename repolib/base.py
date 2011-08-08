@@ -127,12 +127,12 @@ class MirrorRepository ( _mirror ) :
 
     def get_metafile ( self , metafile , _params=None , keep=False ) :
         """Verifies with gpg and/or downloads a metadata file.
-Returns path to metadata file on success, and False if error occurs. If the
-verification is not successfull, stored metadata is removed.
+Returns path to metadata file on success, and False if error occurs.
+If signature verification fails, stored metadata is removed.
 
 The returned value is an off-tree temporary path except when the metadata file
-did already exists and verification succeeds, which returns the path to stored
-metadata, or True if repository is in update mode.
+did already exists and verification succeeds. If this is the case, True is
+returned or the path to stored metadata if running in 'init' mode.
 
 The 'keep' flag avoids removal of stored copies if verification fails, while
 forcing download of current metadata. This behaviour is intended to avoid
@@ -153,12 +153,10 @@ are up to date."""
 
             if os.path.isfile( release_file ) :
                 if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
-                    # NOTE : The keep flag is a different approach to the behaviour wanted by update mode
-                    if keep :
-                        release_file = ""
-                    else :
+                    if not keep :
                         os.unlink( release_file )
                         os.unlink( release_file + self.sign_ext )
+                    release_file = ""
                 else :
                     if self.mode != "init" :
                         repolib.logger.info( "Existing metadata file is valid, skipping" )
@@ -168,11 +166,10 @@ are up to date."""
         # If gpg is not enabled, metafile is removed to force fresh download
         if not self.sign_ext or not _params['usegpg'] :
             if os.path.isfile( release_file ) :
-                if keep :
-                    release_file = ""
-                else :
+                if not keep :
                     os.unlink( release_file )
                     if self.sign_ext : os.unlink( release_file + self.sign_ext )
+                release_file = ""
 
 
         if not os.path.isfile( release_file ) :
@@ -183,12 +180,10 @@ are up to date."""
                 if self.sign_ext and _params['usegpg'] :
                     if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
                         os.unlink( release_file )
-                        os.unlink( release_file + self.sign_ext )
                         release_file = False
 
         if self.sign_ext :
           if isinstance(release_file,str) :
-            # FIXME : if stored metadata is gpg OK, we might left the temporary signature behind
             self.safe_rename( signature_file , release_file + self.sign_ext )
           else :
             os.unlink( signature_file )
