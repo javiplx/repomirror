@@ -244,15 +244,17 @@ that the current copy is ok.
 
         if os.path.isfile( localname ) :
             _name = "%sRelease" % self.metadata_path(True)
-            if not self.verify( localname , _name , release , params ) :
-                os.unlink( localname )
+            if self.verify( localname , _name , release , params ) :
+                repolib.logger.info( "Local copy of '%s' is up-to-date, skipping." % _name )
 
         if not os.path.isfile( localname ) :
+          if download :
+            repolib.logger.info( "No local Release file exist for %s. Downloading." % self )
             url = "%sRelease" % self.metadata_path()
             if self.downloadRawFile( url , localname ) :
                 _name = "%sRelease" % self.metadata_path(True)
                 if not self.verify( localname , _name , release , params ) :
-                    repolib.logger.warning( "Missing Release file for %s" % self )
+                    repolib.logger.warning( "No valid Release file found for %s" % self )
 
         localname = False
 
@@ -266,18 +268,15 @@ that the current copy is ok.
                 if self.verify( localname , _name , release , params ) :
                     if self.mode == "init" :
                         break
-                    repolib.logger.warning( "Local copy of '%s' is up-to-date, skipping." % _name )
+                    repolib.logger.info( "Local copy of '%s' is up-to-date, skipping." % _name )
                     return True
                 continue
 
         else :
 
           localname = False
-
           if download :
-
-            repolib.logger.warning( "No local Packages file exist for %s. Downloading." % self )
-
+            repolib.logger.info( "No local Packages file exist for %s. Downloading." % self )
             localname = SimpleComponent.get_metafile( self , release , _params , True )
 
         if isinstance(localname,str) :

@@ -126,7 +126,7 @@ fresh download is mandatory, and exception is raised if not specified"""
                 continue
 
         else :
-            repolib.logger.error( "No Valid Packages file found for %s" % self )
+            repolib.logger.error( "No valid Packages file found for %s" % self )
             localname = False
 
         if extension != ".gz" :
