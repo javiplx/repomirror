@@ -93,8 +93,8 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             if not isinstance(repomd_file[subrepo],bool) and not os.path.exists( repomd ) :
                 self.safe_rename( repomd_file[subrepo] , repomd )
 
-                if sign_ext and os.path.isfile( repomd_file[subrepo] + sign_ext ) :
-                    self.safe_rename( repomd_file[subrepo] + sign_ext , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + sign_ext ) )
+                if self.sign_ext and os.path.isfile( repomd_file[subrepo] + self.sign_ext ) :
+                    self.safe_rename( repomd_file[subrepo] + self.sign_ext , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + self.sign_ext ) )
 
             local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
 
