@@ -224,12 +224,6 @@ class DebianComponent ( SimpleComponent ) :
             return False
 
     def get_metafile( self , metafile , _params=None , download=True ) :
-        """
-Verifies checksums and optionally downloads the Packages file for a component.
-Returns the full pathname for the file in its final destination or False when
-error ocurrs. When the repository is in update mode, True is returned to signal
-that the current copy is ok.
-"""
 
         # Currently unused, but relevant to verification flags
         params = self.params

@@ -101,7 +101,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
 
     def get_metafile( self , metafile , _params=None , download=True ) :
         """Downloads the Packages file for a feed. As no verification is possible,
-fresh download is mandatory, and exception is raised if not specified"""
+fresh download is forced."""
 
         localname = False
 

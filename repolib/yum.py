@@ -132,12 +132,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         return True
 
     def get_metafile( self , metafile , _params=None , download=True ) :
-        """Verifies checksums and optionally downloads primary and filelist files for
-an architecture.
-Returns the full pathname for the file in its final destination or False when
-error ocurrs. When the repository is in update mode, True is returned to signal
-that the current copy is ok.
-"""
 
         # Currently unused, but relevant to verification flags
         params = self.params
@@ -164,13 +158,9 @@ that the current copy is ok.
                     primary = _primary
     
         if not primary :
-    
           if download :
-
-            repolib.logger.warning( "No local primary file exist for %s-%s. Downloading." % ( self.version , self ) )
-    
+            repolib.logger.warning( "No local primary file exist for %s. Downloading." % self )
             url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
-    
             if self.downloadRawFile( url , _primary ) :
                 if self.verify( _primary , item , params ) :
                     primary = _primary
@@ -184,13 +174,9 @@ that the current copy is ok.
                     secondary = _secondary
     
         if not secondary :
-    
           if download :
-
-            repolib.logger.warning( "No local filelists file exist for %s-%s. Downloading." % ( self.version , self ) )
-    
+            repolib.logger.warning( "No local filelists file exist for %s. Downloading." % self )
             url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
-    
             if self.downloadRawFile( url , _secondary ) :
                 if self.verify( _secondary , filelist , params ) :
                     secondary = _secondary

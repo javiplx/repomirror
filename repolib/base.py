@@ -252,6 +252,11 @@ class MirrorComponent ( _mirror ) :
         return "%s" % self.architectures[0]
 
     def get_metafile( self , metafile , _params=None , download=True ) :
+        """Verifies checksums and optionally downloads metadata files for subrepo.
+Returns the full pathname for the file in its final destination or False when
+error ocurrs. When the repository is in update mode, True is returned to signal
+that the current copy is ok.
+"""
         raise Exception( "Calling an abstract method" )
 
     def match_filters( self , pkginfo , filters ) :
