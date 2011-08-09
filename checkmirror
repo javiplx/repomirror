@@ -38,7 +38,7 @@ meta_files = repo.get_metafile( keep=True )
 msg = "Outdated subrepo"
 retcode = 1
 
-if meta_files[ _subrepo ] is True :
+if meta_files[subrepo] is True :
     msg = "Subrepo is up to date"
     retcode = 0
 

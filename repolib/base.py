@@ -118,18 +118,18 @@ class MirrorRepository ( _mirror ) :
 
     def __init__ ( self , config ) :
 	_mirror.__init__( self , config )
-        self.subrepos = []
+        self.subrepos = {}
 
     def set_mode ( self , mode ) :
-        for subrepo in self.subrepos :
+        for subrepo in self.subrepos.values() :
             subrepo.mode = mode
         self.mode = mode
 
     def select_component ( self , compname ) :
-        for subrepo in self.subrepos :
-            if str(subrepo) == compname :
-                self.subrepos = [ subrepo ]
-                return subrepo
+        names = filter( compname.__ne__ , self.subrepos.keys() )
+        map( self.subrepos.pop , names )
+        if self.subrepos :
+            return self.subrepos[compname]
         raise Exception( "subrepo %s does not exists" % compname )
 
     def get_metafile ( self , metafile , _params=None , keep=False ) :
@@ -214,7 +214,7 @@ are up to date."""
 
     def build_local_tree( self ) :
 
-        for subrepo in self.subrepos :
+        for subrepo in self.subrepos.values() :
             packages_path = os.path.join( subrepo.repo_path() , subrepo.metadata_path() )
             if not os.path.exists( packages_path ) :
                 os.makedirs( packages_path )
@@ -250,9 +250,6 @@ class MirrorComponent ( _mirror ) :
 
     def __str__ ( self ) :
         return "%s" % self.architectures[0]
-
-    def __hash__ ( self ) :
-        return hash(str(self))
 
     def get_metafile( self , metafile , _params=None , download=True ) :
         raise Exception( "Calling an abstract method" )

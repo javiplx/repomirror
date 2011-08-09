@@ -40,10 +40,10 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
-            self.subrepos.append( subrepo )
+            self.subrepos.update( { str(subrepo) : subrepo } )
         self.repomd = {}
-        for subrepo in self.subrepos :
-            self.repomd[subrepo] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
+        for name,subrepo in self.subrepos.iteritems() :
+            self.repomd[name] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -87,23 +87,23 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
         local = {}
 
-        for subrepo in self.subrepos :
-            repomd = os.path.join( subrepo.repo_path() , self.repomd[subrepo] )
+        for name,subrepo in self.subrepos.iteritems() :
+            repomd = os.path.join( subrepo.repo_path() , self.repomd[name] )
             # FIXME : if destination exists, we might left behind a temporary file
-            if not isinstance(repomd_file[subrepo],bool) and not os.path.exists( repomd ) :
-                self.safe_rename( repomd_file[subrepo] , repomd )
+            if not isinstance(repomd_file[name],bool) and not os.path.exists( repomd ) :
+                self.safe_rename( repomd_file[name] , repomd )
 
-                if self.sign_ext and os.path.isfile( repomd_file[subrepo] + self.sign_ext ) :
-                    self.safe_rename( repomd_file[subrepo] + self.sign_ext , os.path.join( subrepo.repo_path() , self.repomd[subrepo] + self.sign_ext ) )
+                if self.sign_ext and os.path.isfile( repomd_file[name] + self.sign_ext ) :
+                    self.safe_rename( repomd_file[name] + self.sign_ext , os.path.join( subrepo.repo_path() , self.repomd[name] + self.sign_ext ) )
 
-            local[ subrepo ] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
+            local[name] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
 
         return local
 
     def info ( self , metafile , cb ) :
         cb( "Mirroring version %s" % self.version )
         cb( "Source at %s" % self.base_url() )
-        cb( "Subrepos : %s" % " ".join( map( lambda x : "%s" % x , self.subrepos ) ) )
+        cb( "Subrepos : %s" % " ".join( self.subrepos ) )
 
     def get_download_list( self ) :
         return YumDownloadThread( self )
@@ -144,11 +144,11 @@ that the current copy is ok.
         if _params : params.update( _params )
 
         if download :
-            local_repodata = metafile[self]
+            local_repodata = metafile[str(self)]
             master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
         else :
             local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
-            master_file = metafile[self]
+            master_file = metafile[str(self)]
 
         primary , secondary = False , False
 

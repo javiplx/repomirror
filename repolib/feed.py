@@ -62,7 +62,8 @@ class feed_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
-            self.subrepos.append( repolib.MirrorComponent.new( archname , config ) )
+            subrepo = repolib.MirrorComponent.new( archname , config )
+            self.subrepos.update( { str(subrepo) : subrepo } )
 
     def __subrepo_dict ( self , value ) :
         d = {}

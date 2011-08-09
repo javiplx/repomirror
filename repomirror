@@ -116,14 +116,14 @@ def do_2nd ( repo , local_repodata ) :
   download_size = 0
   missing_pkgs = []
 
-  for subrepo in repo.subrepos :
+  for name,subrepo in repo.subrepos.iteritems() :
 
     packages = subrepo.get_metafile( local_repodata )
 
     if packages is True or repo.mode == "metadata" :
         continue
 
-    repolib.logger.info( "Scanning %s" % subrepo )
+    repolib.logger.info( "Scanning %s" % name )
 
     _size , _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
     download_size += _size

@@ -26,7 +26,8 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         for archname in self.architectures :
             for compname in self.components :
-                self.subrepos.append( repolib.MirrorComponent.new( ( archname , compname ) , config ) )
+                subrepo = repolib.MirrorComponent.new( ( archname , compname ) , config )
+                self.subrepos.update( { str(subrepo) : subrepo } )
 
         # Not strictly required, but kept as member for convenience
         self.release = os.path.join( self.metadata_path() , "Release" )
@@ -176,7 +177,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         cb( "Mirroring %(Label)s %(Version)s(%(Codename)s)" % release )
         cb( "%(Origin)s %(Suite)s%(Date)s" % release )
-        cb( "Subrepos : %s" % " ".join( map( lambda x : "%s" % x , self.subrepos ) ) )
+        cb( "Subrepos : %s" % " ".join( self.subrepos ) )
 
     def get_download_list( self ) :
         return DebianDownloadThread( self )
@@ -235,9 +236,9 @@ that the current copy is ok.
         if _params : params.update( _params )
 
         if download :
-            master_file = os.path.join( metafile[self] , "Release" )
+            master_file = os.path.join( metafile[str(self)] , "Release" )
         else :
-            master_file = metafile[self]
+            master_file = metafile[str(self)]
 
         release = debian_bundle.deb822.Release( sequence=open( master_file ) )
 
