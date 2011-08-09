@@ -18,17 +18,12 @@ else :
 
 try :
     repo = repolib.MirrorRepository.new( repo_name )
+    _subrepo = repo.select_component( subrepo )
     repo.mode = "update"
 except Exception , ex :
     repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
     sys.exit(255)
 
-for _subrepo in repo.subrepos :
-    if subrepo == str(_subrepo) :
-        break
-else :
-    repolib.logger.critical( "Repo %s : subrepo %s does not exists" % ( repo_name , subrepo ) )
-    sys.exit(255)
 
 def purge ( filesdict ) :
     for subrepo in filesdict.keys() :

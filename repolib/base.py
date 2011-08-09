@@ -125,6 +125,13 @@ class MirrorRepository ( _mirror ) :
             subrepo.mode = mode
         self.mode = mode
 
+    def select_component ( self , compname ) :
+        for subrepo in self.subrepos :
+            if str(subrepo) == compname :
+                self.subrepos = [ subrepo ]
+                return subrepo
+        raise Exception( "subrepo %s does not exists" % compname )
+
     def get_metafile ( self , metafile , _params=None , keep=False ) :
         """Verifies with gpg and/or downloads a metadata file.
 Returns path to metadata file on success, and False if error occurs.
