@@ -85,9 +85,6 @@ class feed_repository ( repolib.MirrorRepository ) :
         if self.version : str += "Version %s\n" % ( self.version )
         return str
 
-    def get_download_list( self ) :
-        return DownloadThread( self )
-
 class SimpleComponent ( repolib.MirrorComponent ) :
 
     def metadata_path ( self , partial=False ) :

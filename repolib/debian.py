@@ -179,6 +179,9 @@ class debian_repository ( repolib.MirrorRepository ) :
         str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
         return str
 
+    def get_download_list( self ) :
+        return DebianDownloadThread( self )
+
 from feed import SimpleComponent , feed_build_repository
 
 class DebianComponent ( SimpleComponent ) :
