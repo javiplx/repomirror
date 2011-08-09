@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (C) 2010 Javier Palacios
+# Copyright (C) 2010,2011 Javier Palacios
 # 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License Version 2
@@ -34,6 +34,9 @@ def option_parser () :
     parser.add_option( "--verbose" , action="store_true" ,
         help="Run in descriptive mode" )
 
+    parser.add_option( "--component" , metavar="COMPNAME" ,
+        help="Select component to operate on" )
+
     modes = optparse.OptionGroup( parser , "Operation modes" ,
         "Operation modes available for mirroring" )
     modes.add_option( "--init" , action="count" , default=0 ,
@@ -57,6 +60,9 @@ def main () :
         parser.print_help()
         sys.exit(1)
 
+    if opts.component and len(args)>1 :
+        parser.error( "Supply a single repository for component based operation" )
+
     if opts.init + opts.update + opts.metadata > 1 :
         parser.error( "Only one operation mode can be specified at a time" )
 
@@ -76,6 +82,8 @@ def main () :
 
       try :
         repo = repolib.MirrorRepository.new( repo_name )
+        if opts.component :
+            repo.select_component( opts.component )
         if opts.init :
             repo.set_mode( "init" )
         elif opts.update :
