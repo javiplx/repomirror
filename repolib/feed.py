@@ -79,11 +79,10 @@ class feed_repository ( repolib.MirrorRepository ) :
     def write_master_file ( self , release_file ) :
         return self.__subrepo_dict( self.repo_path() )
 
-    def info ( self , metafile ) :
-        str  = "Mirroring %s\n" % self.name
-        str += "Architectures : %s\n" % " ".join(self.architectures)
-        if self.version : str += "Version %s\n" % ( self.version )
-        return str
+    def info ( self , metafile , cb ) :
+        cb( "Mirroring %s" % self.name )
+        cb( "Architectures : %s" % " ".join(self.architectures) )
+        if self.version : cb( "Version %s" % ( self.version ) )
 
 class SimpleComponent ( repolib.MirrorComponent ) :
 

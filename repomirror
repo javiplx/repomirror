@@ -105,7 +105,7 @@ def do_1st ( repo ) :
   # Once created, we move in the primary metadata file
   local_repodata = repo.write_master_file( meta_files )
   
-  map( repolib.logger.info , repo.info( local_repodata ).split("\n") )
+  repo.info( local_repodata , repolib.logger.info )
 
   return local_repodata
 

@@ -100,11 +100,10 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
         return local
 
-    def info ( self , metafile ) :
-        str  = "Mirroring version %s\n" % self.version
-        str += "Source at %s\n" % self.base_url()
-        str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
-        return str
+    def info ( self , metafile , cb ) :
+        cb( "Mirroring version %s" % self.version )
+        cb( "Source at %s" % self.base_url() )
+        cb( "Subrepos : %s" % " ".join( map( lambda x : "%s" % x , self.subrepos ) ) )
 
     def get_download_list( self ) :
         return YumDownloadThread( self )

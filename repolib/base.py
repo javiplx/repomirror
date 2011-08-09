@@ -199,7 +199,7 @@ are up to date."""
                 sys.exit(1)
             shutil.move( src , dst )
 
-    def info ( self , release_file ) :
+    def info ( self , release_file , cb ) :
         raise Exception( "Calling an abstract method" )
 
     def write_master_file ( self , release_file ) :

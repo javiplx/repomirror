@@ -154,7 +154,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         return self.__subrepo_dict( os.path.dirname( local ) )
 
-    def info ( self , metafile ) :
+    def info ( self , metafile , cb ) :
 
         release_file = set(metafile.values())
         release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file.pop() , "Release" ) ) )
@@ -174,10 +174,9 @@ class debian_repository ( repolib.MirrorRepository ) :
         else :
             release['Date'] = " , %s" % release['Date']
 
-        str  = "Mirroring %(Label)s %(Version)s(%(Codename)s)\n" % release
-        str += "%(Origin)s %(Suite)s%(Date)s\n" % release
-        str += "Subrepos : %s\n" % " ".join( map( lambda x : "%s" % x , self.subrepos ) )
-        return str
+        cb( "Mirroring %(Label)s %(Version)s(%(Codename)s)" % release )
+        cb( "%(Origin)s %(Suite)s%(Date)s" % release )
+        cb( "Subrepos : %s" % " ".join( map( lambda x : "%s" % x , self.subrepos ) ) )
 
     def get_download_list( self ) :
         return DebianDownloadThread( self )
