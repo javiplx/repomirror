@@ -182,7 +182,7 @@ class debian_repository ( repolib.MirrorRepository ) :
     def get_download_list( self ) :
         return DebianDownloadThread( self )
 
-from feed import SimpleComponent , feed_build_repository
+from feed import SimpleComponent , feed_build_repository , packages_build_repository
 
 class DebianComponent ( SimpleComponent ) :
 
@@ -292,21 +292,24 @@ class debian_build_repository ( feed_build_repository ) :
 
     valid_extensions = ( ".deb" ,)
 
-    def __init__ ( self , config , name ) :
+class debian_component_repository ( packages_build_repository ) :
 
-        feed_build_repository.__init__( self , config , name )
+    def __init__ ( self , parent , arch , compname ) :
+        self.base_path = parent.repo_path()
+        packages_build_repository.__init__( self , parent )
+        self.repo_path = os.path.join( self.base_path , "pool" , compname )
+        self.output_path = os.path.join( self.base_path , "dists" , parent.version , compname , "binary-%s" % arch )
 
-        if not config['architectures'] or len(config['architectures']) > 1 :
-            raise Exception( "Broken '%s' configuration : single architecture required." % name )
+        self.version = parent.version
+        self.architecture , self.component = arch , compname
 
-        if not config['components'] or len(config['components']) > 1 :
-            raise Exception( "Broken '%s' configuration : single component required." % name )
-
-        self.architecture , self.component = config['architectures'][0] , config['components'][0]
+    def extract_filename ( self , name ) :
+        return name.replace( "%s/" % self.base_path , "" )
 
     def build ( self ) :
-        feed_build_repository.build( self )
-        fd = open( os.path.join( self.repo_path() , "Release" ) , 'w' )
+        if not os.path.isdir( self.output_path ) : os.makedirs( self.output_path )
+        packages_build_repository.build( self )
+        fd = open( os.path.join( self.output_path , "Release" ) , 'w' )
         fd.write( "Version: %s\n" % self.version )
         fd.write( "Component: %s\n" % self.component )
         fd.write( "Architecture: %s\n" % self.architecture )
@@ -320,55 +323,24 @@ class debian_build_apt ( repolib.BuildRepository ) :
     def __init__ ( self , config , name ) :
 
         repolib.BuildRepository.__init__( self , config , name )
-        self.components = config['components']
 
         if not config['architectures'] :
             raise Exception( "Broken '%s' configuration : no architecture defined." % name )
 
-    #    if not config['components'] :
-    #        raise Exception( "Broken '%s' configuration : no component defined." % name )
-        self.components = "main" , "universe"
+        if not config['components'] :
+            raise Exception( "Broken '%s' configuration : no component defined." % name )
+        self.components = config['components']
 
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
-        repolib.logger.critical( "I am %s - %s" % ( self , dir(self) ) )
-        self.outchannels = []
-
-    def extract_filename ( self , name ) :
-        return os.path.relpath( name , self.repo_path() )
-
-    def writer ( self , top , names ) :
-            validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
-            fullnames = map( lambda x : os.path.join( top , x ) , validnames )
-            for pkgfile in filter( os.path.isfile , fullnames ) :
-                try :
-                    pkg = debian_bundle.debfile.DebFile( pkgfile )
-                except debian_bundle.arfile.ArError , ex :
-                    pkg = debtarfile.DebTarFile( pkgfile )
-                control = pkg.control.debcontrol()
-                control["Filename"] = self.extract_filename( fullpath )
-                if not control.has_key("Size") :
-                    control["Size"] = "%s" % os.stat( pkgfile ).st_size
-                for type in ( 'MD5sum' ,) :
-                    control[type] = utils.cksum_handles[type.lower()]( pkgfile )
-                for pkgsfile in self.outchannels :
-                    pkgsfile.write( "%s\n" % control )
+        self.feeds = []
+        for arch in self.architectures :
+            for compname in self.components :
+                self.feeds.append( debian_component_repository(self,arch,compname) )
 
     def build ( self ) :
+        for feed in self.feeds :
+            feed.build()
 
-        config.mimetypes[''] = open
-
-        for compname in self.components :
-
-            filename = os.path.join( self.repo_path() , "%s-Packages" % compname )
-            for ( extension , read_handler ) in config.mimetypes.iteritems() :
-                self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
-
-            top = os.path.join( self.repo_path() , "pool" , compname )
-            repolib.logger.warning( "Walking %s" % top )
-            os.path.walk( top , self.writer , self )
-
-            for pkgsfile in self.outchannels :
-                pkgsfile.close()
 

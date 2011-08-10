@@ -25,23 +25,37 @@ class feed_build_repository ( repolib.BuildRepository ) :
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
+        self.feeds = ( packages_build_repository(self) ,)
+
+    def build ( self ) :
+        for feed in self.feeds :
+            feed.build()
+
+
+class packages_build_repository :
+
+    def __init__ ( self , parent ) :
+        self.repo_path = parent.repo_path()
+        self.valid_extensions = parent.valid_extensions
+
         self.outchannels = []
+        self.output_path = parent.repo_path()
 
     def build ( self ) :
 
         config.mimetypes[''] = open
 
-        filename = os.path.join( self.repo_path() , "Packages" )
+        filename = os.path.join( self.output_path , "Packages" )
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
             self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
-        self.writer( self , self.repo_path() , os.listdir( self.repo_path() ) )
+        self.writer( self , self.repo_path , os.listdir( self.repo_path ) )
 
         for pkgsfile in self.outchannels :
             pkgsfile.close()
 
     def extract_filename ( self , name ) :
-            return "./%s" % name.replace( "%s/" % self.repo_path() , "" )
+            return "./%s" % name.replace( "%s/" % self.repo_path , "" )
 
     def writer ( self , top , names ) :
         validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
