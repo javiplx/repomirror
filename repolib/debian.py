@@ -335,16 +335,19 @@ class debian_build_apt ( repolib.BuildRepository ) :
         repolib.logger.critical( "I am %s - %s" % ( self , dir(self) ) )
         self.outchannels = []
 
+    def extract_filename ( self , name ) :
+        return os.path.relpath( name , self.repo_path() )
+
     def writer ( self , top , names ) :
             validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
             fullnames = map( lambda x : os.path.join( top , x ) , validnames )
             for pkgfile in filter( os.path.isfile , fullnames ) :
                 try :
-                    pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , pkgfile ) )
+                    pkg = debian_bundle.debfile.DebFile( pkgfile )
                 except debian_bundle.arfile.ArError , ex :
-                    pkg = debtarfile.DebTarFile( os.path.join( self.repo_path() , pkgfile ) )
+                    pkg = debtarfile.DebTarFile( pkgfile )
                 control = pkg.control.debcontrol()
-                control["Filename"] = os.path.relpath( pkgfile , self.repo_path() )
+                control["Filename"] = self.extract_filename( fullpath )
                 if not control.has_key("Size") :
                     control["Size"] = "%s" % os.stat( pkgfile ).st_size
                 for type in ( 'MD5sum' ,) :
@@ -364,7 +367,7 @@ class debian_build_apt ( repolib.BuildRepository ) :
 
             top = os.path.join( self.repo_path() , "pool" , compname )
             repolib.logger.warning( "Walking %s" % top )
-            os.path.walk( top , self.writer , self ) )
+            os.path.walk( top , self.writer , self )
 
             for pkgsfile in self.outchannels :
                 pkgsfile.close()
