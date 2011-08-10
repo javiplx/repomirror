@@ -17,9 +17,8 @@ class feed_build_repository ( repolib.BuildRepository ) :
 
     def __init__ ( self , config , name ) :
 
-        repolib.BuildRepository.__init__( self , config )
+        repolib.BuildRepository.__init__( self , config , name )
 
-        self.name = name
         if config.has_key( "extensions" ) :
             self.valid_extensions = config['extensions']
 
