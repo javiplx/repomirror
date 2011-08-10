@@ -299,6 +299,7 @@ class debian_component_repository ( packages_build_repository ) :
         packages_build_repository.__init__( self , parent )
         self.repo_path = os.path.join( self.base_path , "pool" , compname )
         self.output_path = os.path.join( self.base_path , "dists" , parent.version , compname , "binary-%s" % arch )
+        self.recursive = True
 
         self.version = parent.version
         self.architecture , self.component = arch , compname

@@ -41,6 +41,7 @@ class packages_build_repository :
         self.outchannels = []
         self.output_path = parent.repo_path()
 
+        self.recursive = False
         self.architectures = False
 
     def build ( self ) :
@@ -51,7 +52,10 @@ class packages_build_repository :
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
             self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
-        self.writer( self , self.repo_path , os.listdir( self.repo_path ) )
+        if self.recursive :
+            os.path.walk( self.repo_path , self.writer , self )
+        else :
+            self.writer( self , self.repo_path , os.listdir( self.repo_path ) )
 
         for pkgsfile in self.outchannels :
             pkgsfile.close()
