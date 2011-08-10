@@ -21,7 +21,7 @@ import os , sys
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
-#import repolib.lists.debian
+import repolib.lists.debian
 
 import urllib2
 
@@ -105,9 +105,7 @@ def main ( sources ) :
     packages = debian_bundle.debian_support.PackageFile( opts.status_file )
 
     for pkg in packages :
-    #    pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
-        _pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
-        pkginfo = debian_bundle.deb822.Deb822( _pkginfo )
+        pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
         filename = buildname( pkginfo )
 
@@ -122,8 +120,7 @@ def main ( sources ) :
                 request = HeadRequest( url )
                 response = urllib2.urlopen( request )
                 pkginfo['Size'] = response.headers['Content-Length']
-                print pkginfo.dump()
-            #    print repolib.lists.debian.dump_package( pkginfo , fd )
+                repolib.lists.debian.dump_package( pkginfo , sys.stderr )
                 break
             except urllib2.HTTPError , ex :
                 pass
