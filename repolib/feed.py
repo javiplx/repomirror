@@ -25,14 +25,15 @@ class feed_build_repository ( repolib.BuildRepository ) :
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
+        self.outchannels = []
+
     def build ( self ) :
 
         config.mimetypes[''] = open
 
-        packages = []
         filename = os.path.join( self.repo_path() , "Packages" )
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
-            packages.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
+            self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
         for filename in filter( lambda x : os.path.splitext(x)[1] in self.valid_extensions , os.listdir( self.repo_path() ) ) :
             try :
@@ -47,10 +48,10 @@ class feed_build_repository ( repolib.BuildRepository ) :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
             for type in ( 'MD5sum' ,) :
                 control[type] = utils.cksum_handles[type.lower()]( fullpath )
-            for pkgsfile in packages :
+            for pkgsfile in self.outchannels :
                 pkgsfile.write( "%s\n" % control )
 
-        for pkgsfile in packages :
+        for pkgsfile in self.outchannels :
             pkgsfile.close()
 
 

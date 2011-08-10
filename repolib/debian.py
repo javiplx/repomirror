@@ -333,39 +333,39 @@ class debian_build_apt ( repolib.BuildRepository ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
         repolib.logger.critical( "I am %s - %s" % ( self , dir(self) ) )
+        self.outchannels = []
 
-    def build ( self ) :
-
-        def writer ( ( repo , packages ) , top , names ) :
-            validnames = filter( lambda x : os.path.splitext( x )[1] in repo.valid_extensions , names )
+    def writer ( self , top , names ) :
+            validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
             fullnames = map( lambda x : os.path.join( top , x ) , validnames )
             for pkgfile in filter( os.path.isfile , fullnames ) :
                 try :
-                    pkg = debian_bundle.debfile.DebFile( os.path.join( repo.repo_path() , pkgfile ) )
+                    pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , pkgfile ) )
                 except debian_bundle.arfile.ArError , ex :
-                    pkg = debtarfile.DebTarFile( os.path.join( repo.repo_path() , pkgfile ) )
+                    pkg = debtarfile.DebTarFile( os.path.join( self.repo_path() , pkgfile ) )
                 control = pkg.control.debcontrol()
-                control["Filename"] = os.path.relpath( pkgfile , repo.repo_path() )
+                control["Filename"] = os.path.relpath( pkgfile , self.repo_path() )
                 if not control.has_key("Size") :
                     control["Size"] = "%s" % os.stat( pkgfile ).st_size
                 for type in ( 'MD5sum' ,) :
                     control[type] = utils.cksum_handles[type.lower()]( pkgfile )
-                for pkgsfile in packages :
+                for pkgsfile in self.outchannels :
                     pkgsfile.write( "%s\n" % control )
+
+    def build ( self ) :
 
         config.mimetypes[''] = open
 
         for compname in self.components :
 
-            packages = []
             filename = os.path.join( self.repo_path() , "%s-Packages" % compname )
             for ( extension , read_handler ) in config.mimetypes.iteritems() :
-                packages.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
+                self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
             top = os.path.join( self.repo_path() , "pool" , compname )
             repolib.logger.warning( "Walking %s" % top )
-            os.path.walk( top , writer , ( self , packages ) )
+            os.path.walk( top , self.writer , self ) )
 
-            for pkgsfile in packages :
+            for pkgsfile in self.outchannels :
                 pkgsfile.close()
 
