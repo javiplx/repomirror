@@ -35,24 +35,30 @@ class feed_build_repository ( repolib.BuildRepository ) :
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
             self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
-        for filename in filter( lambda x : os.path.splitext(x)[1] in self.valid_extensions , os.listdir( self.repo_path() ) ) :
+        self.writer( self.repo_path() , os.listdir( self.repo_path() ) )
+
+        for pkgsfile in self.outchannels :
+            pkgsfile.close()
+
+    def extract_filename ( self , name ) :
+            return "./%s" % name.replace( "%s/" % self.repo_path() , "" )
+
+    def writer ( self , top , names ) :
+        validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
+        fullnames = map( lambda x : os.path.join( top , x ) , validnames )
+        for fullpath in filter( os.path.isfile , fullnames ) :
             try :
-                pkg = debian_bundle.debfile.DebFile( os.path.join( self.repo_path() , filename ) )
+                pkg = debian_bundle.debfile.DebFile( fullpath )
             except debian_bundle.arfile.ArError , ex :
-                pkg = debtarfile.DebTarFile( os.path.join( self.repo_path() , filename ) )
+                pkg = debtarfile.DebTarFile( fullpath )
             control = pkg.control.debcontrol()
-            if not control.has_key("Filename") :
-                control["Filename"] = "./%s" % filename
-            fullpath = os.path.join( self.repo_path() , filename )
+            control["Filename"] = self.extract_filename( fullpath )
             if not control.has_key("Size") :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
             for type in ( 'MD5sum' ,) :
                 control[type] = utils.cksum_handles[type.lower()]( fullpath )
             for pkgsfile in self.outchannels :
                 pkgsfile.write( "%s\n" % control )
-
-        for pkgsfile in self.outchannels :
-            pkgsfile.close()
 
 
 class feed_repository ( repolib.MirrorRepository ) :
