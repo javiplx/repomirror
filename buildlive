@@ -62,7 +62,7 @@ Homepage: http://search.cpan.org/dist/XML-LibXML/
 """
 
 
-def buildpath ( pkg , compname="main" ) :
+def buildpath ( pkg , compname ) :
 
     if pkg.has_key( 'Source' ) :
         name = pkg['Source'].split()[0]
@@ -109,8 +109,9 @@ def main ( sources ) :
 
         filename = buildname( pkginfo )
 
-        path = buildpath( pkginfo , "main" )
-        for repo,(name,baseurl) in sources.items() :
+        for compname in "main" , "contrib" , "universe" :
+          path = buildpath( pkginfo , compname )
+          for repo,(name,baseurl) in sources.items() :
 
             filepath = urllib2.urlparse.urljoin( name , path )
             pkginfo['Filename'] = urllib2.urlparse.urljoin( filepath , filename )
@@ -122,10 +123,16 @@ def main ( sources ) :
                 pkginfo['Size'] = response.headers['Content-Length']
                 repolib.lists.debian.dump_package( pkginfo , sys.stderr )
                 break
+            except urllib2.URLError , ex :
+                pass
             except urllib2.HTTPError , ex :
                 pass
+          else :
+            compname = ""
+          if compname :
+            break
         else :
-            print "Failed %s" % pkginfo['Filename']
+          print "Failed %s" % pkginfo['Package']
 
 if __name__ == "__main__" :
     sources = {}
