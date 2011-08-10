@@ -278,6 +278,8 @@ class BuildRepository ( _repository ) :
         _config = repolib.config.read_build_config( name )
         if _config['type'] == "deb" :
             return repolib.debian_build_repository( _config , name )
+        elif _config['type'] == "apt" :
+            return repolib.debian_build_apt( _config , name )
         elif _config['type'] == "feed" :
             return repolib.feed_build_repository( _config , name )
         elif _config['type'] == "yum" :
