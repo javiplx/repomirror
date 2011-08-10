@@ -41,7 +41,7 @@ class feed_build_repository ( repolib.BuildRepository ) :
                 pkg = debtarfile.DebTarFile( os.path.join( self.repo_path() , filename ) )
             control = pkg.control.debcontrol()
             if not control.has_key("Filename") :
-                control["Filename"] = filename
+                control["Filename"] = "./%s" % filename
             fullpath = os.path.join( self.repo_path() , filename )
             if not control.has_key("Size") :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
