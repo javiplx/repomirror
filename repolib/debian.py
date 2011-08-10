@@ -292,12 +292,9 @@ class debian_build_repository ( feed_build_repository ) :
 
     valid_extensions = ( ".deb" ,)
 
-
-class debian_component_repository ( debian_build_repository ) :
-
     def __init__ ( self , config , name ) :
 
-        debian_build_repository.__init__( self , config , name )
+        feed_build_repository.__init__( self , config , name )
 
         if not config['architectures'] or len(config['architectures']) > 1 :
             raise Exception( "Broken '%s' configuration : single architecture required." % name )
