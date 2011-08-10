@@ -17,9 +17,9 @@ def safe_encode ( str ) :
 
 # Derived from Deb822.dump()
 def dump_package(deb822 , fd):
-    _multivalued_fields = [ "Description" ]
+    _multivalued_fields = ( "Description" , "Conffiles" )
     for key, value in deb822.iteritems():
-        if not value or value[0] == '\n':
+        if not value or ( value[0] == '\n' and key not in _multivalued_fields ) :
             # Avoid trailing whitespace after "Field:" if it's on its own
             # line or the value is empty
             # XXX Uh, really print value if value == '\n'?
