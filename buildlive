@@ -36,7 +36,6 @@ def option_parser () :
     parser.add_option( "--status-file" , metavar="FILENAME" ,
         help="Specify dpkg status file" )
 
-
     return parser
 
 
@@ -113,7 +112,7 @@ def main ( sources ) :
         filename = buildname( pkginfo )
 
         path = buildpath( pkginfo , "main" )
-        for name,baseurl in sources.items() :
+        for repo,(name,baseurl) in sources.items() :
 
             filepath = urllib2.urlparse.urljoin( name , path )
             pkginfo['Filename'] = urllib2.urlparse.urljoin( filepath , filename )
@@ -129,11 +128,16 @@ def main ( sources ) :
             except urllib2.HTTPError , ex :
                 pass
         else :
-            print "Failed %s" % ( pkginfo['Filename'] )
+            print "Failed %s" % pkginfo['Filename']
 
 if __name__ == "__main__" :
     sources = {}
-    sources['pool/'] = "http://ftp.es.debian.org/debian/"
-    sources['pool/updates/'] = "http://security.debian.org/"
+    sources['ubuntu'] = ( 'pool/' , "http://es.archive.ubuntu.com/ubuntu/" )
+    sources['ubuntu-security'] = ( 'pool/' , "http://security.ubuntu.com/ubuntu/" )
+    sources['ubuntu-partner'] = ( 'pool/' , "http://archive.canonical.com/ubuntu/" )
+    sources['debian'] = ( 'pool/' , "http://ftp.es.debian.org/debian/" )
+    sources['debian-security'] = ( 'pool/updates/' , "http://security.debian.org/" )
+    sources['archive'] = ( 'pool/' , "http://archive.debian.org/debian/" )
+    sources['archive-security'] = ( 'pool/updates/' , "http://archive.debian.org/debian-security/" )
     main( sources )
 
