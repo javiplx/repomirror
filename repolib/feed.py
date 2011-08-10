@@ -35,7 +35,7 @@ class feed_build_repository ( repolib.BuildRepository ) :
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
             self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
-        self.writer( self.repo_path() , os.listdir( self.repo_path() ) )
+        self.writer( self , self.repo_path() , os.listdir( self.repo_path() ) )
 
         for pkgsfile in self.outchannels :
             pkgsfile.close()
@@ -59,6 +59,7 @@ class feed_build_repository ( repolib.BuildRepository ) :
                 control[type] = utils.cksum_handles[type.lower()]( fullpath )
             for pkgsfile in self.outchannels :
                 pkgsfile.write( "%s\n" % control )
+    writer = staticmethod(writer)
 
 
 class feed_repository ( repolib.MirrorRepository ) :
