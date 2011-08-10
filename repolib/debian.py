@@ -302,6 +302,7 @@ class debian_component_repository ( packages_build_repository ) :
 
         self.version = parent.version
         self.architecture , self.component = arch , compname
+        self.architectures = "all" , arch
 
     def extract_filename ( self , name ) :
         return name.replace( "%s/" % self.base_path , "" )

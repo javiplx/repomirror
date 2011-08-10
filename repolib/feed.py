@@ -41,6 +41,8 @@ class packages_build_repository :
         self.outchannels = []
         self.output_path = parent.repo_path()
 
+        self.architectures = False
+
     def build ( self ) :
 
         config.mimetypes[''] = open
@@ -59,6 +61,8 @@ class packages_build_repository :
 
     def writer ( self , top , names ) :
         validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
+        if self.architectures :
+            validnames = filter( lambda x : os.path.splitext(x)[0].split('_')[-1] in self.architectures , validnames )
         fullnames = map( lambda x : os.path.join( top , x ) , validnames )
         for fullpath in filter( os.path.isfile , fullnames ) :
             try :
