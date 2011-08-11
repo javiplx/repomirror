@@ -295,23 +295,29 @@ class debian_build_repository ( feed_build_repository ) :
 class debian_component_repository ( packages_build_repository ) :
 
     def __init__ ( self , parent , arch , compname ) :
-        self.base_path = parent.repo_path()
-        packages_build_repository.__init__( self , parent )
-        self.repo_path = os.path.join( self.base_path , "pool" , compname )
-        self.output_path = os.path.join( self.base_path , "dists" , parent.version , compname , "binary-%s" % arch )
-        self.recursive = True
-
         self.version = parent.version
         self.architecture , self.component = arch , compname
         self.architectures = "all" , arch
 
+        packages_build_repository.__init__( self , parent )
+        self.base_path = os.path.join( self.repo_path , "pool" , compname )
+        self.recursive = True
+
+    def metadata_path ( self , partial=False ) :
+        path = "%s/binary-%s/" % ( self.component , self.architecture )
+        if not partial :
+            path = "dists/%s/%s" % ( self.version , path )
+        return path
+
     def extract_filename ( self , name ) :
-        return name.replace( "%s/" % self.base_path , "" )
+        return name.replace( "%s/" % self.repo_path , "" )
 
     def build ( self ) :
-        if not os.path.isdir( self.output_path ) : os.makedirs( self.output_path )
         packages_build_repository.build( self )
-        fd = open( os.path.join( self.output_path , "Release" ) , 'w' )
+        output_path = os.path.join( self.repo_path , self.metadata_path() )
+        if not os.path.isdir( output_path ) : os.makedirs( output_path )
+        filename = os.path.join( output_path , "Release" )
+        fd = open( filename , 'w' )
         fd.write( "Version: %s\n" % self.version )
         fd.write( "Component: %s\n" % self.component )
         fd.write( "Architecture: %s\n" % self.architecture )
@@ -341,8 +347,27 @@ class debian_build_apt ( repolib.BuildRepository ) :
             for compname in self.components :
                 self.feeds.append( debian_component_repository(self,arch,compname) )
 
+    def metadata_path ( self , partial=False ) :
+        path = ""
+        if not partial :
+            path = "dists/%s" % self.version
+        return path
+
     def build ( self ) :
         for feed in self.feeds :
             feed.build()
+        fd = open( os.path.join( self.repo_path() , self.metadata_path() , "Release" ) , 'w' )
+        fd.write( "Version: %s\n" % self.version )
+        fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
+        fd.write( "Components: %s\n" % " ".join(self.components) )
+        fd.write( "MD5Sum:\n" )
+        for feed in self.feeds :
+            for extension in config.mimetypes :
+                basename = "Packages" + extension
+                packages = os.path.join( feed.metadata_path(True) , basename )
+                _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
+                cksum = utils.calc_md5( _packages )
+                fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
+        fd.close()
 
 
