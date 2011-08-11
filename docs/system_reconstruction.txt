@@ -1,0 +1,20 @@
+
+The utility buildlive is intended to help in system "cloning", by building
+a repository with the same package and versions than those present on a
+particular running system.
+
+Alghouth is possible to perform this task on a different node, the easiest
+operation is within node, being possible to execute it from the unpacked
+source directory. Typical usage will involve just executing
+./buildlive reponame
+althought there are a couple of tasks that should be done in advance. The
+very first is to create a configuration file /etc/buildrepo.conf with a
+global section , and the second one is to create the top directory used
+on that configuration.
+
+If we prefer to run on a different node, we need the original dpkg status
+file of the node under cloning, and three extra parameters are required
+  - status-file, to point to the local copy of the original dpkg status
+  - breed, to indicate the type of system we are cloning (debian/ubuntu)
+  - architecture, from the original node
+

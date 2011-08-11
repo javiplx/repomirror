@@ -221,7 +221,8 @@ class BuildConf ( RepoConf ) :
         if config.has_option( self.name , "extensions" ) :
             self['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( self.name , "extensions" ).split() )
 
-def read_build_config ( repo_name ) :
+
+def read_build_config ( repo_name , confdata=None ) :
 
     conffiles = [ buildconf ]
     conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
@@ -230,7 +231,20 @@ def read_build_config ( repo_name ) :
     if not config.read( conffiles ) :
         raise Exception( "Could not find a valid configuration file" )
 
-    return BuildConf( repo_name , config , get_file( repo_name , conffiles ) )
+    if confdata :
+        if repo_name in config.sections() :
+            raise Exception( "already configured" )
+        for name in config.sections() :
+            if name != "global" :
+                config.remove_section( name )
+        config.add_section( repo_name )
+        for k,v in confdata.iteritems() :
+            config.set( repo_name , k , v )
+        infile = None
+    else :
+        infile = get_file( repo_name , conffiles )
+
+    return BuildConf( repo_name , config , infile )
 
 if __name__ == "__main__" :
     print get_all_configs()

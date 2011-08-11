@@ -299,6 +299,9 @@ class debian_component_repository ( packages_build_repository ) :
         self.architecture , self.component = arch , compname
         self.architectures = "all" , arch
 
+        output_path = os.path.join( parent.repo_path() , self.metadata_path() )
+        if not os.path.isdir( output_path ) : os.makedirs( output_path )
+
         packages_build_repository.__init__( self , parent )
         self.base_path = os.path.join( self.repo_path , "pool" , compname )
         self.recursive = True
@@ -314,8 +317,13 @@ class debian_component_repository ( packages_build_repository ) :
 
     def build ( self ) :
         packages_build_repository.build( self )
+
+    def post_build ( self ) :
+        packages_build_repository.post_build( self )
+        self.build_release()
+
+    def build_release ( self ) :
         output_path = os.path.join( self.repo_path , self.metadata_path() )
-        if not os.path.isdir( output_path ) : os.makedirs( output_path )
         filename = os.path.join( output_path , "Release" )
         fd = open( filename , 'w' )
         fd.write( "Version: %s\n" % self.version )
@@ -337,7 +345,13 @@ class debian_build_apt ( repolib.BuildRepository ) :
 
         if not config['components'] :
             raise Exception( "Broken '%s' configuration : no component defined." % name )
-        self.components = config['components']
+
+        self.components = []
+        if config['components'] != ["-"] :
+            self.components.extend( config['components'] )
+
+	if config.get( "force" ) :
+            os.mkdir( self.repo_path() )
 
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
@@ -356,6 +370,12 @@ class debian_build_apt ( repolib.BuildRepository ) :
     def build ( self ) :
         for feed in self.feeds :
             feed.build()
+        self.post_build()
+
+    def post_build ( self ) :
+        self.build_release()
+
+    def build_release ( self ) :
         fd = open( os.path.join( self.repo_path() , self.metadata_path() , "Release" ) , 'w' )
         fd.write( "Version: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )

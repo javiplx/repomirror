@@ -19,8 +19,10 @@ __usage__ = """%prog [options] reponame"""
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 import repolib.lists.debian
+from repolib.config import read_build_config
+from repolib.debian import debian_component_repository
 
-import sys
+import os , sys , platform
 import urllib2
 
 
@@ -30,9 +32,24 @@ def option_parser () :
     version_string = "%%prog %s" % __version__
     parser = optparse.OptionParser( usage=__usage__ , version=version_string )
     parser.set_defaults( status_file = "/var/lib/dpkg/status" )
+    parser.set_defaults( architecture = platform.machine() )
+    guess = platform.platform().split('-')
+    pos = guess.index('with')
+    parser.set_defaults( breed = guess[pos+1].lower() )
 
-    parser.add_option( "--status-file" , metavar="FILENAME" ,
+    offsite = optparse.OptionGroup( parser , "Off-site parameters" ,
+        "Parameters required when running out of the original node" )
+    offsite.add_option( "--status-file" , metavar="FILENAME" ,
         help="off-tree dpkg status file" )
+    offsite.add_option( "--breed" , metavar="BREED" ,
+        help="group of source repositories to use (debian/ubuntu)" )
+    offsite.add_option( "--architecture" , metavar="ARCHNAME" ,
+        help="select architecture for repository" )
+
+    parser.add_option( "--repo-version" , metavar="VERSION" ,
+        help="version identification for the new repo (defaults to name)" )
+
+    parser.add_option_group( offsite )
 
     return parser
 
@@ -68,7 +85,7 @@ class HeadRequest ( urllib2.Request ) :
 
 
 
-def main ( sources ) :
+def main ( all_sources ) :
 
     parser = option_parser()
     opts , args = parser.parse_args()
@@ -79,22 +96,38 @@ def main ( sources ) :
 
     repo_name = args[0]
 
+    if not opts.repo_version :
+        repolib.logger.warning( "No version supplied, using '%s'" % repo_name )
+        opts.repo_version = repo_name
+
+    if not all_sources.has_key( opts.breed ) :
+        repolib.logger.critical( "Breed '%s' unknow. Select one from %s" % ( opts.breed , " ".join(all_sources.keys()) ) )
+        sys.exit(3)
+    sources = all_sources[opts.breed]
+
     try :
-        repolib.BuildRepository.new( repo_name )
+        config = { 'type':"apt" , 'version':opts.repo_version ,
+                   'architectures':opts.architecture , 'components':"-" }
+        conf = read_build_config ( repo_name , config )
+        conf['force'] = True
     except Exception , ex :
-        pass
-    else :
-        repolib.logger.critical( "Repo %s already defined" % repo_name )
+        repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
         sys.exit(2)
+
+    newrepo = repolib.debian_build_apt( conf , repo_name )
 
     packages = debian_bundle.debian_support.PackageFile( opts.status_file )
 
     for pkg in packages :
         pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+        if pkginfo['Status'] == "purge ok not-installed" :
+          repolib.logger.info( "Package %s was removed" % pkginfo['Package'] )
+          continue
 
         filename = buildname( pkginfo )
 
-        for compname in "main" , "contrib" , "universe" :
+        for compname in ( "main" , "contrib" , "non-free" ,
+                        "universe" , "multiverse" , "restricted" ) :
           path = buildpath( pkginfo , compname )
           for repo,(name,baseurl) in sources.items() :
 
@@ -106,8 +139,14 @@ def main ( sources ) :
                 url = urllib2.urlparse.urljoin( baseurl , pkginfo['Filename'] )
                 request = HeadRequest( url )
                 response = urllib2.urlopen( request )
+                if compname not in newrepo.components :
+                    repolib.logger.info( "Adding component %s/%s" % ( opts.architecture , compname ) )
+                    newrepo.components.append( compname )
+                    newrepo.feeds.append( debian_component_repository( newrepo , opts.architecture , compname ) )
                 pkginfo['Size'] = response.headers['Content-Length']
-                repolib.lists.debian.dump_package( pkginfo , sys.stderr )
+                pos = newrepo.components.index( compname )
+                for pkgsfile in newrepo.feeds[pos].outchannels :
+                    repolib.lists.debian.dump_package( pkginfo , pkgsfile )
                 break
             except urllib2.URLError , ex :
                 pass
@@ -118,16 +157,22 @@ def main ( sources ) :
           if compname :
             break
         else :
-          print "Failed %s" % pkginfo['Package']
+          repolib.logger.warning( "Failed %s %s" % ( pkginfo['Package'] , pkginfo['Version'] ) )
+    newrepo.post_build()
 
 if __name__ == "__main__" :
     sources = {}
-    sources['ubuntu'] = ( 'pool/' , "http://es.archive.ubuntu.com/ubuntu/" )
-    sources['ubuntu-security'] = ( 'pool/' , "http://security.ubuntu.com/ubuntu/" )
-    sources['ubuntu-partner'] = ( 'pool/' , "http://archive.canonical.com/ubuntu/" )
-    sources['debian'] = ( 'pool/' , "http://ftp.es.debian.org/debian/" )
-    sources['debian-security'] = ( 'pool/updates/' , "http://security.debian.org/" )
-    sources['archive'] = ( 'pool/' , "http://archive.debian.org/debian/" )
-    sources['archive-security'] = ( 'pool/updates/' , "http://archive.debian.org/debian-security/" )
+    sources['ubuntu'] = {}
+    sources['ubuntu']['ubuntu'] = ( 'pool/' , "http://es.archive.ubuntu.com/ubuntu/" )
+    sources['ubuntu']['ubuntu-security'] = ( 'pool/' , "http://security.ubuntu.com/ubuntu/" )
+    sources['ubuntu']['ubuntu-partner'] = ( 'pool/' , "http://archive.canonical.com/ubuntu/" )
+    sources['ubuntu']['netbook-ppa'] = ( 'pool/' , "http://ppa.launchpad.net/netbook-remix-team/ubuntu" )
+    sources['debian'] = {}
+    sources['debian']['debian'] = ( 'pool/' , "http://ftp.es.debian.org/debian/" )
+    sources['debian']['debian-security'] = ( 'pool/updates/' , "http://security.debian.org/" )
+    sources['debian']['debian-volatile'] = ( 'pool/volatile/' , "http://volatile.debian.org/debian-volatile/" )
+    sources['debian']['backports'] = ( 'pool/' , "http://backports.debian.org/debian-backports/" )
+    sources['debian']['archive'] = ( 'pool/' , "http://archive.debian.org/debian/" )
+    sources['debian']['archive-security'] = ( 'pool/updates/' , "http://archive.debian.org/debian-security/" )
     main( sources )
 

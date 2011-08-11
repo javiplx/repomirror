@@ -39,25 +39,25 @@ class packages_build_repository :
         self.base_path = parent.repo_path()
         self.valid_extensions = parent.valid_extensions
 
-        self.outchannels = []
-
         self.recursive = False
         self.architectures = False
 
-    def build ( self ) :
-
         config.mimetypes[''] = open
 
-        output_path = os.path.join( self.repo_path , self.metadata_path() )
+        self.outchannels = []
+        output_path = os.path.join( parent.repo_path() , self.metadata_path() )
         filename = os.path.join( output_path , "Packages" )
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
             self.outchannels.append( read_handler( "%s%s" % ( filename , extension ) , 'w' ) )
 
+    def build ( self ) :
         if self.recursive :
             os.path.walk( self.base_path , self.writer , self )
         else :
             self.writer( self , self.base_path , os.listdir( self.base_path ) )
+        self.post_build()
 
+    def post_build ( self ) :
         for pkgsfile in self.outchannels :
             pkgsfile.close()
 
