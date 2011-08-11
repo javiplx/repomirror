@@ -17,12 +17,10 @@ __version__ = "0.5"
 __usage__ = """%prog [options] reponame"""
 
 
-import os , sys
-
 import debian_bundle.deb822 , debian_bundle.debian_support
-
 import repolib.lists.debian
 
+import sys
 import urllib2
 
 
@@ -34,32 +32,9 @@ def option_parser () :
     parser.set_defaults( status_file = "/var/lib/dpkg/status" )
 
     parser.add_option( "--status-file" , metavar="FILENAME" ,
-        help="Specify dpkg status file" )
+        help="off-tree dpkg status file" )
 
     return parser
-
-
-"""Snippet from a real status file
-Package: libxml-libxml-perl
-Status: install ok installed
-Priority: optional
-Section: perl
-Installed-Size: 1328
-Maintainer: Debian Perl Group <pkg-perl-maintainers@lists.alioth.debian.org>
-Architecture: amd64
-Version: 1.70.ds-1
-Replaces: libxml-libxml-common-perl
-Depends: perl (>= 5.10.1-5), perlapi-5.10.1, libc6 (>= 2.4), libxml2 (>= 2.7.4), zlib1g (>= 1:1.1.4), libxml-namespacesupport-
-perl, libxml-sax-perl
-Conflicts: libxml-libxml-common-perl
-Description: Perl interface to the libxml2 library
- XML::LibXML is a Perl interface to the GNOME libxml2 library, which provides
- interfaces for parsing and manipulating XML files. This module allows Perl
- programmers to make use of the highly capable validating XML parser and the
- high performance Document Object Model (DOM) implementation. Additionally, it
- supports using the XML Path Language (XPath) to find and extract information.
-Homepage: http://search.cpan.org/dist/XML-LibXML/
-"""
 
 
 def buildpath ( pkg , compname ) :
@@ -98,9 +73,19 @@ def main ( sources ) :
     parser = option_parser()
     opts , args = parser.parse_args()
 
-    if not args :
+    if not args or len(args)>1:
         parser.print_help()
         sys.exit(1)
+
+    repo_name = args[0]
+
+    try :
+        repolib.BuildRepository.new( repo_name )
+    except Exception , ex :
+        pass
+    else :
+        repolib.logger.critical( "Repo %s already defined" % repo_name )
+        sys.exit(2)
 
     packages = debian_bundle.debian_support.PackageFile( opts.status_file )
 
@@ -115,6 +100,7 @@ def main ( sources ) :
 
             filepath = urllib2.urlparse.urljoin( name , path )
             pkginfo['Filename'] = urllib2.urlparse.urljoin( filepath , filename )
+            if pkginfo.has_key('Conffiles') : pkginfo.pop('Conffiles')
 
             try :
                 url = urllib2.urlparse.urljoin( baseurl , pkginfo['Filename'] )

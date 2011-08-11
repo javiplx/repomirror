@@ -1,29 +1,53 @@
 #!/usr/bin/python
 
-# FIXME : Allow reading from a sources.list file, parsing into scheme, server, path, codename and components
+# Copyright (C) 2011 Javier Palacios
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2
+# as published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
 
-params = {}
+
+__version__ = "1.0"
+
+__usage__ = """%prog reponame [reponame ...]"""
 
 
-import os , sys
+import sys
 
 import repolib
 
-if sys.argv[1:] :
-    if len(sys.argv) > 2 :
-        print "Too many arguments"
-        print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
-        sys.exit(2)
-    repo_name = sys.argv[1]
-else :
-    print "Usage : %s repo_name" % os.path.basename( sys.argv[0] )
-    sys.exit(1)
 
-try :
-    repo = repolib.BuildRepository.new( repo_name )
-except Exception , ex :
-    print "Exception : %s" % ex
-    sys.exit(255)
+import optparse
 
-repo.build()
+def option_parser () :
+    version_string = "%%prog %s" % __version__
+    parser = optparse.OptionParser( usage=__usage__ , version=version_string )
+
+    return parser
+
+
+def main () :
+
+    parser = option_parser()
+    opts , args = parser.parse_args()
+
+    if not args :
+        parser.print_help()
+        sys.exit(1)
+
+    while args :
+        repo_name = args.pop()
+        try :
+            repo = repolib.BuildRepository.new( repo_name )
+            repo.build()
+        except Exception , ex :
+            repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
+
+if __name__ == "__main__" :
+    main()
 
