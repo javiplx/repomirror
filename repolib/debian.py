@@ -49,12 +49,12 @@ class debian_repository ( repolib.MirrorRepository ) :
             d[k] = value
         return d
 
-    def get_metafile ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None ) :
 
         params = self.params
         if _params : params.update( _params )
 
-        release_file = repolib.MirrorRepository.get_metafile( self , self.release , params , keep )
+        release_file = repolib.MirrorRepository.get_metafile( self , self.release , params )
 
         if not release_file :
             repolib.logger.error( "Metadata for '%s' not found" % self.version )
@@ -131,37 +131,34 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         return self.__subrepo_dict( release_file )
 
-    def write_master_file ( self , meta_files ) :
+    def write_master_file ( self , metafiles ) :
 
-        # Path for local copy must be created in advance by build_local_tree
+        tempfiles = set( metafiles.values() )
+        tempfile = tempfiles.pop()
+
+        if tempfiles :
+            raise Exception( "Too many different Release files returned" )
+
+        if self.mode == "keep" and tempfile is not True :
+            return self.__subrepo_dict( tempfile )
+
         local = os.path.join( self.repo_path() , self.release )
 
-        temp_files = set( meta_files.values() )
+        if not isinstance(tempfile,bool) and not os.path.exists( local ) :
 
-        if len(temp_files) > 1 :
-            repolib.logger.warning( "Too many different Release files returned" )
+            self.safe_rename( tempfile , local , True )
 
-        for temp_file in temp_files :
-          # FIXME : if local exists, we might left behind a temporary file
-          if not isinstance(temp_file,bool) and not os.path.exists( local ) :
-            self.safe_rename( temp_file , local )
+            if self.sign_ext and not os.path.isfile( local + self.sign_ext ) :
+                self.safe_rename( tempfile + self.sign_ext , local + self.sign_ext , True )
 
-            os.chmod( local , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
-
-            if os.path.isfile( temp_file + ".gpg" ) :
-                self.safe_rename( temp_file + ".gpg" , local + ".gpg" )
-
-                os.chmod( local + ".gpg" , stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH )
-
-        return self.__subrepo_dict( os.path.dirname( local ) )
+        return self.__subrepo_dict( local )
 
     def info ( self , metafile , cb ) :
 
-        release_file = set(metafile.values())
-        release = debian_bundle.deb822.Release( sequence=open( os.path.join( release_file.pop() , "Release" ) ) )
-
-        if release_file :
-            repolib.logger.warning( "Too many different Release files returned" )
+        release_file = set(metafile.values()).pop()
+        if release_file is True :
+            release_file = os.path.join( self.repo_path() , self.release )
+        release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :
@@ -215,7 +212,6 @@ class DebianComponent ( SimpleComponent ) :
                         _item.update( item )
         if _item :
             if utils.integrity_check( filename , _item ) is False :
-                os.unlink( filename )
                 return False
 
             return True
@@ -224,34 +220,36 @@ class DebianComponent ( SimpleComponent ) :
             repolib.logger.error( "Checksum for file '%s' not found, exiting." % _name ) 
             return False
 
-    def get_metafile( self , metafile , _params=None , download=True ) :
+    def get_metafile( self , metafile , _params=None ) :
 
-        # Currently unused, but relevant to verification flags
         params = self.params
         if _params : params.update( _params )
 
-        if download :
-            master_file = os.path.join( metafile[str(self)] , "Release" )
-        else :
-            master_file = metafile[str(self)]
+        masterfile = metafile[str(self)]
 
-        release = debian_bundle.deb822.Release( sequence=open( master_file ) )
+        if isinstance(masterfile,bool) :
+            raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
 
-        _name = "%sRelease" % self.metadata_path()
-        localname = os.path.join( self.repo_path() , _name )
+        release = debian_bundle.deb822.Release( sequence=open( masterfile ) )
 
-        if os.path.isfile( localname ) :
+        if self.mode == "init" :
+          _name = "%sRelease" % self.metadata_path()
+          localname = os.path.join( self.repo_path() , _name )
+
+          if os.path.isfile( localname ) :
             _name = "%sRelease" % self.metadata_path(True)
             if self.verify( localname , _name , release , params ) :
                 repolib.logger.info( "Local copy of '%s' is up-to-date, skipping." % _name )
+            else :
+                os.unlink( localname )
 
-        if not os.path.isfile( localname ) :
-          if download :
+          if not os.path.isfile( localname ) :
             repolib.logger.info( "No local Release file exist for %s. Downloading." % self )
             url = "%sRelease" % self.metadata_path()
             if self.downloadRawFile( url , localname ) :
                 _name = "%sRelease" % self.metadata_path(True)
                 if not self.verify( localname , _name , release , params ) :
+                    os.unlink( localname )
                     repolib.logger.warning( "No valid Release file found for %s" % self )
 
         localname = False
@@ -268,14 +266,17 @@ class DebianComponent ( SimpleComponent ) :
                         break
                     repolib.logger.info( "Local copy of '%s' is up-to-date, skipping." % _name )
                     return True
-                continue
+                elif self.mode == "keep" :
+                    # FIXME : could happen that another compression is OK
+                    return False
+                os.unlink( localname )
 
         else :
 
           localname = False
-          if download :
+          if self.mode != "keep" :
             repolib.logger.info( "No local Packages file exist for %s. Downloading." % self )
-            localname = SimpleComponent.get_metafile( self , release , _params , True )
+            localname = SimpleComponent.get_metafile( self , release , _params )
             if not isinstance(localname,bool) :
                classname = "%s" % localname.__class__
                if str(self).endswith("/debian-installer") and classname != "gzip.GzipFile" :

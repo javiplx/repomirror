@@ -7,7 +7,6 @@ repolib/base.py
 repolib/utils.py
 repolib/debian.py
 repolib/feed.py
-get_filters
 repolib/yum.py
 repolib/config.py
 repolib/lists/__init__.py

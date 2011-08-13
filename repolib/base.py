@@ -4,6 +4,7 @@ __all__ = [ 'MirrorRepository' , 'MirrorComponent' , 'BuildRepository' ]
 import os
 import tempfile
 import shutil , errno
+import stat
 
 import urllib2
 
@@ -132,19 +133,14 @@ class MirrorRepository ( _mirror ) :
             return self.subrepos[compname]
         raise Exception( "subrepo %s does not exists" % compname )
 
-    def get_metafile ( self , metafile , _params=None , keep=False ) :
+    def get_metafile ( self , metafile , _params=None ) :
         """Verifies with gpg and/or downloads a metadata file.
 Returns path to metadata file on success, and False if error occurs.
 If signature verification fails, stored metadata is removed.
 
 The returned value is an off-tree temporary path except when the metadata file
-did already exists and verification succeeds. If this is the case, True is
-returned or the path to stored metadata if running in 'init' mode.
-
-The 'keep' flag avoids removal of stored copies if verification fails, while
-forcing download of current metadata. This behaviour is intended to avoid
-breaking already downloaded repositories when only checking whether they
-are up to date."""
+did already exists and verification succeeds, where the path to the stored
+metadata is returned in 'init' mode and True in any other operation mode."""
 
         release_file = os.path.join( self.repo_path() , metafile )
 
@@ -160,7 +156,7 @@ are up to date."""
 
             if os.path.isfile( release_file ) :
                 if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
-                    if not keep :
+                    if self.mode != "keep" :
                         os.unlink( release_file )
                         os.unlink( release_file + self.sign_ext )
                     release_file = ""
@@ -173,7 +169,7 @@ are up to date."""
         # If gpg is not enabled, metafile is removed to force fresh download
         if not self.sign_ext or not _params['usegpg'] :
             if os.path.isfile( release_file ) :
-                if not keep :
+                if self.mode != "keep" :
                     os.unlink( release_file )
                     if self.sign_ext : os.unlink( release_file + self.sign_ext )
                 release_file = ""
@@ -197,7 +193,7 @@ are up to date."""
 
         return release_file
 
-    def safe_rename ( self , src , dst ) :
+    def safe_rename ( self , src , dst , chmod=False ) :
         try :
             os.rename( src , dst )
         except OSError , ex :
@@ -205,11 +201,14 @@ are up to date."""
                 repolib.logger.critical( "OSError: %s" % ex )
                 sys.exit(1)
             shutil.move( src , dst )
+        if chmod :
+            mode = stat.S_IWUSR | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH
+            os.chmod( dst , mode )
 
     def info ( self , release_file , cb ) :
         raise Exception( "Calling an abstract method" )
 
-    def write_master_file ( self , release_file ) :
+    def write_master_file ( self , metafiles ) :
         raise Exception( "Calling an abstract method" )
 
     def build_local_tree( self ) :
@@ -252,7 +251,7 @@ class MirrorComponent ( _mirror ) :
     def __str__ ( self ) :
         return "%s" % self.architectures[0]
 
-    def get_metafile( self , metafile , _params=None , download=True ) :
+    def get_metafile( self , metafile , _params=None ) :
         """Verifies checksums and optionally downloads metadata files for subrepo.
 Returns the full pathname for the file in its final destination or False when
 error ocurrs. When the repository is in update mode, True is returned to signal

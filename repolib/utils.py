@@ -141,7 +141,7 @@ easy reporting back a descriptive string for the error"""
 
     gpgerror = "Not verified"
     try :
-        result = GnuPGInterface.GnuPG().run( [ "--verify", signature , file ] )
+        result = GnuPGInterface.GnuPG().run( [ "--verify", signature , file ] , create_fhs=['stdin', 'stdout', 'logger'])
         result.wait()
         gpgerror = False
     except IOError , ex :

@@ -3,6 +3,7 @@ import debian_bundle.debfile
 import debtarfile
 
 import os
+import tempfile
 
 
 import config , utils
@@ -104,14 +105,14 @@ class feed_repository ( repolib.MirrorRepository ) :
             d[k] = value
         return d
 
-    def get_metafile ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None ) :
         return self.__subrepo_dict( '' )
 
     def metadata_path ( self , partial=False ) :
         return ""
 
-    def write_master_file ( self , release_file ) :
-        return self.__subrepo_dict( self.repo_path() )
+    def write_master_file ( self , metafiles ) :
+        return self.__subrepo_dict( '' )
 
     def info ( self , metafile , cb ) :
         cb( "Mirroring %s" % self.name )
@@ -132,27 +133,31 @@ class SimpleComponent ( repolib.MirrorComponent ) :
             return False
         return True
 
-    def get_metafile( self , metafile , _params=None , download=True ) :
-        """Downloads the Packages file for a feed. As no verification is possible,
-fresh download is forced."""
-
-        localname = False
+    def get_metafile( self , metafile , _params=None ) :
+        """Downloads the Packages file for a feed."""
 
         params = self.params
         if _params : params.update( _params )
 
-        if not download :
-            repolib.logger.warning( "Forcing download mode on %s.get_metafile()" % self )
+        if isinstance(metafile,bool) :
+            raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
+
+        localname = False
 
         for ( extension , read_handler ) in config.mimetypes.iteritems() :
 
             url = "%sPackages%s" % ( self.metadata_path() , extension )
             localname = os.path.join( self.repo_path() , url )
 
+            if self.mode == "keep" :
+                localname = tempfile.mktemp()
+                repolib.logger.info( "Using temporary '%s' for Packages%s file" % ( localname , extension ) )
             if self.downloadRawFile( url , localname ) :
                 _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
                 if self.verify( localname , _name , metafile , params ) :
                     break
+                os.unlink( localname )
+                localname = False
                 continue
 
         else :

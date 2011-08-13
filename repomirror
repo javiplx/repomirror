@@ -44,6 +44,8 @@ def option_parser () :
         help="download modified metadata and new packages" )
     modes.add_option( "--metadata" , action="count" , default=0 ,
         help="download repository metadata [default]" )
+    modes.add_option( "--check" , action="count" , default=0 ,
+        help="check repository status" )
 
     parser.add_option_group( modes )
 
@@ -59,10 +61,13 @@ def main () :
         parser.print_help()
         sys.exit(1)
 
+#    if opts.check and not opts.component :
+#        parser.error( "Check mode requires supplying one component" )
+
     if opts.component and len(args)>1 :
         parser.error( "Supply a single repository for component based operation" )
 
-    if opts.init + opts.update + opts.metadata > 1 :
+    if opts.init + opts.update + opts.metadata + opts.check > 1 :
         parser.error( "Only one operation mode can be specified at a time" )
 
     if opts.verbose and opts.quiet :
@@ -71,6 +76,9 @@ def main () :
     if opts.verbose :
         repolib.logger.setLevel( repolib.logging.INFO )
     if opts.quiet :
+        repolib.logger.setLevel( repolib.logging.ERROR )
+
+    if opts.check :
         repolib.logger.setLevel( repolib.logging.CRITICAL )
 
     repolist = []
@@ -87,6 +95,8 @@ def main () :
             repo.set_mode( "init" )
         elif opts.update :
             repo.set_mode( "update" )
+        elif opts.check :
+            repo.set_mode( "keep" )
         else :
             repo.set_mode( "metadata" )
       except Exception , ex :
@@ -127,7 +137,15 @@ def do_2nd ( repo , local_repodata ) :
 
     packages = subrepo.get_metafile( local_repodata )
 
-    if packages is True or repo.mode == "metadata" :
+    if subrepo.mode == "keep" :
+        if not isinstance(packages,bool) :
+            repolib.logger.critical( "Returned non-boolean '%s' while in check mode" % (packages,) )
+        if packages :
+            print "%s %s [%s] - subrepo is up to date" % ( subrepo.name , subrepo.version , subrepo )
+        else :
+            print "%s %s [%s] - outdated subrepo" % ( subrepo , subrepo.version , subrepo.name )
+
+    if isinstance(packages,bool) or repo.mode == "metadata" :
         continue
 
     repolib.logger.info( "Scanning %s" % name )

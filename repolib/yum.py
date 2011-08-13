@@ -57,7 +57,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             path += "repodata/"
         return path
 
-    def get_metafile ( self , _params=None , keep=False ) :
+    def get_metafile ( self , _params=None ) :
 
       params = self.params
       if _params : params.update( _params )
@@ -65,38 +65,39 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
       repomd = {}
 
       for subrepo in self.subrepos :
-        metafile = repolib.MirrorRepository.get_metafile( self , self.repomd[subrepo] , params , keep )
+        metafile = repolib.MirrorRepository.get_metafile( self , self.repomd[subrepo] , params )
 
         if not metafile :
-            repolib.logger.error( "Metadata for '%s' not found" % self.version )
-        else :
-            if metafile is not True :
+            repolib.logger.error( "Metadata for '%s-%s' not found" % ( subrepo , self.version ) )
+        elif metafile is not True :
                 repolib.logger.info( "Content verification of metafile %s" % metafile )
                 item , filelist = filelist_xmlparser.get_filelist( metafile )
 
                 if not item or not filelist :
                     repolib.logger.error( "No primary or filelist node within repomd file" )
-                    os.unlink( metafile )
+                    if self.mode != "keep" :
+                        os.unlink( metafile )
                     metafile = False
     
         repomd[ subrepo ] = metafile
 
       return repomd
 
-    def write_master_file ( self , repomd_file ) :
+    def write_master_file ( self , metafiles ) :
 
         local = {}
 
         for name,subrepo in self.subrepos.iteritems() :
+          if self.mode == "keep" and metafiles[name] is not True :
+            local[name] = metafiles[name]
+          else :
             repomd = os.path.join( subrepo.repo_path() , self.repomd[name] )
-            # FIXME : if destination exists, we might left behind a temporary file
-            if not isinstance(repomd_file[name],bool) and not os.path.exists( repomd ) :
-                self.safe_rename( repomd_file[name] , repomd )
+            if not isinstance(metafiles[name],bool) and not os.path.exists( repomd ) :
+                    self.safe_rename( metafiles[name] , repomd )
+                    if self.sign_ext and not os.path.exists( repomd + self.sign_ext ) :
+                        self.safe_rename( metafiles[name] + self.sign_ext , repomd + self.sign_ext )
 
-                if self.sign_ext and os.path.isfile( repomd_file[name] + self.sign_ext ) :
-                    self.safe_rename( repomd_file[name] + self.sign_ext , os.path.join( subrepo.repo_path() , self.repomd[name] + self.sign_ext ) )
-
-            local[name] = os.path.join( subrepo.repo_path() , subrepo.metadata_path(True) )
+            local[name] = repomd
 
         return local
 
@@ -128,27 +129,24 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     def verify( self , filename , item , params ) :
         # FIXME : no matching on filename vs. href within item is done
         if repolib.utils.integrity_check( filename , item , params['pkgvflags'] ) is False :
-            os.unlink( filename )
             return False
         return True
 
-    def get_metafile( self , metafile , _params=None , download=True ) :
+    def get_metafile( self , metafile , _params=None ) :
 
-        # Currently unused, but relevant to verification flags
         params = self.params
         if _params : params.update( _params )
 
-        if download :
-            local_repodata = metafile[str(self)]
-            master_file = os.path.join( local_repodata , "repodata/repomd.xml" )
-        else :
-            local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
-            master_file = metafile[str(self)]
+        masterfile = metafile[str(self)]
 
-        primary , secondary = False , False
+        if isinstance(masterfile,bool) :
+            raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
 
         # FIXME : the same extraction was already performed on master.get_metafile()
-        item , filelist = filelist_xmlparser.get_filelist( master_file )
+        item , filelist = filelist_xmlparser.get_filelist( masterfile )
+        local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
+
+        primary , secondary = False , False
 
         _primary = os.path.join( local_repodata , item['href'] )
     
@@ -158,13 +156,14 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 if self.mode == "init" :
                     primary = _primary
     
-        if not primary :
-          if download :
+        if not primary and self.mode != "keep" :
             repolib.logger.warning( "No local primary file exist for %s. Downloading." % self )
             url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
             if self.downloadRawFile( url , _primary ) :
                 if self.verify( _primary , item , params ) :
                     primary = _primary
+                else:
+                    os.unlink( _primary )
     
         _secondary = os.path.join( local_repodata , filelist['href'] )
     
@@ -174,15 +173,18 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 if self.mode == "init" :
                     secondary = _secondary
     
-        if not secondary :
-          if download :
+        if not secondary and self.mode != "keep" :
             repolib.logger.warning( "No local filelists file exist for %s. Downloading." % self )
             url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
             if self.downloadRawFile( url , _secondary ) :
                 if self.verify( _secondary , filelist , params ) :
                     secondary = _secondary
+                else :
+                    os.unlink( _secondary )
     
-        # Workaround for easily detect True,True and False,False pairs
+        # Workarounds to detect booleans within output
+        if False in ( primary , secondary ) :
+            return False
         if primary == secondary and isinstance(primary,bool) :
             return primary
 
