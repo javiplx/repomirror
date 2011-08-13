@@ -276,6 +276,19 @@ class DebianComponent ( SimpleComponent ) :
           if download :
             repolib.logger.info( "No local Packages file exist for %s. Downloading." % self )
             localname = SimpleComponent.get_metafile( self , release , _params , True )
+            if not isinstance(localname,bool) :
+               classname = "%s" % localname.__class__
+               if str(self).endswith("/debian-installer") and classname != "gzip.GzipFile" :
+                   repolib.logger.info( "Force download of Packages.gz for installer components" )
+
+                   url = "%sPackages%s" % ( self.metadata_path() , ".gz" )
+                   _localname = os.path.join( self.repo_path() , url )
+
+                   if self.downloadRawFile( url , _localname ) :
+                       _name = "%sPackages%s" % ( self.metadata_path(True) , ".gz" )
+                       if not self.verify( _localname , _name , release , params ) :
+                           os.unlink( _localname )
+
 
         if isinstance(localname,str) :
             return read_handler( localname )

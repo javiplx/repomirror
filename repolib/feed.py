@@ -159,18 +159,6 @@ fresh download is forced."""
             repolib.logger.error( "No valid Packages file found for %s" % self )
             localname = False
 
-        if extension != ".gz" :
-            # Forced gz download because debian-installer seems unable to use the bz2 versions
-            extension = ".gz"
-
-            url = "%sPackages%s" % ( self.metadata_path() , extension )
-            _localname = os.path.join( self.repo_path() , url )
-
-            if self.downloadRawFile( url , _localname ) :
-                _name = "%sPackages%s" % ( self.metadata_path(True) , extension )
-                if not self.verify( _localname , _name , metafile , params ) :
-                    os.unlink( _localname )
-
         if isinstance(localname,str) :
             return read_handler( localname )
 
