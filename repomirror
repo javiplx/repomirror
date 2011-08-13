@@ -132,8 +132,8 @@ def do_2nd ( repo , local_repodata ) :
 
     repolib.logger.info( "Scanning %s" % name )
 
-    _size , _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
-    download_size += _size
+    _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
+    download_size += _pkgs.weight
     download_pkgs.queue( _pkgs )
     missing_pkgs.extend( _missing )
 
@@ -177,9 +177,11 @@ def do_missing ( download_pkgs , missing_pkgs ) :
 if __name__ == "__main__" :
 
   repolist = main()
+  downloaders = []
   for repo in repolist :
     local_repodata = do_1st( repo )
     download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
+    downloaders.append( download_pkgs )
     if not download_pkgs :
         repolib.logger.info( "Nothing to download" )
         sys.exit(0)
@@ -187,4 +189,7 @@ if __name__ == "__main__" :
 
     download_pkgs.start()
     download_pkgs.finish()
+
+  for downloader in downloaders :
+    downloader.join()
 

@@ -221,6 +221,7 @@ are up to date."""
 
     def get_download_list( self ) :
         return DownloadThread( self )
+        return DownloadList( self )
 
 
 class MirrorComponent ( _mirror ) :

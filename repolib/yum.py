@@ -107,6 +107,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
     def get_download_list( self ) :
         return YumDownloadThread( self )
+        return YumDownloadFile( self )
 
 class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
@@ -195,7 +196,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         params = self.params
         params.update( _params )
 
-        download_size = 0
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
         missing_pkgs = []
@@ -206,7 +206,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         all_pkgs = {}
         providers = {}
 
-        repolib.logger.warning( "Scanning available packages for minor filters" )
+        repolib.logger.warning( "Scanning available %s packages for minor filters" % self )
         for pkginfo in packages :
     
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
@@ -220,8 +220,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
             all_pkgs[ pkginfo['name'] ] = 1
             pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
             download_pkgs.append( pkginfo )
-            # FIXME : This might cause a ValueError exception ??
-            download_size += pkginfo['size']
 
             if pkginfo.has_key( 'requires' ) :
                 for pkg in pkginfo['requires'] :
@@ -230,7 +228,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         filesfd = gzip.open( local_repodata[1] )
 
         # NOTE : We run over the filelists content, marking package owners for later addition
-        repolib.logger.warning( "Scanning filelists.xml for file dependencies" )
+        repolib.logger.info( "Scanning filelists.xml for file dependencies" )
         files = filelist_xmlparser.get_files_list( filesfd )
         for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
@@ -242,7 +240,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     
         filesfd.close()
         
-        repolib.logger.warning( "Searching for missing dependencies" )
+        repolib.logger.info( "Searching for missing dependencies" )
         for pkginfo in rejected_pkgs :
         
             # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
@@ -253,8 +251,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 all_pkgs[ pkginfo['name'] ] = 1
                 pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
                 download_pkgs.append( pkginfo )
-                # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkginfo['size'] )
                 providers.pop( pkginfo['name'] )
 
             elif pkginfo.has_key( 'provides' ) :
@@ -267,8 +263,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                         all_pkgs[ pkginfo['name'] ] = 1
                         pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
                         download_pkgs.append( pkginfo )
-                        # FIXME : This might cause a ValueError exception ??
-                        download_size += int( pkginfo['size'] )
 
 #                        if pkginfo.has_key( 'requires' ) :
 #                            for reqpkg in pkginfo['requires'] :
@@ -277,7 +271,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         # Rewind file
         fd.seek(0)
 
-        repolib.logger.warning( "Running to filter out fixed dependencies" )
+        repolib.logger.info( "Running to filter out fixed dependencies" )
         packages = filelist_xmlparser.get_package_list( fd )
         for pkginfo in packages :
             if not all_pkgs.has_key( pkginfo['name'] ) :
@@ -294,9 +288,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
 
-        repolib.logger.warning( "Current download size : %.1f Mb" % ( download_size / 1024 / 1024 ) )
-
-        return download_size , download_pkgs , missing_pkgs
+        return download_pkgs , missing_pkgs
 
 class fedora_repository ( yum_repository ) :
 

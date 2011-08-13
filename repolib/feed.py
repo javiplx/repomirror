@@ -188,14 +188,12 @@ fresh download is forced."""
         params = self.params
         params.update( _params )
 
-        download_size = 0
-        missing_pkgs = []
-
         all_pkgs = {}
         all_requires = {}
 
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
+        missing_pkgs = []
 
         if fd :
             if 'name' in dir(fd) :
@@ -208,7 +206,7 @@ fresh download is forced."""
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            repolib.logger.warning( "Scanning available packages for minor filters" )
+            repolib.logger.warning( "Scanning available %s packages for minor filters" % self )
             for pkg in packages :
                 self.forward( fd )
                 pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
@@ -229,8 +227,6 @@ fresh download is forced."""
 
                 all_pkgs[ pkginfo['Package'] ] = 1
                 download_pkgs.append( pkginfo )
-                # FIXME : This might cause a ValueError exception ??
-                download_size += int( pkginfo['Size'] )
 
                 if pkginfo.has_key( 'Depends' ) :
                     for deplist in pkginfo['Depends'].split(',') :                            
@@ -252,8 +248,6 @@ fresh download is forced."""
                 if all_requires.has_key( pkginfo['Package'] ) :
                     all_pkgs[ pkginfo['Package'] ] = 1
                     download_pkgs.append( pkginfo )
-                    # FIXME : This might cause a ValueError exception ??
-                    download_size += int( pkginfo['Size'] )
 
                     if pkginfo.has_key( 'Depends' ) :
                         for deplist in pkginfo['Depends'].split(',') :                            
@@ -267,6 +261,6 @@ fresh download is forced."""
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
-        return download_size , download_pkgs , missing_pkgs
+        return download_pkgs , missing_pkgs
 
 

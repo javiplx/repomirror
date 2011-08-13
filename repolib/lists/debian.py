@@ -1,11 +1,11 @@
 
-__all__ = [ "DebianPackageList" , "DebianDownloadList" , "DebianDownloadThread" ]
+__all__ = [ "DebianPackageFile" , "DebianDownloadFile" , "DebianDownloadThread" ]
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
 import tempfile
 
-from repolib.lists import PackageListInterface , AbstractDownloadThread , AbstractDownloadList
+from repolib.lists import PackageListInterface , AbstractDownloadList , AbstractDownloadThread
 
 
 def safe_encode ( str ) :
@@ -35,24 +35,13 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class _DebianPackageList ( list ) :
-
-    def __repr__ ( self ) :
-        return "<_DebianPackageList items:%d>" % len(self)
-
-    def start ( self ) :
-        pass
-
-    def rewind ( self ) :
-        pass
-
-class _DebianPackageFile ( debian_bundle.debian_support.PackageFile ) :
-    """This implements a read & write PackageFile.
-Input uses a list interface, and output a sequence interface taken from original PackageFile"""
+class PackageFile ( debian_bundle.debian_support.PackageFile ) :
+    """Implements of a read & write PackageFile."""
 
     def __init__ ( self ) :
         self.pkgfd = tempfile.NamedTemporaryFile()
         debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
+        self.index = 0
         self.__cnt = 0
 
     def __len__ ( self ) :
@@ -64,6 +53,7 @@ Input uses a list interface, and output a sequence interface taken from original
         while _pkg :
             pkg = debian_bundle.deb822.Deb822()
             pkg.update( _pkg.next() )
+            self.index += 1
             yield pkg
             _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
 
@@ -71,43 +61,56 @@ Input uses a list interface, and output a sequence interface taken from original
     def rewind ( self ) :
         if self.pkgfd :
             self.pkgfd.seek(0)
+            self.index = 0
 
     def append ( self , pkg ) :
         dump_package( pkg , self.pkgfd )
         self.__cnt += 1
 
-class DebianPackageList ( _DebianPackageList , PackageListInterface ) :
+class DebianPackageFile ( PackageListInterface , PackageFile ) :
+    __iter__ = PackageFile.__iter__
 
-    def extend ( self , values_list ) :
-        self.pkgfd.seek(0,2)
-        for pkg in values_list :
-            self.append( pkg )
+    def __init__ ( self ) :
+        PackageFile.__init__( self )
 
-class DebianDownloadList ( _DebianPackageList , AbstractDownloadList ) :
+    def append ( self , pkg ) :
+        self.weight += int( pkg['size'] )
+        PackageFile.append( self , pkg )
+
+class DebianDownloadFile ( AbstractDownloadList , PackageFile ) :
+    __iter__ = PackageFile.__iter__
 
     def __init__ ( self , repo ) :
-        _DebianPackageList.__init__( self )
+        PackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
-    def __iter__ ( self ) :
-        if self.started :
-            raise Exception( "Trying to iterate over a running list" )
-        return _DebianPackageList.__iter__( self )
+    def append ( self , pkg ) :
+        self.weight += int( pkg['size'] )
+        PackageFile.append( self , pkg )
 
-    def push ( self , pkg ) :
+    def __nonzero__ ( self ) :
+        return self.index != len(self)
+
+    def push ( self , item ) :
         if self.closed :
             raise Exception( "Trying to push into a closed queue" )
-        _DebianPackageList.append( self , pkg )
+        self.append( item )
 
-class DebianDownloadThread ( _DebianPackageList , AbstractDownloadThread ) :
+class DebianDownloadThread ( AbstractDownloadThread , list ) :
  
+    def __hash__ ( self ) :
+        return AbstractDownloadThread.__hash__( self )
+
     def __init__ ( self , repo=None ) :
         AbstractDownloadThread.__init__( self , repo )
-        _DebianPackageList.__init__( self )
+        list.__init__( self )
 
     def __iter__ ( self ) :
         if self.started :
             raise Exception( "Trying to iterate over a running list" )
-        return _DebianPackageList.__iter__( self )
+        return list.__iter__( self )
 
+    def append ( self , item ) :
+        self.weight += int( item['size'] )
+        list.append( self , item )
 
