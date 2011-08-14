@@ -1,3 +1,6 @@
+
+__all__ = [ "DebTarFile" ]
+
 # DebTarFile: a Python representation for tar based packages
 # Copyright (C) 2011    Javier Palacios     <javiplx@gmail.com>
 #

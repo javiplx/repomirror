@@ -1,6 +1,5 @@
 
 import debian_bundle.debfile
-import debtarfile
 
 import os
 import tempfile
@@ -10,6 +9,7 @@ import config , utils
 
 
 import repolib
+from lists.debtarfile import *
 
 
 class feed_build_repository ( repolib.BuildRepository ) :
@@ -77,7 +77,7 @@ class packages_build_repository :
             try :
                 pkg = debian_bundle.debfile.DebFile( fullpath )
             except debian_bundle.arfile.ArError , ex :
-                pkg = debtarfile.DebTarFile( fullpath )
+                pkg = DebTarFile( fullpath )
             control = pkg.control.debcontrol()
             control["Filename"] = self.extract_filename( fullpath )
             if not control.has_key("Size") :
