@@ -12,8 +12,8 @@ repolib/config.py
 repolib/lists/__init__.py
 repolib/lists/debian.py
 repolib/lists/yum.py
+repolib/lists/yum_xml.py
 repomirror.conf
-filelist_xmlparser.py
 debtarfile.py
 buildrepo
 buildrepo.conf

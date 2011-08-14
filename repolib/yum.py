@@ -1,12 +1,11 @@
 
-import filelist_xmlparser
-
 import gzip
 
 import os , sys
 
 import repolib
 from lists.yum import *
+from lists.yum_xml import *
 
 try :
     sys.path.append( '/usr/share/createrepo' )
@@ -71,7 +70,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             repolib.logger.error( "Metadata for '%s-%s' not found" % ( subrepo , self.version ) )
         elif metafile is not True :
                 repolib.logger.info( "Content verification of metafile %s" % metafile )
-                item , filelist = filelist_xmlparser.get_filelist( metafile )
+                item , filelist = xml_filelist( metafile )
 
                 if not item or not filelist :
                     repolib.logger.error( "No primary or filelist node within repomd file" )
@@ -143,7 +142,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
             raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
 
         # FIXME : the same extraction was already performed on master.get_metafile()
-        item , filelist = filelist_xmlparser.get_filelist( masterfile )
+        item , filelist = xml_filelist( masterfile )
         local_repodata = os.path.join( self.repo_path() , self.metadata_path(True) )
 
         primary , secondary = False , False
@@ -203,7 +202,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         missing_pkgs = []
 
         fd = gzip.open( local_repodata[0] )
-        packages = filelist_xmlparser.get_package_list( fd )
+        packages = xml_package_list( fd )
     
         all_pkgs = {}
         providers = {}
@@ -227,11 +226,14 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 for pkg in pkginfo['requires'] :
                     providers[ pkg ] = 1
 
+        fd.close()
+        del packages
+        return download_pkgs , missing_pkgs
         filesfd = gzip.open( local_repodata[1] )
 
         # NOTE : We run over the filelists content, marking package owners for later addition
         repolib.logger.info( "Scanning filelists.xml for file dependencies" )
-        files = filelist_xmlparser.get_files_list( filesfd )
+        files = xml_files_list( filesfd )
         for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
             pkg = fileinfo[ 'name' ]
@@ -274,7 +276,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         fd.seek(0)
 
         repolib.logger.info( "Running to filter out fixed dependencies" )
-        packages = filelist_xmlparser.get_package_list( fd )
+        packages = xml_package_list( fd )
         for pkginfo in packages :
             if not all_pkgs.has_key( pkginfo['name'] ) :
                 continue

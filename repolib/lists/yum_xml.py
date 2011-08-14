@@ -1,7 +1,8 @@
 
+__all__ = [ "xml_filelist" , "xml_package_list" , "xml_files_list" ]
+
 import xml.sax
 import xml.dom.pulldom
-import repolib
 
 class xml_handler ( xml.dom.pulldom.DOMEventStream , xml.sax.handler.ContentHandler ) :
 
@@ -130,13 +131,13 @@ class yum_files_handler ( xml_handler ) :
             self._list = False
 
 
-def get_package_list ( fd ) :
+def xml_package_list ( fd ) :
     return yum_packages_handler( fd , xml.sax.make_parser() )
 
-def get_files_list ( fd ) :
+def xml_files_list ( fd ) :
     return yum_files_handler( fd , xml.sax.make_parser() )
 
-def get_filelist ( metafile ) :
+def xml_filelist ( metafile ) :
 
     repodoc = xml.dom.pulldom.parse( metafile )
 
@@ -156,8 +157,6 @@ def get_filelist ( metafile ) :
                 _key = node.getAttribute( "type" )
         elif event == "END_ELEMENT" :
             if node.nodeName == "data" :
-                if not _item[_name].has_key( "href" ) :
-                    repolib.logger.error( "No location element within repomd '%s' entry"  % _name )
                 _data = None
             if node.nodeName == "size" :
                 _item[_name][_key] = int(_content)
