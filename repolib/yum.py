@@ -226,15 +226,16 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 for pkg in pkginfo['requires'] :
                     providers[ pkg ] = 1
 
-        fd.close()
         del packages
-        return download_pkgs , missing_pkgs
-        filesfd = gzip.open( local_repodata[1] )
 
-        # NOTE : We run over the filelists content, marking package owners for later addition
-        repolib.logger.info( "Scanning filelists.xml for file dependencies" )
-        files = xml_files_list( filesfd )
-        for fileinfo in files :
+        if filters :
+
+          filesfd = gzip.open( local_repodata[1] )
+
+          # NOTE : We run over the filelists content, marking package owners for later addition
+          repolib.logger.info( "Scanning filelists.xml for file dependencies" )
+          files = xml_files_list( filesfd )
+          for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
             pkg = fileinfo[ 'name' ]
             # There are multiple packages providing the same item, so we cannot break on matches
@@ -242,10 +243,10 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
                 if providers.has_key( file ) :
                     providers[ pkg ] = 1
     
-        filesfd.close()
+          filesfd.close()
         
-        repolib.logger.info( "Searching for missing dependencies" )
-        for pkginfo in rejected_pkgs :
+          repolib.logger.info( "Searching for missing dependencies" )
+          for pkginfo in rejected_pkgs :
         
             # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
             #if all_pkgs.has_key( pkginfo['name'] ) :
@@ -272,25 +273,25 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 #                            for reqpkg in pkginfo['requires'] :
 #                                providers[ reqpkg ] = 1
 
-        # Rewind file
-        fd.seek(0)
+          # Rewind file
+          fd.seek(0)
 
-        repolib.logger.info( "Running to filter out fixed dependencies" )
-        packages = xml_package_list( fd )
-        for pkginfo in packages :
+          repolib.logger.info( "Running to filter out fixed dependencies" )
+          packages = xml_package_list( fd )
+          for pkginfo in packages :
             if not all_pkgs.has_key( pkginfo['name'] ) :
                 continue
             if pkginfo.has_key( 'provides' ) :
                 for pkg in pkginfo['provides'] :
                     if providers.has_key( pkg ) :
                         providers.pop( pkg )
-        
-        fd.close()
-        del packages
+          del packages
 
-        for pkgname in providers.keys() :
+          for pkgname in providers.keys() :
             if not all_pkgs.has_key( pkgname ) :
                 missing_pkgs.append( pkgname )
+
+        fd.close()
 
         return download_pkgs , missing_pkgs
 

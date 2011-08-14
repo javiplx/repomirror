@@ -235,7 +235,9 @@ class SimpleComponent ( repolib.MirrorComponent ) :
             fd.close()
             del packages
 
-            for pkginfo in rejected_pkgs :
+            if filters :
+
+              for pkginfo in rejected_pkgs :
 
                 # FIXME : We made no attempt to go into a full depenceny loop
                 if all_requires.has_key( pkginfo['Package'] ) :
@@ -250,7 +252,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
                                 pkgname = depitem.strip().split(None,1)
                                 all_requires[ pkgname[0] ] = 1
 
-            for pkgname in all_requires.keys() :
+              for pkgname in all_requires.keys() :
                 if not all_pkgs.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
