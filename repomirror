@@ -130,6 +130,7 @@ def do_1st ( repo ) :
 def do_2nd ( repo , local_repodata ) :
 
   download_pkgs = repo.get_download_list()
+  download_pkgs.start()
   download_size = 0
   missing_pkgs = []
 
@@ -152,7 +153,7 @@ def do_2nd ( repo , local_repodata ) :
 
     _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
     download_size += _pkgs.weight
-    download_pkgs.queue( _pkgs )
+    download_pkgs.extend( _pkgs )
     missing_pkgs.extend( _missing )
 
   if repo.mode == "metadata" :
@@ -181,8 +182,9 @@ def do_missing ( download_pkgs , missing_pkgs ) :
         # NOTE : We don't break the loop to ensure we get all the available archs
         if pkg['name'] in _missing.keys() :
             found_pkgs[ pkg['name'] ] = pkg
+    # FIXME : We are extending with names a list which should hold full packages
     # NOTE : extending here is safer
-    download_pkgs.queue( found_pkgs.values() )
+    download_pkgs.extend( found_pkgs.values() )
 
     missing = []
     for pkg in _missing.keys() :
@@ -204,8 +206,6 @@ if __name__ == "__main__" :
         repolib.logger.info( "Nothing to download" )
         sys.exit(0)
     do_missing( download_pkgs , missing_pkgs )
-
-    download_pkgs.start()
     download_pkgs.finish()
 
   for downloader in downloaders :

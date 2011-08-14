@@ -91,17 +91,17 @@ class DebianDownloadFile ( AbstractDownloadList , PackageFile ) :
     def __nonzero__ ( self ) :
         return self.index != len(self)
 
-    def push ( self , item ) :
+    def append ( self , item ) :
         if self.closed :
-            raise Exception( "Trying to push into a closed queue" )
-        self.append( item )
+            raise Exception( "Trying to append into a closed queue" )
+        PackageFile.append( self , item )
 
 class DebianDownloadThread ( AbstractDownloadThread , list ) :
  
     def __hash__ ( self ) :
         return AbstractDownloadThread.__hash__( self )
 
-    def __init__ ( self , repo=None ) :
+    def __init__ ( self , repo ) :
         AbstractDownloadThread.__init__( self , repo )
         list.__init__( self )
 
@@ -110,7 +110,7 @@ class DebianDownloadThread ( AbstractDownloadThread , list ) :
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
-    def append ( self , item ) :
+    def push ( self , item ) :
         self.weight += int( item['size'] )
         list.append( self , item )
 

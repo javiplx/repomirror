@@ -1,4 +1,67 @@
 
+"""
+Repomirror lists submodule
+
+Defines and exports basic list structures to store package information.
+There are are two types of objects, one standard package lists associated
+to subrepos, and one in charge for actual package download that is used
+at the repository level.
+
+The module defines three classes, PackageList of the first kind, and two
+classes of the second type: DownloadList and DownloadThread. All of them
+use a real python list as backend storage.
+
+The module also defines abstract base clases required to implement the
+exported objects, that can be used to build custom lists using different
+storage backends. Derived classes should use those defined here as first
+base class, to enforce implementation of required methods.
+
+
+PackageListInterface
+
+Gives a python-list alike interface for package groups, accounting for the
+size of the included packages. Derived classes must explictly implement
+append() and __iter__() methods, while extend() not requires implementation.
+
+
+DownloadListInterface
+
+Extends PackageListInterface, attempting to become a thread-safe list. They
+must implement a join() method, taken from threading objects, that is used
+as an anchor to wait until the underlying list gets fully exhausted. There
+are two methods controlling the list behaviour of the object, both requiring
+implementation on derived classes. Once finish() is called, the underlying
+list gets closed and no extra elements can be added. Calling start() method
+will start the iteration over the underlying list, and disables instantiation
+of further iterators from the object. These two methods are strongly related
+to the join method and object instantiation respectively, but are kept as
+distinct to make objects more versatile. Derived classes must also implement
+a __nonzero__() method because in boolean context they cannot evaluate False
+unless the list it is both empty and closed.
+The class implements two final methods, standard extend() and download_pkg()
+which cares about package download and verification.
+
+
+AbstractDownloadThread
+
+Is a combination of DownloadListInterface and Thread object, being the base
+for thread-safe download lists. Is close to a full implementation of the
+download list interface, except for the methods giving access to the underlying
+list object.
+Derived classes must only implement __iter__() method, and a push() method
+that is used as interface to access to the actual append() method on underlying
+list object. Depending on the type of the backed storage object, it could be
+required to implement a __hash__() method, requires by threading module.
+
+
+AbstractDownloadList
+
+Is a partial implementation of DownloadListInterface. Implements most of the
+non-list methods, and its primary purpose is to make easier the creation of
+custom download lists in a non-threading way.
+
+"""
+
 __all__ = [ "PackageList" , "DownloadList" , "DownloadThread" ]
 
 import os
@@ -39,7 +102,7 @@ class PackageList ( PackageListInterface , list ) :
         list.append( self , item )
 
 
-class DownloadInterface ( PackageListInterface ) :
+class DownloadListInterface ( PackageListInterface ) :
     """Interface for download lists.
 Primary difference is the behaviour respect to iterations, that cannot be
 started at any time and whose finalization is not controlled by standard
@@ -66,21 +129,14 @@ It requires an explicit check on append/extend methods"""
         raise AbstractMethodException( self , "finish" )
 
     # This is a final method
-    def queue ( self , itemlist ) :
+    def extend ( self , itemlist ) :
         for item in itemlist :
-            self.push( item )
-
-    def push ( self , item ) :
-        raise AbstractMethodException( self , "push" )
+            self.append( item )
 
     def __nonzero__ ( self ) :
         """Method to evaluate in boolean context the existence of available items.
 Used in while loop context to enable element extraction"""
         raise AbstractMethodException( self , "__nonzero__" )
-
-    # This is a redefinition of PackageListInterface, to stress requirement of specific implemenation
-    def __iter__ ( self ) :
-        raise AbstractMethodException( self , "__iter__" )
 
     def join ( self ) :
         """Wait until the queue gets cleared"""
@@ -106,18 +162,21 @@ Used in while loop context to enable element extraction"""
             logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
 
-class AbstractDownloadList ( DownloadInterface ) :
+class AbstractDownloadList ( DownloadListInterface ) :
 
     def start ( self ) :
+        if self.started :
+            raise Exception( "%s already started" % self )
+
+    def finish ( self ) :
         for pkg in self :
             self.started = True
             self.download_pkg( pkg )
-
-    def finish ( self ) :
         self.closed = True
 
     def join ( self ) :
-        pass
+        if not self.started :
+            raise Exception( "cannot join %s before starting" % self )
 
 # FIXME : DownloadList is usable, but has some reporting issues under iterations
 class DownloadList ( AbstractDownloadList , list ) :
@@ -129,12 +188,9 @@ class DownloadList ( AbstractDownloadList , list ) :
     def __nonzero__ ( self ) :
         return not bool(list(self))
 
-    def push ( self , item ) :
-        if self.closed :
-            raise Exception( "Trying to push into a closed queue" )
-        self.append( item )
-
     def append ( self , item ) :
+        if self.closed :
+            raise Exception( "Trying to append into a closed queue" )
         self.weight += int( item['size'] )
         list.append( self , item )
 
@@ -146,7 +202,7 @@ class DownloadList ( AbstractDownloadList , list ) :
 
 import threading
 
-class AbstractDownloadThread ( DownloadInterface , threading.Thread ) :
+class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
     start = threading.Thread.start
     join = threading.Thread.join
 
@@ -155,33 +211,37 @@ class AbstractDownloadThread ( DownloadInterface , threading.Thread ) :
         if not 'append' in dir(self) or not '__len__' in dir(self) :
             raise Exception ("Implementation of AbstractDownloadThread required sized objects with append method")
         self.cond = threading.Condition()
-        DownloadInterface.__init__( self , repo )
+        DownloadListInterface.__init__( self , repo )
         threading.Thread.__init__( self , name=repo.name )
 
     def finish(self):
         """Ends the main loop"""
         self.cond.acquire()
         try:
-            self.closed=True
-            # FIXME : Notification takes effect now or after release ???
+            self.closed = True
             self.cond.notify()
         finally:
             self.cond.release()
 
     def __nonzero__ ( self ) :
+        if not self.closed :
+            return True
         return self.index != len(self)
 
     def push ( self , item ) :
+        """Real append to the underlying list object, to allow easier subclassing"""
+        raise AbstractMethodException( self , "push" )
+
+    # This is a final method
+    def append ( self , item ) :
         """Adds an item to the download queue"""
         self.cond.acquire()
         try:
-            if not self :
-                # FIXME : Notification takes effect now or after release ???
-                self.cond.notify()
             if self.closed :
-                raise Exception( "Trying to push into a closed queue" )
+                raise Exception( "Trying to append to a closed queue" )
             else :
-                self.append( item )
+                self.push( item )
+                self.cond.notify()
         finally:
             self.cond.release()
 
@@ -194,11 +254,11 @@ class AbstractDownloadThread ( DownloadInterface , threading.Thread ) :
         while self.started:
             self.cond.acquire()
             if not self :
-                if self.closed :
-                   self.started = False
-                   continue
-                self.cond.wait()
+                break
             elif self.started :
+                # NOTE : protect against race condition under empty lists
+                if len(__iter) == 0 :
+                    self.cond.wait()
                 pkginfo = __iter.next()
             self.cond.release()
             if pkginfo :
@@ -222,7 +282,7 @@ are appended. Once the thread starts, the actual file download begins"""
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
-    def append ( self , item ) :
+    def push ( self , item ) :
         self.weight += int( item['size'] )
         list.append( self , item )
 

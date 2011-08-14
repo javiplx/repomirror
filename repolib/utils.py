@@ -37,7 +37,9 @@ globally fixed.
 
     # Remove file name, unrelated to checksum types
     name = False
-    for key in ( "href" , "name" ) :
+    for key in ( "href" , "name" ) : # What about removing also filename ?
+                                     # and others as in
+# WARNING : Unknonw checksum types available for file : ['sha256', 'filename', 'name']
         if item.has_key( key ) :
             name = item[key]
             checksums.remove( key )

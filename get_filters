@@ -46,15 +46,13 @@ print repo.info( local_repodata )
 
 
 download_pkgs = []
-download_size = 0
 _missing = []
 
 for name,subrepo in repo.subrepos.iteritems() :
 
     print "Scanning %s" % name
 
-    _size , _pkgs , _missing = subrepo.get_package_list( local_repodata , params , {} )
-    download_size += _size
+    _pkgs , _missing = subrepo.get_package_list( local_repodata , params , {} )
     download_pkgs.extend( _pkgs )
 
 

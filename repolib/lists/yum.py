@@ -78,10 +78,10 @@ class YumDownloadFile ( AbstractDownloadList , PackageFile ) :
             raise Exception( "Trying to iterate over a running list" )
         return PackageFile.__iter__( self )
 
-    def push ( self , item ) :
+    def append ( self , item ) :
         if self.closed :
-            raise Exception( "Trying to push into a closed queue" )
-        self.append( item )
+            raise Exception( "Trying to append into a closed queue" )
+        PackageFile.append( self , item )
 
 class YumDownloadThread ( AbstractDownloadThread , list ) :
 
@@ -97,7 +97,7 @@ class YumDownloadThread ( AbstractDownloadThread , list ) :
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
-    def append ( self , item ) :
+    def push ( self , item ) :
         self.weight += int( item['size'] )
         list.append( self , item )
 
