@@ -11,11 +11,11 @@ class PackageFile :
 It is a full implementation of PackageListInterface, but it is not declared
 to avoid inheritance problems"""
 
-    out_template = """name=%s
-sha256=%s
-size=%s
-href=%s
-Filename=%s
+    out_template = """name=%(name)s
+sha256=%(sha256)s
+size=%(size)s
+href=%(href)s
+Filename=%(Filename)s
 
 """
 
@@ -35,7 +35,7 @@ Filename=%s
             if line == '\n' :
                 self.index += 1
                 yield _pkg
-                _pkg = {}
+                _pkg.clear()
             else :
                 k,v = line[:-1].split('=',1)
                 _pkg[k] = v
@@ -50,8 +50,8 @@ Filename=%s
             self.pkgfd.seek(0)
 
     def append ( self , pkg ) :
-        self.pkgfd.write( self.out_template % ( pkg['name'] , pkg.get( 'sha256' , pkg.get( 'sha' ) ) , pkg['size'] , pkg['href'] , pkg['Filename'] ) )
         self.__cnt += 1
+        self.pkgfd.write( self.out_template % pkg )
 
 class YumPackageFile ( PackageListInterface , PackageFile ) :
     __iter__ = PackageFile.__iter__
@@ -81,6 +81,7 @@ class YumDownloadFile ( AbstractDownloadList , PackageFile ) :
     def append ( self , item ) :
         if self.closed :
             raise Exception( "Trying to append into a closed queue" )
+        self.weight += int( item['size'] )
         PackageFile.append( self , item )
 
 # NOTE : YumXMLPackageList is not usable yet
@@ -90,11 +91,11 @@ class YumDownloadFile ( AbstractDownloadList , PackageFile ) :
 class YumXMLPackageList ( YumPackageFile ) :
 
     out_template = """<package type="rpm">
-  <name>%s</name>
-  <checksum type="sha256" pkgid="YES">%s</checksum>
-  <size package="%s"/>
-  <location href="%s"/>
-  <poolfile href="%s"/>
+  <name>%(name)s</name>
+  <checksum type="sha256" pkgid="YES">%(sha256)s</checksum>
+  <size package="%(size)s"/>
+  <location href="%(href)s"/>
+  <poolfile href="%(Filename)s"/>
 </package>
 """
 

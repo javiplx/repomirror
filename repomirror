@@ -137,6 +137,7 @@ def do_2nd ( repo , local_repodata ) :
   for name,subrepo in repo.subrepos.iteritems() :
 
     packages = subrepo.get_metafile( local_repodata )
+    repolib.logger.critical( "INFO is %s" % (packages,) )
 
     if subrepo.mode == "keep" :
         if not isinstance(packages,bool) :
@@ -152,6 +153,7 @@ def do_2nd ( repo , local_repodata ) :
     repolib.logger.info( "Scanning %s" % name )
 
     _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
+    repolib.logger.critical( "OUTPUT IS %s - %s" % ( _pkgs , len(_missing) ) )
     download_size += _pkgs.weight
     download_pkgs.extend( _pkgs )
     missing_pkgs.extend( _missing )

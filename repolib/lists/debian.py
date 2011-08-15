@@ -64,8 +64,8 @@ class PackageFile ( debian_bundle.debian_support.PackageFile ) :
             self.index = 0
 
     def append ( self , pkg ) :
-        dump_package( pkg , self.pkgfd )
         self.__cnt += 1
+        dump_package( pkg , self.pkgfd )
 
 class DebianPackageFile ( PackageListInterface , PackageFile ) :
     __iter__ = PackageFile.__iter__
@@ -78,21 +78,22 @@ class DebianPackageFile ( PackageListInterface , PackageFile ) :
         PackageFile.append( self , pkg )
 
 class DebianDownloadFile ( AbstractDownloadList , PackageFile ) :
-    __iter__ = PackageFile.__iter__
 
     def __init__ ( self , repo ) :
         PackageFile.__init__( self )
         AbstractDownloadList.__init__( self , repo )
 
     def append ( self , pkg ) :
+        if self.closed :
+            raise Exception( "Trying to append into a closed queue" )
         self.weight += int( pkg['size'] )
         PackageFile.append( self , pkg )
 
     def __nonzero__ ( self ) :
         return self.index != len(self)
 
-    def append ( self , item ) :
-        if self.closed :
-            raise Exception( "Trying to append into a closed queue" )
-        PackageFile.append( self , item )
+    def __iter__ ( self ) :
+        if self.started :
+            raise Exception( "Trying to iterate over a running download list" )
+        return PackageFile.__iter__( self )
 

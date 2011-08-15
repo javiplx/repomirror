@@ -52,6 +52,12 @@ Derived classes must only implement __iter__() method, and a push() method
 that is used as interface to access to the actual append() method on underlying
 list object. Depending on the type of the backed storage object, it could be
 required to implement a __hash__() method, requires by threading module.
+NOTE :
+There is a race condition triggered if the object is empty when start() is
+called. The only safe way found to avoid the issue is to check the internal
+iterator before extracting items and waiting if empty, so the object returned
+by the __iter__() method of AbstractDownloadThread derived classes must
+be evaluable in boolean context, which usually needs a __nonzero__ method.
 
 
 AbstractDownloadList
@@ -208,8 +214,6 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
 
     def __init__ ( self , repo ) :
         # Check for methods required on the underlying container
-        if not 'append' in dir(self) or not '__len__' in dir(self) :
-            raise Exception ("Implementation of AbstractDownloadThread required sized objects with append method")
         self.cond = threading.Condition()
         DownloadListInterface.__init__( self , repo )
         threading.Thread.__init__( self , name=repo.name )
@@ -223,11 +227,6 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
         finally:
             self.cond.release()
 
-    def __nonzero__ ( self ) :
-        if not self.closed :
-            return True
-        return self.index != len(self)
-
     def push ( self , item ) :
         """Real append to the underlying list object, to allow easier subclassing"""
         raise AbstractMethodException( self , "push" )
@@ -240,6 +239,7 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
             if self.closed :
                 raise Exception( "Trying to append to a closed queue" )
             else :
+                self.weight += int( item['size'] )
                 self.push( item )
                 self.cond.notify()
         finally:
@@ -257,7 +257,7 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
                 break
             elif self.started :
                 # NOTE : protect against race condition under empty lists
-                if len(__iter) == 0 :
+                if not __iter :
                     self.cond.wait()
                 pkginfo = __iter.next()
             self.cond.release()
@@ -282,7 +282,11 @@ are appended. Once the thread starts, the actual file download begins"""
             raise Exception( "Trying to iterate over a running list" )
         return list.__iter__( self )
 
+    def __nonzero__ ( self ) :
+        if not self.closed :
+            return True
+        return self.index != len(self)
+
     def push ( self , item ) :
-        self.weight += int( item['size'] )
         list.append( self , item )
 
