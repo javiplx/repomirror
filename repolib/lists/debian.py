@@ -1,11 +1,11 @@
 
-__all__ = [ "DebianPackageFile" , "DebianDownloadFile" , "DebianDownloadThread" ]
+__all__ = [ "DebianPackageFile" , "DebianDownloadFile" ]
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 
 import tempfile
 
-from repolib.lists import PackageListInterface , AbstractDownloadList , AbstractDownloadThread
+from repolib.lists import PackageListInterface , AbstractDownloadList
 
 
 def safe_encode ( str ) :
@@ -95,22 +95,4 @@ class DebianDownloadFile ( AbstractDownloadList , PackageFile ) :
         if self.closed :
             raise Exception( "Trying to append into a closed queue" )
         PackageFile.append( self , item )
-
-class DebianDownloadThread ( AbstractDownloadThread , list ) :
- 
-    def __hash__ ( self ) :
-        return AbstractDownloadThread.__hash__( self )
-
-    def __init__ ( self , repo ) :
-        AbstractDownloadThread.__init__( self , repo )
-        list.__init__( self )
-
-    def __iter__ ( self ) :
-        if self.started :
-            raise Exception( "Trying to iterate over a running list" )
-        return list.__iter__( self )
-
-    def push ( self , item ) :
-        self.weight += int( item['size'] )
-        list.append( self , item )
 

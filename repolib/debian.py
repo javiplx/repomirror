@@ -177,7 +177,6 @@ class debian_repository ( repolib.MirrorRepository ) :
         cb( "Subrepos : %s" % " ".join( self.subrepos ) )
 
     def get_download_list( self ) :
-        return DebianDownloadThread( self )
         return DebianDownloadFile( self )
 
 from feed import SimpleComponent , feed_build_repository , packages_build_repository

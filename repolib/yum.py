@@ -106,7 +106,6 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         cb( "Subrepos : %s" % " ".join( self.subrepos ) )
 
     def get_download_list( self ) :
-        return YumDownloadThread( self )
         return YumDownloadFile( self )
 
 class YumComponent ( repolib.MirrorComponent , path_handler ) :

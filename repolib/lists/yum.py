@@ -1,9 +1,9 @@
 
-__all__ = [ "YumPackageFile" , "YumDownloadFile" , "YumDownloadThread" ]
+__all__ = [ "YumPackageFile" , "YumDownloadFile" ]
 
 import tempfile
 
-from repolib.lists import PackageListInterface , AbstractDownloadList , AbstractDownloadThread
+from repolib.lists import PackageListInterface , AbstractDownloadList
 
 
 class PackageFile :
@@ -82,25 +82,6 @@ class YumDownloadFile ( AbstractDownloadList , PackageFile ) :
         if self.closed :
             raise Exception( "Trying to append into a closed queue" )
         PackageFile.append( self , item )
-
-class YumDownloadThread ( AbstractDownloadThread , list ) :
-
-    def __hash__ ( self ) :
-        return AbstractDownloadThread.__hash__( self )
-
-    def __init__ ( self , repo ) :
-        AbstractDownloadThread.__init__( self , repo )
-        list.__init__( self )
-
-    def __iter__ ( self ) :
-        if self.started :
-            raise Exception( "Trying to iterate over a running list" )
-        return list.__iter__( self )
-
-    def push ( self , item ) :
-        self.weight += int( item['size'] )
-        list.append( self , item )
-
 
 # NOTE : YumXMLPackageList is not usable yet
 # NOTE : The xml version seems more attractive, but we cannot use it until
