@@ -76,6 +76,14 @@ from repolib import logger
 import repolib.utils
 
 
+def safe_encode ( str ) :
+    try :
+        out = "%s" % str.encode('utf-8')
+    except UnicodeDecodeError , ex :
+        out = "%s" % str
+    return out
+
+
 class AbstractMethodException ( Exception ) :
 
     def __init__ ( self , source , method ) :

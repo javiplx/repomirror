@@ -3,6 +3,7 @@ __all__ = [ "YumPackageFile" , "YumDownloadFile" ]
 
 import tempfile
 
+from repolib.lists import safe_encode
 from repolib.lists import PackageListInterface , AbstractDownloadList
 
 
@@ -16,6 +17,7 @@ sha256=%(sha256)s
 size=%(size)s
 href=%(href)s
 Filename=%(Filename)s
+provides=%(provlist)s
 
 """
 
@@ -51,6 +53,7 @@ Filename=%(Filename)s
 
     def append ( self , pkg ) :
         self.__cnt += 1
+        pkg['provlist'] = ",".join( map( safe_encode , pkg['provides'] ) )
         self.pkgfd.write( self.out_template % pkg )
 
 class YumPackageFile ( PackageListInterface , PackageFile ) :

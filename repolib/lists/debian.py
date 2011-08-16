@@ -5,15 +5,9 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 
 import tempfile
 
+from repolib.lists import safe_encode
 from repolib.lists import PackageListInterface , AbstractDownloadList
 
-
-def safe_encode ( str ) :
-    try :
-        out = "%s" % str.encode('utf-8')
-    except UnicodeDecodeError , ex :
-        out = "%s" % str
-    return out
 
 # Derived from Deb822.dump()
 def dump_package(deb822 , fd):
