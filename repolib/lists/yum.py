@@ -13,11 +13,14 @@ It is a full implementation of PackageListInterface, but it is not declared
 to avoid inheritance problems"""
 
     out_template = """name=%(name)s
+arch=%(arch)s
 sha256=%(sha256)s
 size=%(size)s
 href=%(href)s
 Filename=%(Filename)s
+group=%(group)s
 provides=%(provlist)s
+requires=%(reqlist)s
 
 """
 
@@ -40,7 +43,11 @@ provides=%(provlist)s
                 _pkg.clear()
             else :
                 k,v = line[:-1].split('=',1)
-                _pkg[k] = v
+                if k in ( "provides" , "requires" ) :
+                  if v :
+                    _pkg[k] = v.split(",")
+                else :
+                  _pkg[k] = v
             line = self.pkgfd.readline()
         if _pkg :
             self.index += 1
@@ -53,7 +60,8 @@ provides=%(provlist)s
 
     def append ( self , pkg ) :
         self.__cnt += 1
-        pkg['provlist'] = ",".join( map( safe_encode , pkg['provides'] ) )
+        pkg['provlist'] = ",".join( map( safe_encode , pkg.get("provides",()) ) )
+        pkg['reqlist'] = ",".join( map( safe_encode , pkg.get("requires",()) ) )
         self.pkgfd.write( self.out_template % pkg )
 
 class YumPackageFile ( PackageListInterface , PackageFile ) :

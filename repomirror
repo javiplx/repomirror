@@ -131,13 +131,11 @@ def do_2nd ( repo , local_repodata ) :
 
   download_pkgs = repo.get_download_list()
   download_pkgs.start()
-  download_size = 0
-  missing_pkgs = []
+  missing_pkgs = {}
 
   for name,subrepo in repo.subrepos.iteritems() :
 
     packages = subrepo.get_metafile( local_repodata )
-    repolib.logger.critical( "INFO is %s" % (packages,) )
 
     if subrepo.mode == "keep" :
         if not isinstance(packages,bool) :
@@ -152,48 +150,20 @@ def do_2nd ( repo , local_repodata ) :
 
     repolib.logger.info( "Scanning %s" % name )
 
-    _pkgs , _missing = subrepo.get_package_list( packages , {} , repo.filters )
-    repolib.logger.critical( "OUTPUT IS %s - %s" % ( _pkgs , len(_missing) ) )
-    download_size += _pkgs.weight
-    download_pkgs.extend( _pkgs )
-    missing_pkgs.extend( _missing )
+    download , missing = subrepo.get_package_list( packages , {} , repo.filters )
+    download_pkgs.extend( download )
+    missing_pkgs.update( dict.fromkeys( missing ) )
 
   if repo.mode == "metadata" :
     return None , None
 
-  _size = download_size / 1024 / 1024
-  if _size > 2048 :
-    repolib.logger.info( "Total size to download : %.1f Gb" % ( _size / 1024 ) )
+  size = download_pkgs.weight / 1024 / 1024
+  if size > 2048 :
+    repolib.logger.info( "Total size to download : %.1f Gb" % ( size / 1024 ) )
   else :
-    repolib.logger.info( "Total size to download : %.1f Mb" % _size )
+    repolib.logger.info( "Total size to download : %.1f Mb" % size )
 
   return download_pkgs , missing_pkgs
-
-
-def do_missing ( download_pkgs , missing_pkgs ) :
-
-    if not missing_pkgs :
-        return
-
-    _missing = {}
-    for pkg in missing_pkgs :
-        _missing[ pkg ] = 1
-
-    found_pkgs = {}
-    for pkg in download_pkgs :
-        # NOTE : We don't break the loop to ensure we get all the available archs
-        if pkg['name'] in _missing.keys() :
-            found_pkgs[ pkg['name'] ] = pkg
-    # FIXME : We are extending with names a list which should hold full packages
-    # NOTE : extending here is safer
-    download_pkgs.extend( found_pkgs.values() )
-
-    missing = []
-    for pkg in _missing.keys() :
-        if not pkg in found_pkgs.keys() :
-            missing.append( pkg )
-    if missing :
-        repolib.logger.warning( "There are %d missing requirements : %s " % ( len(missing) , missing[:5] ) )
 
 
 if __name__ == "__main__" :
@@ -205,9 +175,9 @@ if __name__ == "__main__" :
     download_pkgs , missing_pkgs = do_2nd( repo , local_repodata )
     downloaders.append( download_pkgs )
     if not download_pkgs :
-        repolib.logger.info( "Nothing to download" )
-        sys.exit(0)
-    do_missing( download_pkgs , missing_pkgs )
+        repolib.logger.info( "Nothing to download for %s" % repo )
+    if missing_pkgs :
+        repolib.logger.warning( "There are %d missing requirements : %s " % ( len(missing_pkgs) , missing_pkgs[:5] ) )
     download_pkgs.finish()
 
   for downloader in downloaders :

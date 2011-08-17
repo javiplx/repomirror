@@ -176,86 +176,103 @@ class SimpleComponent ( repolib.MirrorComponent ) :
         # At least for the sample feed, double empty lines are used
         fd.readline()
 
-    def get_package_list ( self , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters , depiter=5 ) :
 
         params = self.params
         params.update( _params )
 
-        all_pkgs = {}
-        all_requires = {}
+        self.included = {}
+        self.required = {}
 
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
-        missing_pkgs = []
 
-        if fd :
-            if 'name' in dir(fd) :
-                fdname = fd.name
-            else :
-                fdname = fd.filename
-            packages = debian_bundle.debian_support.PackageFile( fdname , fd )
+        if 'name' in dir(fd) :
+            fdname = fd.name
+        else :
+            fdname = fd.filename
+        packages = debian_bundle.debian_support.PackageFile( fdname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach
 #         In any case, the real problem is actually checksumming, reconstructiog Release and signing
 
-            repolib.logger.warning( "Scanning available %s packages for minor filters" % self )
-            for pkg in packages :
-                self.forward( fd )
-                pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+        for pkg in packages :
+            self.forward( fd )
+            pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
 
-                # On debian repos, we add this key while writting into PackageList
-                pkginfo['Name'] = pkginfo['Package']
+            # name is used as key to get the package name
+            pkginfo['Name'] = pkginfo['Package']
 
-                # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
-                # SOLUTION : Create a second and separate Category with the last part (filename) of Section
-                # For now, we kept the simplest way
+            # NOTE : Is this actually a good idea ?? It simplifies, but I would like to mirror main/games but not contrib/games, for example
+            # SOLUTION : Create a second and separate Category with the last part (filename) of Section
+            # For now, we kept the simplest way
 # FIXME : Remaining reference to subrepo
-#                if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
-#                    pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
+#            if pkginfo['Section'].find( "%s/" % subrepo[1] ) == 0 :
+#                pkginfo['Section'] = pkginfo['Section'][pkginfo['Section'].find("/")+1:]
 
-                if not self.match_filters( pkginfo , filters ) :
-                    rejected_pkgs.append( pkginfo )
-                    continue
+            if not self.match_filters( pkginfo , filters ) :
+                rejected_pkgs.append( pkginfo )
+                continue
 
-                all_pkgs[ pkginfo['Package'] ] = 1
-                download_pkgs.append( pkginfo )
+            self.handle( pkginfo )
+            download_pkgs.append( pkginfo )
 
-                if pkginfo.has_key( 'Depends' ) :
-                    for deplist in pkginfo['Depends'].split(',') :                            
-                        if not deplist :
-                            continue
+        fd.close()
+        del packages
 
-                        # When we found 'or' in Depends, we will download all of them
-                        for depitem in deplist.split('|') :
-                            # We keep only the package name, more or less safer within a repository
-                            pkgname = depitem.strip().split(None,1)
-                            all_requires[ pkgname[0] ] = 1
+        if not filters :
+            repolib.logger.info( "No filters defined, component assumed as complete" )
+            return download_pkgs , ()
 
-            fd.close()
-            del packages
+        if not self.required :
+            repolib.logger.info( "No pending requirement" )
+            return download_pkgs , ()
 
-            if filters :
+        if not rejected_pkgs :
 
-              for pkginfo in rejected_pkgs :
+            if self.required :
+                repolib.logger.warning( "No candidates to fill missing dependencies" )
 
-                # FIXME : We made no attempt to go into a full depenceny loop
-                if all_requires.has_key( pkginfo['Package'] ) :
-                    all_pkgs[ pkginfo['Package'] ] = 1
-                    download_pkgs.append( pkginfo )
+        else :
 
-                    if pkginfo.has_key( 'Depends' ) :
-                        for deplist in pkginfo['Depends'].split(',') :                            
-                            # When we found 'or' in Depends, we will download all of them
-                            for depitem in deplist.split('|') :
-                                # We keep only the package name, more or less safer within a repository
-                                pkgname = depitem.strip().split(None,1)
-                                all_requires[ pkgname[0] ] = 1
+            repolib.logger.info( "Scanning %s for dependencies" % self )
+            for iter in range(depiter) :
+                found = 0
+                for pkginfo in rejected_pkgs :
+                    if self.required.has_key( pkginfo['Package'] ) :
+                        found += 1
+                        self.handle( pkginfo )
+                        download_pkgs.append( pkginfo )
+                if len(self.required) == 0 or found == 0 :
+                    break
 
-              for pkgname in all_requires.keys() :
-                if not all_pkgs.has_key( pkgname ) :
+        missing_pkgs = []
+
+        if self.required :
+            repolib.logger.info( "There are %s missing dependencies within %s" % ( len(self.required) , self ) )
+            for pkgname in self.required.keys() :
+                if not self.included.has_key( pkgname ) :
                     missing_pkgs.append( pkgname )
 
         return download_pkgs , missing_pkgs
 
+    def handle ( self , pkg ) :
+
+        self.included[ pkg['Package'] ] = 1
+        if self.required.has_key( pkg['Package'] ) :
+            self.required.pop( pkg['Package'] )
+
+        for provides in pkg.get('Provides',"").split(',') :
+            self.included[ provides ] = 1
+            if self.required.has_key( provides ) :
+                self.required.pop( provides )
+
+        for deplist in pkg.get('Depends',"").split(',') :
+            if deplist :
+                # NOTE : When we found 'or' in Depends, all get included
+                for depitem in deplist.split('|') :
+                    pkgname = depitem.strip().split()[0]
+                    if pkgname and not self.included.has_key( pkgname ) :
+                        self.required[ pkgname ] = 1
 

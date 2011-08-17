@@ -120,7 +120,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         return path
 
     def match_filters( self , pkginfo , filters ) :
-        if filters.has_key('groups') and pkginfo.has_key('groups') and pkginfo['group'] not in filters['groups'] :
+        if filters.has_key('groups') and pkginfo.has_key('group') and pkginfo['group'] not in filters['groups'] :
             return False
         return True
 
@@ -191,108 +191,104 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     def pkg_list( self ) :
         return YumPackageFile()
 
-    def get_package_list ( self , local_repodata , _params , filters ) :
+    def get_package_list ( self , local_repodata , _params , filters , depiter=5 ) :
 
         params = self.params
         params.update( _params )
 
+        self.included = {}
+        self.required = {}
+
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
-        missing_pkgs = []
 
         fd = gzip.open( local_repodata[0] )
         packages = xml_package_list( fd )
     
-        all_pkgs = {}
-        providers = {}
-
-        repolib.logger.warning( "Scanning available %s packages for minor filters" % self )
         for pkginfo in packages :
-    
-# FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
-#         Solution : Disable filtering on first approach
-#         In any case, the real problem is actually checksumming, reconstructiog Release and signing
-    
+
+            if pkginfo['name'] not in pkginfo['provides'] :
+                repolib.logger.warning( "Bad provides on '%s' : %s" % ( pkginfo['name'] , pkginfo['provides'] ) )
+                pkginfo['provides'].append( pkginfo['name'] )
+
+            pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
+
             if not self.match_filters( pkginfo , filters ) :
                 rejected_pkgs.append( pkginfo )
                 continue
 
-            all_pkgs[ pkginfo['name'] ] = 1
-            pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
+            self.handle( pkginfo )
             download_pkgs.append( pkginfo )
 
-            if pkginfo.has_key( 'requires' ) :
-                for pkg in pkginfo['requires'] :
-                    providers[ pkg ] = 1
-
+        fd.close()
         del packages
 
-        if filters :
+        if not filters :
+            repolib.logger.info( "No filters defined, component assumed as complete" )
+            return download_pkgs , ()
 
-          filesfd = gzip.open( local_repodata[1] )
+        if not self.required :
+            repolib.logger.info( "No pending requirement" )
+            return download_pkgs , ()
 
-          # NOTE : We run over the filelists content, marking package owners for later addition
-          repolib.logger.info( "Scanning filelists.xml for file dependencies" )
-          files = xml_files_list( filesfd )
-          for fileinfo in files :
+        # NOTE : run over filelists content, marking owners for inclusion
+        #        expensive, lots of paths in dependencies and only a few cleaned
+        repolib.logger.info( "Scanning filelists.xml for file providers" )
+        filesfd = gzip.open( local_repodata[1] )
+
+        files = xml_files_list( filesfd )
+        for fileinfo in files :
             if not fileinfo.has_key( 'file' ) : continue
-            pkg = fileinfo[ 'name' ]
-            # There are multiple packages providing the same item, so we cannot break on matches
-            for file in fileinfo[ 'file' ] :
-                if providers.has_key( file ) :
-                    providers[ pkg ] = 1
+            # NOTE : some paths are provided by multiple packages, so no break
+            for path in fileinfo['file'] :
+                if self.required.has_key( path ) :
+                    self.required[ fileinfo['name'] ] = 1
+                    self.required.pop( path )
     
-          filesfd.close()
+        filesfd.close()
         
-          repolib.logger.info( "Searching for missing dependencies" )
-          for pkginfo in rejected_pkgs :
-        
-            # NOTE : There are some cases of packages requiring themselves, so we cannot jump to next
-            #if all_pkgs.has_key( pkginfo['name'] ) :
-            #    continue
+        if not rejected_pkgs :
 
-            if providers.has_key( pkginfo['name'] ) :
-                all_pkgs[ pkginfo['name'] ] = 1
-                pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
-                download_pkgs.append( pkginfo )
-                providers.pop( pkginfo['name'] )
+            if self.required :
+                repolib.logger.warning( "No candidates to fill missing dependencies" )
 
-            elif pkginfo.has_key( 'provides' ) :
-                for pkg in pkginfo['provides'] :
-                    # There are multiple packages providing the same item, so we cannot break on matches
+        else :
 
-                    # FIXME : We made no attempt to go into a full depenceny loop
-                    if providers.has_key( pkg ) :
-                    
-                        all_pkgs[ pkginfo['name'] ] = 1
-                        pkginfo['Filename'] = os.path.join( self.metadata_path(True) , pkginfo['href'] )
-                        download_pkgs.append( pkginfo )
+            repolib.logger.info( "Scanning %s for dependencies" % self )
+            for iter in range(depiter) :
+                found = 0
+                for pkginfo in rejected_pkgs :
+                    for pkgname in pkginfo['provides'] :
+                        if self.required.has_key( pkginfo['name'] ) :
+                            found += 1
+                            self.handle( pkginfo )
+                            download_pkgs.append( pkginfo )
+                            break
+                if len(self.required) == 0 or found == 0 :
+                    break
 
-#                        if pkginfo.has_key( 'requires' ) :
-#                            for reqpkg in pkginfo['requires'] :
-#                                providers[ reqpkg ] = 1
+        missing_pkgs = []
 
-          # Rewind file
-          fd.seek(0)
-
-          repolib.logger.info( "Running to filter out fixed dependencies" )
-          packages = xml_package_list( fd )
-          for pkginfo in packages :
-            if not all_pkgs.has_key( pkginfo['name'] ) :
-                continue
-            if pkginfo.has_key( 'provides' ) :
-                for pkg in pkginfo['provides'] :
-                    if providers.has_key( pkg ) :
-                        providers.pop( pkg )
-          del packages
-
-          for pkgname in providers.keys() :
-            if not all_pkgs.has_key( pkgname ) :
-                missing_pkgs.append( pkgname )
-
-        fd.close()
+        if self.required :
+            repolib.logger.info( "There are %s missing dependencies within %s" % ( len(self.required) , self ) )
+            for pkgname in self.required.keys() :
+                if not self.included.has_key( pkgname ) :
+                    missing_pkgs.append( pkgname )
 
         return download_pkgs , missing_pkgs
+
+    def handle ( self , pkg ) :
+
+        # NOTE : pkg name in provides, skipping explicit inclusion/exclusion
+
+        for provides in pkg['provides'] :
+            self.included[ provides ] = 1
+            if self.required.has_key( provides ) :
+                self.required.pop( provides )
+
+        for pkgname in pkg.get('requires',()) :
+            if not self.included.has_key( pkgname ) :
+                self.required[ pkgname ] = 1
 
 class fedora_repository ( yum_repository ) :
 

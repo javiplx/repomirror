@@ -262,7 +262,7 @@ that the current copy is ok.
     def match_filters( self , pkginfo , filters ) :
         raise Exception( "Calling an abstract method" )
 
-    def get_package_list ( self , fd , _params , filters ) :
+    def get_package_list ( self , fd , _params , filters , depiter=5 ) :
         raise Exception( "Calling an abstract method" )
 
     def verify( self , filename , _name , release , params ) :

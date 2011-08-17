@@ -33,19 +33,15 @@ be avoided specifying SKIP_CKSUM for those cases where the absence of valid chec
 globally fixed.
 """
 
-    checksums = map( lambda x : x.lower() , item.keys() )
+    keysout = ( "name" , "href" , "filename" , "arch" ,
+                "sha256" ,
+                "group" , "provides" , "requires" )
 
-    # Remove file name, unrelated to checksum types
-    name = False
-    for key in ( "href" , "name" ) : # What about removing also filename ?
-                                     # and others as in
-# WARNING : Unknonw checksum types available for file : ['sha256', 'filename', 'name']
-        if item.has_key( key ) :
-            name = item[key]
-            checksums.remove( key )
-            break
-    else :
-        name = os.path.basename(filename)
+    checksums = filter( lambda x : x not in keysout ,
+                        map( lambda x : x.lower() , item.keys() )
+                        )
+
+    name = os.path.basename(filename)
 
     if skip_check == ( SKIP_SIZE | SKIP_CKSUM ) :
         logger.warning( "No check selected for '%s'" % name )
@@ -57,21 +53,23 @@ globally fixed.
             logger.warning( "Bad size on file '%s'" % name )
             return False
         res = True
-        checksums.remove( "size" )
+    checksums.remove( "size" )
 
     # Policy is to verify all the available checksums
     if not ( skip_check & SKIP_CKSUM ) :
         res = None
-        for type in cksum_handles.keys() :
-            if item.has_key( type ) :
-                if cksum_handles[type]( filename , bsize ) == item[type] :
+        if not checksums :
+            logger.warning( "No checksum defined for %s" % item['name'] )
+        for cktype in cksum_handles.keys() :
+            if item.has_key( cktype ) :
+                if cksum_handles[cktype]( filename , bsize ) == item[cktype] :
                     res = True
                 else :
-                    logger.warning( "Bad %s checksum '%s'" % ( type , name ) )
+                    logger.warning( "Bad %s checksum '%s'" % ( cktype , name ) )
                     return False
 
         if res is None :
-            logger.warning( "Unknonw checksum types available for file : %s" % checksums )
+            logger.warning( "Unknown checksum types available for %s : %s" % ( item['name'] , checksums ) )
 
     return res
 
