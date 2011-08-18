@@ -256,6 +256,11 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
     def run(self):
         """Main thread loop. Runs over the item list, downloading every file"""
 
+        # NOTE : protect against race condition under empty lists
+        self.cond.acquire()
+        if len(self) == 0 :
+            self.cond.wait()
+        self.cond.release()
         pkginfo = None
         __iter = self.__iter__()
         self.started = True
@@ -264,8 +269,8 @@ class AbstractDownloadThread ( DownloadListInterface , threading.Thread ) :
             if not self :
                 break
             elif self.started :
-                # NOTE : protect against race condition under empty lists
-                if not __iter :
+                # NOTE : protect against StopIteration on open lists
+                if self.index == len(self) :
                     self.cond.wait()
                 pkginfo = __iter.next()
             self.cond.release()
