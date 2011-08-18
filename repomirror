@@ -154,9 +154,6 @@ def do_2nd ( repo , local_repodata ) :
     download_pkgs.extend( download )
     missing_pkgs.update( dict.fromkeys( missing ) )
 
-  if repo.mode == "metadata" :
-    return None , None
-
   size = download_pkgs.weight / 1024 / 1024
   if size > 2048 :
     repolib.logger.info( "Total size to download : %.1f Gb" % ( size / 1024 ) )
