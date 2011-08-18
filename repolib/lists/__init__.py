@@ -52,12 +52,6 @@ Derived classes must only implement __iter__() method, and a push() method
 that is used as interface to access to the actual append() method on underlying
 list object. Depending on the type of the backed storage object, it could be
 required to implement a __hash__() method, requires by threading module.
-NOTE :
-There is a race condition triggered if the object is empty when start() is
-called. The only safe way found to avoid the issue is to check the internal
-iterator before extracting items and waiting if empty, so the object returned
-by the __iter__() method of AbstractDownloadThread derived classes must
-be evaluable in boolean context, which usually needs a __nonzero__ method.
 
 
 AbstractDownloadList
