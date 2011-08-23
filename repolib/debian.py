@@ -231,7 +231,8 @@ class DebianComponent ( SimpleComponent ) :
 
         release = debian_bundle.deb822.Release( sequence=open( masterfile ) )
 
-        if self.mode == "init" :
+        if self.mode in ( "init" , "metadata" ) :
+          # NOTE : ubuntu has no Release file on installer components
           _name = "%sRelease" % self.metadata_path()
           localname = os.path.join( self.repo_path() , _name )
 
