@@ -12,8 +12,7 @@
 
 
 from cache import *
-
-import urllib2
+from repolib import utils
 
 
 def handler ( req ) :
@@ -27,7 +26,7 @@ def handler ( req ) :
 
     if req.used_path_info :
         local_path += req.path_info
-        remote_url = urllib2.urlparse.urljoin( remote_url , subpath + req.path_info )
+        remote_url = utils.urljoin( remote_url , subpath + req.path_info )
 
     return get_file( req , local_path , remote_url )
 

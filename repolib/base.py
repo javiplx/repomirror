@@ -6,8 +6,6 @@ import tempfile
 import shutil , errno
 import stat
 
-import urllib2
-
 
 import repolib
 import utils
@@ -79,16 +77,7 @@ class _mirror ( _repository ) :
         else :
             fname = local
             handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-        try:
-            response = urllib2.urlopen( remote )
-            data = response.read(256)
-            while data :
-                os.write(handle, data)
-                data = response.read(256)
-            os.close(handle)
-        except Exception ,ex :
-            repolib.logger.error( "Exception : %s" % ex )
-            os.close(handle)
+        if not utils.download( remote , handle ) :
             os.unlink(fname)
             return False
         return fname

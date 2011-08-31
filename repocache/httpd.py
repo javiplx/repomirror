@@ -21,7 +21,8 @@ try :
 except :
     import apcompat as apache
 
-import os , urllib2
+import os
+from repolib import utils
 
 
 server_conf = { 
@@ -57,7 +58,7 @@ class Handler ( BaseHTTPRequestHandler ) :
             remote_url += "/"
             req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
 
-        remote_url = urllib2.urlparse.urljoin( remote_url , uri )
+        remote_url = utils.urljoin( remote_url , uri )
 
         retcode = get_file( self , local_path , remote_url )
 

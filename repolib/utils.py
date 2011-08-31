@@ -19,6 +19,36 @@ def unsplit ( scheme , server , path ) :
     urltuple = ( scheme , server , path , None , None )
     return urllib2.urlparse.urlunsplit( urltuple )
 
+# Thanks to http://stackoverflow.com/questions/107405/how-do-you-send-a-head-http-request-in-python/2070916#2070916
+class download_head ( urllib2.Request ) :
+    def get_method(self):
+        return "HEAD"
+
+def download ( remote , handle=None , request=None ) :
+    response = False
+    try:
+        response = urllib2.urlopen( remote )
+
+        if handle :
+            while True:
+                buffer = response.read(512)
+                if not buffer:
+                    break
+                os.write(handle,buffer)
+                if request : request.write(buffer)
+            os.close(handle)
+
+    except Exception , ex :
+        if request :
+            request.log_error( "Exception : %s" % ex )
+        else :
+            logger.error( "Exception : %s" % ex )
+
+    if response :
+        response.close()
+
+    return response
+
 
 SKIP_NONE = 0
 SKIP_SIZE = 1

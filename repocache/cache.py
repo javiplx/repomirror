@@ -16,8 +16,8 @@ try :
 except :
     import apcompat as apache
 
-import urllib2
 import os
+from repolib import utils
 
 
 def get_file ( req , local_path , remote_url ) :
@@ -32,35 +32,20 @@ def get_file ( req , local_path , remote_url ) :
 
     if not os.path.exists( local_path ) :
         try :
-            req.log_error( "Downloading %s" % remote_url , apache.APLOG_INFO )
-            remote = urllib2.urlopen( remote_url )
-        except Exception , ex :
-            req.log_error( "Cannot download remote %s : %s" % ( remote_url , ex ) )
-            return apache.HTTP_NOT_FOUND
-        try :
             local = open( local_path , 'wb' )
         except Exception , ex :
             req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
             return apache.HTTP_NOT_FOUND
+        req.log_error( "Downloading %s" % remote_url , apache.APLOG_INFO )
+        remote = utils.download( remote_url , local , req )
+        if not remote :
+            req.log_error( "Cannot download remote %s" % remote_url )
+            return apache.HTTP_NOT_FOUND
 
-        # Block from http://stackoverflow.com/questions/22676/how-do-i-download-a-file-over-http-using-python
         file_size = int( remote.info().getheaders("Content-Length")[0] )
         if 'content-type' in remote.info().keys() :
             req.content_type = remote.info().getheader('Content-Type')
 
-        file_size_dl = 0
-        block_sz = 8192
-        while True:
-            buffer = remote.read(block_sz)
-            if not buffer:
-                break
-
-            file_size_dl += block_sz
-            local.write(buffer)
-            req.write(buffer)
-
-        remote.close()
-        local.close()
     else :
         req.sendfile(local_path)
 

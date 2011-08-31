@@ -21,9 +21,9 @@ import debian_bundle.deb822 , debian_bundle.debian_support
 import repolib.lists.debian
 from repolib.config import read_build_config
 from repolib.debian import debian_component_repository
+from repolib import utils
 
 import os , sys , platform
-import urllib2
 
 
 import optparse
@@ -78,13 +78,6 @@ def buildname ( pkg ) :
 
 
 
-# Thanks to http://stackoverflow.com/questions/107405/how-do-you-send-a-head-http-request-in-python/2070916#2070916
-class HeadRequest ( urllib2.Request ) :
-    def get_method(self):
-        return "HEAD"
-
-
-
 def main ( all_sources ) :
 
     parser = option_parser()
@@ -131,14 +124,14 @@ def main ( all_sources ) :
           path = buildpath( pkginfo , compname )
           for repo,(name,baseurl) in sources.items() :
 
-            filepath = urllib2.urlparse.urljoin( name , path )
-            pkginfo['Filename'] = urllib2.urlparse.urljoin( filepath , filename )
+            filepath = utils.urljoin( name , path )
+            pkginfo['Filename'] = utils.urljoin( filepath , filename )
             if pkginfo.has_key('Conffiles') : pkginfo.pop('Conffiles')
 
-            try :
-                url = urllib2.urlparse.urljoin( baseurl , pkginfo['Filename'] )
-                request = HeadRequest( url )
-                response = urllib2.urlopen( request )
+            url = utils.urljoin( baseurl , pkginfo['Filename'] )
+            request = utils.download_head( url )
+            response = utils.download( request )
+            if response :
                 if compname not in newrepo.components :
                     repolib.logger.info( "Adding component %s/%s" % ( opts.architecture , compname ) )
                     newrepo.components.append( compname )
@@ -148,10 +141,6 @@ def main ( all_sources ) :
                 for pkgsfile in newrepo.feeds[pos].outchannels :
                     repolib.lists.debian.dump_package( pkginfo , pkgsfile )
                 break
-            except urllib2.URLError , ex :
-                pass
-            except urllib2.HTTPError , ex :
-                pass
           else :
             compname = ""
           if compname :
