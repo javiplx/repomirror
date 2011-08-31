@@ -180,6 +180,9 @@ class AbstractDownloadList ( DownloadListInterface ) :
         for pkg in self :
             self.started = True
             self.download_pkg( pkg )
+        # If list is empty, is never set
+        if not self.started :
+            self.started = True
         self.closed = True
 
     def join ( self ) :

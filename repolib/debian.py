@@ -32,6 +32,10 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Not strictly required, but kept as member for convenience
         self.release = os.path.join( self.metadata_path() , "Release" )
 
+    def __str__ ( self ) :
+        # FIXME : consider suite, codename or real version, maybe coming from Release
+        return self.version
+
     def repo_path ( self ) :
         if self.subdir :
             return os.path.join( self.destdir , self.subdir )

@@ -110,6 +110,12 @@ class MirrorRepository ( _mirror ) :
 	_mirror.__init__( self , config )
         self.subrepos = {}
 
+    def __str__ ( self ) :
+        name = self.name
+        if self.name != self.version :
+            name += " %s" % self.version
+        return name
+
     def set_mode ( self , mode ) :
         for subrepo in self.subrepos.values() :
             subrepo.mode = mode

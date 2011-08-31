@@ -297,6 +297,9 @@ class fedora_repository ( yum_repository ) :
     def base_url_extend ( self ) :
         return "releases/%s/Fedora/" % self.version
 
+    def __str__ ( self ) :
+        return "fedora %s" % self.version
+
 class FedoraComponent ( YumComponent ) :
 
     def path_prefix ( self ) :
@@ -312,6 +315,9 @@ class fedora_update_repository ( yum_repository ) :
     def base_url_extend ( self ) :
         return "updates/%s/" % self.version
 
+    def __str__ ( self ) :
+        return "fedora update %s" % self.version
+
 class FedoraUpdateComponent ( YumComponent ) :
 
     def path_prefix ( self ) :
@@ -324,6 +330,9 @@ class centos_repository ( yum_repository ) :
     def base_url_extend ( self ) :
         return "%s/" % self.version
 
+    def __str__ ( self ) :
+        return "centos %s" % self.version
+
 class CentosComponent ( YumComponent ) :
 
     def path_prefix ( self ) :
@@ -335,6 +344,9 @@ class centos_update_repository ( yum_repository ) :
 
     def base_url_extend ( self ) :
         return "%s/updates/" % self.version
+
+    def __str__ ( self ) :
+        return "centos update %s" % self.version
 
 class CentosUpdateComponent ( YumComponent ) :
 
