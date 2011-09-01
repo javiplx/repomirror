@@ -5,8 +5,6 @@
 
 * Extend with yum-1.x(rhn?) type
 
-* Encapsulate download exceptions, and move file download to submodule
-
 * Implement proper iterators on DownloadList
 
 * Improve check mode by actually downloading the new subrepo metadata and extracting differences

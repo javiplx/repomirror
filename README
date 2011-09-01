@@ -1,0 +1,28 @@
+
+repomirror is a set of tools intended to manage linux repositories. Handles
+the most common package formats (deb/opk, rpm) and repositories (apt, yum).
+Is able to partially import external repositories, as well as build custom
+repositories, either with local packages or using packages coming from an
+external source.
+
+Configuration files are ini style, and the two primary commands are in charge
+of syncing local repository (repomirror) and build required metadata files to
+construct an exportable repository (buildrepo). Detailed documentation is
+available at the docs directory.
+
+Tested with Debian/Ubuntu, Fedora, CentOS, openSUSE and OpenWrt feeds.
+
+
+Advanced functionality
+----------------------
+
+Although not completelly polished, besides simple mirroring some advanced
+functionality is provided, by mean of different bundled tools
+
+checkmirror - a simple repository update check, usable as nagios plugin
+
+buildlive - tries to construct a repository to fully reproduce packages
+    installed in a live server (debian only)
+
+snapshots - allows creation of snapshots of mirrored repositories
+
