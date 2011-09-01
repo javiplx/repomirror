@@ -369,9 +369,6 @@ class debian_build_apt ( repolib.BuildRepository ) :
         if config['components'] != ["-"] :
             self.components.extend( config['components'] )
 
-	if config.get( "force" ) :
-            os.mkdir( self.repo_path() )
-
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 

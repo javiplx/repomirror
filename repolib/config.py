@@ -190,7 +190,7 @@ def read_mirror_config ( repo_name ) :
     return MirrorConf( repo_name , config , get_file( repo_name , conffiles ) )
 
 
-def get_all_configs ( key=None , value=None ) :
+def get_all_mirror_configs ( key=None , value=None ) :
 
     conffiles = [ mirrorconf ]
     conffiles.extend( glob.glob( os.path.join( mirrordir , "*.conf" ) ) )
@@ -221,6 +221,18 @@ class BuildConf ( RepoConf ) :
         if config.has_option( self.name , "extensions" ) :
             self['extensions'] = map ( lambda s : ".%s" % s.lstrip('.') , config.get( self.name , "extensions" ).split() )
 
+    def read ( self , config ) :
+
+        RepoConf.read( self , config )
+
+        self['source'] = None
+        self['force'] = False
+
+        if config.has_option( self.name , "force" ) :
+            self['force'] = True
+
+        if config.has_option( self.name , "source" ) :
+            self['source'] = config.get( self.name , "source" )
 
 def read_build_config ( repo_name , confdata=None ) :
 
@@ -262,7 +274,7 @@ def get_all_build_repos ( key=None , value=None ) :
 if __name__ == "__main__" :
     print get_all_build_repos()
     print 
-    print get_all_configs()
+    print get_all_mirror_configs()
     print 
-    print get_all_configs( 'type' , 'deb' )
+    print get_all_mirror_configs( 'type' , 'deb' )
 

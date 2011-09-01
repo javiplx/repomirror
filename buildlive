@@ -98,7 +98,7 @@ def main ( all_sources ) :
     sources = all_sources[opts.breed]
 
     try :
-        config = { 'type':"apt" , 'version':opts.repo_version ,
+        config = { 'force':True , 'type':"apt" , 'version':opts.repo_version ,
                    'architectures':opts.architecture , 'components':"-" }
         newrepo = repolib.BuildRepository.new( repo_name , config )
     except Exception , ex :

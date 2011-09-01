@@ -1,0 +1,77 @@
+#!/usr/bin/python
+
+# Copyright (C) 2011 Javier Palacios
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2
+# as published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+
+
+__version__ = "1.0"
+
+__usage__ = """%prog reponame snapshotname"""
+
+
+import sys
+
+import repolib
+
+
+import optparse
+
+def option_parser () :
+    version_string = "%%prog %s" % __version__
+    parser = optparse.OptionParser( usage=__usage__ , version=version_string )
+
+    parser.add_option( "--quiet" , action="store_true" ,
+        help="Issue only critical messages" )
+    parser.add_option( "--verbose" , action="store_true" ,
+        help="Run in descriptive mode" )
+
+    return parser
+
+
+def main () :
+
+    parser = option_parser()
+    opts , args = parser.parse_args()
+
+    if len(args) != 2 :
+        parser.print_help()
+        sys.exit(1)
+
+    if opts.verbose and opts.quiet :
+        repolib.logger.warning( "Specified verbose and quiet simultaneously, switching to quiet" )
+
+    if opts.verbose :
+        repolib.logger.setLevel( repolib.logging.INFO )
+    if opts.quiet :
+        repolib.logger.setLevel( repolib.logging.ERROR )
+
+    try :
+        repo = repolib.MirrorRepository.new( args[0] )
+        repo.set_mode( "keep" )
+    except Exception , ex :
+        repolib.logger.error( "Repo %s : %s" % ( args[0] , ex ) )
+        sys.exit(-1)
+
+    try :
+        config = { 'type':"snapshot" , 'version':repo.version ,
+                   'architectures':" ".join(repo.architectures) , 'source':repo.name }
+        snapshot = repolib.BuildRepository.new( args[1] , config )
+    except Exception , ex :
+        repolib.logger.error( "Snapshot %s : %s" % ( args[0] , ex ) )
+        sys.exit(-1)
+
+    snapshot.build()
+
+
+if __name__ == "__main__" :
+
+    main()
+

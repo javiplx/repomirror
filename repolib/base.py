@@ -1,5 +1,5 @@
 
-__all__ = [ 'MirrorRepository' , 'MirrorComponent' , 'BuildRepository' ]
+__all__ = [ 'MirrorRepository' , 'MirrorComponent' , 'BuildRepository' , 'snapshot_build_repository' ]
 
 import os
 import tempfile
@@ -276,7 +276,6 @@ class BuildRepository ( _repository ) :
             if not isinstance(input,dict) :
                 raise Exception( "Given '%s' object, only dictionaries allowed" % input.__class__.__name__ )
             _config = repolib.config.read_build_config( name , input )
-            _config['force'] = True
         else :
             _config = repolib.config.read_build_config( name )
         if _config['type'] == "deb" :
@@ -287,6 +286,8 @@ class BuildRepository ( _repository ) :
             return repolib.feed_build_repository( _config , name )
         elif _config['type'] == "yum" :
             return repolib.yum_build_repository( _config , name )
+        elif _config['type'] == "snapshot" :
+            return repolib.snapshot_build_repository( _config , name )
         else :
             raise Exception( "Unknown repository build type '%s'" % _config['type'] )
     new = staticmethod( new )
@@ -295,10 +296,52 @@ class BuildRepository ( _repository ) :
         _repository.__init__( self , config )
         self.name = name
         self.detached = config['detached']
+        self.source = config['source']
+        self.force = config['force']
 
     def repo_path ( self ) :
         if self.detached :
             return self.destdir
         return os.path.join( self.destdir , self.name )
 
+
+class snapshot_build_repository ( BuildRepository ) :
+
+    valid_extensions = ( ".opk" , ".ipk" )
+
+    def __init__ ( self , config , name ) :
+        BuildRepository.__init__( self , config , name )
+
+	if self.source :
+            if os.path.isdir( self.repo_path() ) :
+                raise Exception( "Snapshot destination directory '%s' already dexists" % self.repo_path() )
+
+	if self.force :
+            os.mkdir( self.repo_path() )
+
+    def build ( self ) :
+        source = repolib.MirrorRepository.new( self.source )
+        source.set_mode( "keep" )
+
+        if isinstance(source,repolib.yum_repository) and len(source.architectures) > 1 :
+            repolib.logger.critical( "Snapshots not supported on yum repos with multiple architectures" )
+            return
+
+        if not source.sign_ext or not source.params['usegpg'] :
+            repolib.logger.critical( "Snapshots not supported for unsigned repositories" )
+            return
+
+        meta_files = source.get_metafile()
+        if meta_files.values().count( True ) != len(meta_files) :
+            for file in set(meta_files.values()) :
+                if not isinstance(file,bool) :
+                    os.unlink( file )
+            raise Exception( "Source repository '%s' is not up to date" % self.source )
+
+        src = os.path.join( source.repo_path() , source.metadata_path() )
+        # FIXME : subtle bug?? Yum repositories metadata comes with trailing slash
+        dst = os.path.join( self.repo_path() , source.metadata_path().rstrip('/') )
+
+        os.makedirs( os.path.dirname(dst) )
+        shutil.copytree( src , dst )
 

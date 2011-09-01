@@ -18,7 +18,7 @@ source_url = {}
 
 
 def load_confs () :
-    for repo in config.get_all_configs( 'type' , 'deb' ) :
+    for repo in config.get_all_mirror_configs( 'type' , 'deb' ) :
         source_url[ repo.name ] = repo['url']
 
 

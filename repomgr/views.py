@@ -1,7 +1,7 @@
 
 from django.shortcuts import render_to_response
 
-from repolib.config import read_mirror_config , get_all_configs
+from repolib.config import read_mirror_config , get_all_mirror_configs
 
 from django.http import HttpResponse
 
@@ -12,7 +12,7 @@ def index ( request ) :
 
     keylist =  ( 'type' , 'url' , 'version' , 'architectures' )
     repos = []
-    for repo in get_all_configs() :
+    for repo in get_all_mirror_configs() :
         repodesc = { 'name':repo.name , 'values':[] }
         for key in keylist :
             repodesc['values'].append( repo[key] )
