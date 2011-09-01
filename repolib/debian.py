@@ -30,7 +30,10 @@ class debian_repository ( repolib.MirrorRepository ) :
                 self.subrepos.update( { str(subrepo) : subrepo } )
 
         # Not strictly required, but kept as member for convenience
-        self.release = os.path.join( self.metadata_path() , "Release" )
+        self.repomd = os.path.join( self.metadata_path() , "Release" )
+
+        for subrepo in self.subrepos.values() :
+            subrepo.repomd = os.path.join( subrepo.metadata_path() , "Release" )
 
     def __str__ ( self ) :
         # FIXME : consider suite, codename or real version, maybe coming from Release
@@ -58,7 +61,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         params = self.params
         if _params : params.update( _params )
 
-        release_file = repolib.MirrorRepository.get_metafile( self , self.release , params )
+        release_file = repolib.MirrorRepository.get_metafile( self , self.repomd , params )
 
         if not release_file :
             repolib.logger.error( "Metadata for '%s' not found" % self.version )
@@ -146,7 +149,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         if self.mode == "keep" and tempfile is not True :
             return self.__subrepo_dict( tempfile )
 
-        local = os.path.join( self.repo_path() , self.release )
+        local = os.path.join( self.repo_path() , self.repomd )
 
         if not isinstance(tempfile,bool) and not os.path.exists( local ) :
 
@@ -161,7 +164,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         release_file = set(metafile.values()).pop()
         if release_file is True :
-            release_file = os.path.join( self.repo_path() , self.release )
+            release_file = os.path.join( self.repo_path() , self.repomd )
         release = debian_bundle.deb822.Release( sequence=open( release_file ) )
 
         # Some Release files hold no 'version' information
@@ -237,8 +240,7 @@ class DebianComponent ( SimpleComponent ) :
 
         if self.mode in ( "init" , "metadata" ) :
           # NOTE : ubuntu has no Release file on installer components
-          _name = "%sRelease" % self.metadata_path()
-          localname = os.path.join( self.repo_path() , _name )
+          localname = os.path.join( self.repo_path() , self.repomd )
 
           if os.path.isfile( localname ) :
             _name = "%sRelease" % self.metadata_path(True)

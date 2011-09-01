@@ -40,9 +40,9 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
             self.subrepos.update( { str(subrepo) : subrepo } )
-        self.repomd = {}
-        for name,subrepo in self.subrepos.iteritems() :
-            self.repomd[name] = os.path.join( subrepo.metadata_path() , "repomd.xml" )
+
+        for subrepo in self.subrepos.values() :
+            subrepo.repomd = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.version )
@@ -63,8 +63,8 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
       repomd = {}
 
-      for subrepo in self.subrepos :
-        metafile = repolib.MirrorRepository.get_metafile( self , self.repomd[subrepo] , params )
+      for subrepo in self.subrepos.values() :
+        metafile = repolib.MirrorRepository.get_metafile( self , subrepo.repomd , params )
 
         if not metafile :
             repolib.logger.error( "Metadata for '%s-%s' not found" % ( subrepo , self.version ) )
@@ -86,17 +86,17 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
         local = {}
 
-        for name,subrepo in self.subrepos.iteritems() :
-          if self.mode == "keep" and metafiles[name] is not True :
-            local[name] = metafiles[name]
-          else :
-            repomd = os.path.join( subrepo.repo_path() , self.repomd[name] )
-            if not isinstance(metafiles[name],bool) and not os.path.exists( repomd ) :
-                    self.safe_rename( metafiles[name] , repomd )
+        for subrepo in self.subrepos.values() :
+            if self.mode == "keep" and metafiles[subrepo] is not True :
+                local[subrepo] = metafiles[subrepo]
+            else :
+                repomd = os.path.join( subrepo.repo_path() , subrepo.repomd )
+                if not isinstance(metafiles[subrepo],bool) and not os.path.exists( repomd ) :
+                    self.safe_rename( metafiles[subrepo] , repomd )
                     if self.sign_ext and not os.path.exists( repomd + self.sign_ext ) :
-                        self.safe_rename( metafiles[name] + self.sign_ext , repomd + self.sign_ext )
+                        self.safe_rename( metafiles[subrepo] + self.sign_ext , repomd + self.sign_ext )
 
-            local[name] = repomd
+                local[subrepo] = repomd
 
         return local
 
@@ -135,7 +135,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
         params = self.params
         if _params : params.update( _params )
 
-        masterfile = metafile[str(self)]
+        masterfile = metafile[self]
 
         if isinstance(masterfile,bool) :
             raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )

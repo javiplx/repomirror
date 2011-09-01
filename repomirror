@@ -114,6 +114,7 @@ def do_1st ( repo ) :
   meta_files = repo.get_metafile()
 
   if meta_files.values().count( False ) == len(meta_files) :
+    # FIXME : why not clean temporaries from meta_files
     return False
 
   # After verify all the mirroring parameters, it is safe to create directory tree

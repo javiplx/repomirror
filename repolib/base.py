@@ -108,6 +108,7 @@ class MirrorRepository ( _mirror ) :
 
     def __init__ ( self , config ) :
 	_mirror.__init__( self , config )
+        self.repomd = None
         self.subrepos = {}
 
     def __str__ ( self ) :
@@ -242,6 +243,7 @@ class MirrorComponent ( _mirror ) :
     def __init__ ( self , compname , config ) :
         _mirror.__init__( self , config )
         self.architectures = [ compname ]
+        self.repomd = None
 
     def __str__ ( self ) :
         return "%s" % self.architectures[0]
@@ -323,25 +325,33 @@ class snapshot_build_repository ( BuildRepository ) :
         source = repolib.MirrorRepository.new( self.source )
         source.set_mode( "keep" )
 
-        if isinstance(source,repolib.yum_repository) and len(source.architectures) > 1 :
-            repolib.logger.critical( "Snapshots not supported on yum repos with multiple architectures" )
-            return
-
-        if not source.sign_ext or not source.params['usegpg'] :
-            repolib.logger.critical( "Snapshots not supported for unsigned repositories" )
-            return
-
         meta_files = source.get_metafile()
         if meta_files.values().count( True ) != len(meta_files) :
             for file in set(meta_files.values()) :
                 if not isinstance(file,bool) :
                     os.unlink( file )
-            raise Exception( "Source repository '%s' is not up to date" % self.source )
+            if source.sign_ext and source.params['usegpg'] :
+                raise Exception( "Source repository '%s' is not up to date" % self.source )
+            for subrepo in meta_files :
+                meta_files[subrepo] = True
 
-        src = os.path.join( source.repo_path() , source.metadata_path() )
-        # FIXME : subtle bug?? Yum repositories metadata comes with trailing slash
-        dst = os.path.join( self.repo_path() , source.metadata_path().rstrip('/') )
+        src = source.repo_path()
+        dst = self.repo_path()
 
-        os.makedirs( os.path.dirname(dst) )
-        shutil.copytree( src , dst )
+        if source.repomd :
+            src = os.path.join( source.repo_path() , source.repomd )
+            dst = os.path.join( self.repo_path() , source.repomd )
+            os.makedirs( os.path.dirname( dst ) )
+            shutil.copy( src , dst )
+            if source.sign_ext and source.params['usegpg'] :
+                shutil.copy( src + source.sign_ext , dst + source.sign_ext )
+
+        for subrepo in source.subrepos.values() :
+            srcdir = os.path.join( subrepo.repo_path() , subrepo.metadata_path() )
+            dstdir = os.path.dirname( os.path.join( self.repo_path() , subrepo.metadata_path() ) )
+            # debian-installer share directory with standard component, so we must check
+            if not os.path.isdir( os.path.dirname( dstdir ) ) :
+                os.makedirs( os.path.dirname( dstdir ) )
+            shutil.copytree( srcdir , dstdir )
+
 
