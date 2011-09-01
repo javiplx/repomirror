@@ -269,8 +269,16 @@ that the current copy is ok.
 
 class BuildRepository ( _repository ) :
 
-    def new ( name ) :
-        _config = repolib.config.read_build_config( name )
+    def new ( name , input=None ) :
+        if input :
+            if name in repolib.config.get_all_build_repos() :
+                raise Exception( "already exists" )
+            if not isinstance(input,dict) :
+                raise Exception( "Given '%s' object, only dictionaries allowed" % input.__class__.__name__ )
+            _config = repolib.config.read_build_config( name , input )
+            _config['force'] = True
+        else :
+            _config = repolib.config.read_build_config( name )
         if _config['type'] == "deb" :
             return repolib.debian_build_repository( _config , name )
         elif _config['type'] == "apt" :

@@ -19,7 +19,6 @@ __usage__ = """%prog [options] reponame"""
 
 import debian_bundle.deb822 , debian_bundle.debian_support
 import repolib.lists.debian
-from repolib.config import read_build_config
 from repolib.debian import debian_component_repository
 from repolib import utils
 
@@ -101,13 +100,10 @@ def main ( all_sources ) :
     try :
         config = { 'type':"apt" , 'version':opts.repo_version ,
                    'architectures':opts.architecture , 'components':"-" }
-        conf = read_build_config ( repo_name , config )
-        conf['force'] = True
+        newrepo = repolib.BuildRepository.new( repo_name , config )
     except Exception , ex :
         repolib.logger.critical( "Repo %s : %s" % ( repo_name , ex ) )
         sys.exit(2)
-
-    newrepo = repolib.debian_build_apt( conf , repo_name )
 
     packages = debian_bundle.debian_support.PackageFile( opts.status_file )
 

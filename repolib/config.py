@@ -232,8 +232,6 @@ def read_build_config ( repo_name , confdata=None ) :
         raise Exception( "Could not find a valid configuration file" )
 
     if confdata :
-        if repo_name in config.sections() :
-            raise Exception( "already configured" )
         for name in config.sections() :
             if name != "global" :
                 config.remove_section( name )
@@ -246,7 +244,24 @@ def read_build_config ( repo_name , confdata=None ) :
 
     return BuildConf( repo_name , config , infile )
 
+
+def get_all_build_repos ( key=None , value=None ) :
+
+    conffiles = [ buildconf ]
+    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+
+    config = ConfigParser.RawConfigParser()
+    if not config.read( conffiles ) :
+        raise Exception( "Could not find a valid configuration file" )
+
+    names = config.sections()
+    names.remove( 'global' )
+    return names
+
+
 if __name__ == "__main__" :
+    print get_all_build_repos()
+    print 
     print get_all_configs()
     print 
     print get_all_configs( 'type' , 'deb' )
