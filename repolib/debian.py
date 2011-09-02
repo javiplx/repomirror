@@ -163,7 +163,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
             self.safe_rename( tempfile , local , True )
 
-            if self.sign_ext and not os.path.isfile( local + self.sign_ext ) :
+            if self.sign_ext and not os.path.isfile( local + self.sign_ext ) and os.path.isfile( tempfile + self.sign_ext ):
                 self.safe_rename( tempfile + self.sign_ext , local + self.sign_ext , True )
 
         return self.__subrepo_dict( local )

@@ -143,8 +143,9 @@ metadata is returned in 'init' mode and True in any other operation mode."""
           signature_file = self.downloadRawFile( metafile + self.sign_ext )
 
           if not signature_file :
-                repolib.logger.critical( "Signature file for version '%s' not found." % ( self.version ) )
-                return False
+              repolib.logger.critical( "Signature file for version '%s' not found." % ( self.version ) )
+              if _params['usegpg'] :
+                  return False
 
           if _params['usegpg'] :
 
@@ -181,6 +182,7 @@ metadata is returned in 'init' mode and True in any other operation mode."""
 
         if self.sign_ext :
           if isinstance(release_file,str) :
+           if isinstance( signature_file , str ) :
             self.safe_rename( signature_file , release_file + self.sign_ext )
           else :
             os.unlink( signature_file )
