@@ -4,7 +4,9 @@
   <li><b>destdir</b> - {{ repo.destdir }}
   <li><b>version</b> - {{ repo.version }}
   <li><b>architectures</b> - {{ repo.architectures }}
+{% if repo.components %}
   <li><b>components</b> - {{ repo.components }}
+{% endif %}
   <li><b>url</b> - {{ repo.url }}
 </ul>
 <h4>Extra values</h4>

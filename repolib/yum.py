@@ -38,6 +38,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         repolib.MirrorRepository.__init__( self , config )
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
+            subrepo.mode = self.mode
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
             self.subrepos.update( { str(subrepo) : subrepo } )
 

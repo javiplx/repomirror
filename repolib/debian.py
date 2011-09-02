@@ -19,14 +19,16 @@ class debian_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
 
-        # Stored for later use during Release file checks
-        self.components = config.get( "components" , None )
-
         self.subdir = config["subdir"]
+
+        # Stored for later use during Release file checks
+        self.config = config
+        self.components = config.get( "components" , [] )
 
         for archname in self.architectures :
             for compname in self.components :
-                subrepo = repolib.MirrorComponent.new( ( archname , compname ) , config )
+                subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
+                subrepo.mode = self.mode
                 self.subrepos.update( { str(subrepo) : subrepo } )
 
         # Not strictly required, but kept as member for convenience
@@ -92,8 +94,19 @@ class debian_repository ( repolib.MirrorRepository ) :
             return self.__subrepo_dict( False )
 
 
-        # We get sure that all the requested components are defined in the
-        # mirrored repository.
+        release_archs = release['Architectures'].split()
+        for arch in self.architectures :
+            if arch not in release_archs :
+                repolib.logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
+                # FIXME : only this architecture should get marked as unavailable
+                os.unlink( release_file )
+                return self.__subrepo_dict( False )
+
+
+        # Components requires the same verification than architecture, but
+        # as it is not requried on repomirror configuration the workflow is
+        # more complex, as we must ensure that all the requested components
+        # are defined in the mirrored repository.
         # If no component is defined neither on repomirror configuration or
         # in Release file, main is selected as the only component to mirror
 
@@ -112,7 +125,12 @@ class debian_repository ( repolib.MirrorRepository ) :
                         return self.__subrepo_dict( False )
             else :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
-                self.components = release_comps
+                self.components.extend( release_comps )
+                for archname in self.architectures :
+                    for compname in self.components :
+                        subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
+                        subrepo.mode = self.mode
+                        self.subrepos.update( { str(subrepo) : subrepo } )
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
@@ -121,19 +139,15 @@ class debian_repository ( repolib.MirrorRepository ) :
         else :
             repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
+            for archname in self.architectures :
+                for compname in self.components :
+                    subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
+                    subrepo.mode = self.mode
+                    self.subrepos.update( { str(subrepo) : subrepo } )
 
-
-        # Architecture requires the same verification than components, but
-        # as it must be present on Release and repomirror configuration the
-        # workflow is much simpler
-
-        release_archs = release['Architectures'].split()
-        for arch in self.architectures :
-            if arch not in release_archs :
-                repolib.logger.error( "Architecture '%s' is not available ( %s )" % ( arch , " ".join(release_archs) ) )
-                # FIXME : only this architecture should get marked as unavailable
-                os.unlink( release_file )
-                return self.__subrepo_dict( False )
+        # Remove temporarily stored items
+        del self.components
+        del self.config
 
 
         return self.__subrepo_dict( release_file )

@@ -90,7 +90,6 @@ class RepoConf ( dict ) :
         self['detached'] = False
         self['version'] = None
         self['architectures'] = None
-        self['components'] = None
         self['subdir'] = False
 
         if self.name not in config.sections() :

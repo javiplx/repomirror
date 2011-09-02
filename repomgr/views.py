@@ -23,7 +23,7 @@ def index ( request ) :
 def detail ( request , repo_name ) :
 
     repo = read_mirror_config( repo_name )
-    keys = [ 'name' , 'type' , 'detached' , 'destdir' , 'version' , 'architectures' , 'components' , 'url' ]
+    keys = [ 'name' , 'type' , 'detached' , 'destdir' , 'version' , 'architectures' , 'url' ]
     if not repo['detached'] :
         repo['destdir'] += " (ro)"
     if repo.url_parts :
