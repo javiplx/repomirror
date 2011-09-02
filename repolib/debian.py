@@ -21,21 +21,27 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         self.subdir = config["subdir"]
 
+        self.architectures = config.get( "architectures" , [ "i386" , "amd64" ] )
+
         # Stored for later use during Release file checks
         self.config = config
         self.components = config.get( "components" , [] )
 
-        for archname in self.architectures :
-            for compname in self.components :
-                subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
-                subrepo.mode = self.mode
-                self.subrepos.update( { str(subrepo) : subrepo } )
+        if self.components :
+            self.__set_components( config )
 
         # Not strictly required, but kept as member for convenience
         self.repomd = os.path.join( self.metadata_path() , "Release" )
 
         for subrepo in self.subrepos.values() :
             subrepo.repomd = os.path.join( subrepo.metadata_path() , "Release" )
+
+    def __set_components ( self , config ) :
+        for archname in self.architectures :
+            for compname in self.components :
+                subrepo = repolib.MirrorComponent.new( ( archname , compname ) , config )
+                subrepo.mode = self.mode
+                self.subrepos.update( { str(subrepo) : subrepo } )
 
     def __str__ ( self ) :
         # FIXME : consider suite, codename or real version, maybe coming from Release
@@ -94,6 +100,10 @@ class debian_repository ( repolib.MirrorRepository ) :
             return self.__subrepo_dict( False )
 
 
+        # Neither architectures nor components are required. If defined,
+        # the configured values are verified to avoid mismathes.
+        # If not configured, values from Release file are taken.
+
         release_archs = release['Architectures'].split()
         for arch in self.architectures :
             if arch not in release_archs :
@@ -101,14 +111,6 @@ class debian_repository ( repolib.MirrorRepository ) :
                 # FIXME : only this architecture should get marked as unavailable
                 os.unlink( release_file )
                 return self.__subrepo_dict( False )
-
-
-        # Components requires the same verification than architecture, but
-        # as it is not requried on repomirror configuration the workflow is
-        # more complex, as we must ensure that all the requested components
-        # are defined in the mirrored repository.
-        # If no component is defined neither on repomirror configuration or
-        # in Release file, main is selected as the only component to mirror
 
         if release.has_key( "Components" ) :
             # NOTE : security and volatile repositories prepend a string to the actual component name
@@ -126,11 +128,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             else :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
                 self.components.extend( release_comps )
-                for archname in self.architectures :
-                    for compname in self.components :
-                        subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
-                        subrepo.mode = self.mode
-                        self.subrepos.update( { str(subrepo) : subrepo } )
+                self.__set_components( self.config )
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
@@ -139,11 +137,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         else :
             repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
-            for archname in self.architectures :
-                for compname in self.components :
-                    subrepo = repolib.MirrorComponent.new( ( archname , compname ) , self.config )
-                    subrepo.mode = self.mode
-                    self.subrepos.update( { str(subrepo) : subrepo } )
+            self.__set_components( self.config )
 
         # Remove temporarily stored items
         del self.components
@@ -207,10 +201,7 @@ class DebianComponent ( SimpleComponent ) :
     def __init__ ( self , ( arch , comp ) , config ) :
         self.subdir = config["subdir"]
         self.archname , self.compname = arch, comp
-        SimpleComponent.__init__( self , ( arch , comp ) , config )
-
-    def __str__ ( self ) :
-        return "%s/%s" % ( self.archname , self.compname )
+        SimpleComponent.__init__( self , "%s/%s" % ( arch , comp ) , config )
 
     def repo_path ( self ) :
         if self.subdir :
@@ -332,7 +323,7 @@ class debian_component_repository ( packages_build_repository ) :
     def __init__ ( self , parent , arch , compname ) :
         self.version = parent.version
         self.architecture , self.component = arch , compname
-        self.architectures = "all" , arch
+        self.archfilters = ( "all" , arch )
 
         output_path = os.path.join( parent.repo_path() , self.metadata_path() )
         if not os.path.isdir( output_path ) : os.makedirs( output_path )
@@ -369,17 +360,18 @@ class debian_component_repository ( packages_build_repository ) :
 
 class debian_build_apt ( repolib.BuildRepository ) :
 
+    required = ( 'destdir' , 'type' , 'url' , 'version' , 'architectures' , 'components' )
+
     valid_extensions = ( ".deb" ,)
 
     def __init__ ( self , config , name ) :
 
         repolib.BuildRepository.__init__( self , config , name )
 
-        if not config['architectures'] :
-            raise Exception( "Broken '%s' configuration : no architecture defined." % name )
+        if not config.has_key( "architectures" ) :
+            raise Exception( "Broken configuration : no architecture defined" )
 
-        if not config['components'] :
-            raise Exception( "Broken '%s' configuration : no component defined." % name )
+        self.architectures = config["architectures"]
 
         self.components = []
         if config['components'] != ["-"] :

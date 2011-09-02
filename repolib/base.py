@@ -23,8 +23,6 @@ class _repository :
 	self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
 
-        self.architectures = config[ "architectures" ]
-
         if not os.path.isdir( self.destdir ) :
             raise Exception( "Destination directory %s does not exists" % self.destdir )
 
@@ -38,7 +36,7 @@ class _mirror ( _repository ) :
     # (update|init) - decides if we stop processing for unchanged metadata files
     mode = "update"
 
-    required = ( 'destdir' , 'type' , 'url' , 'version' , 'architectures' )
+    required = ( 'destdir' , 'type' , 'url' , 'version' )
 
     def __init__ ( self , config ) :
         missing = []
@@ -242,11 +240,11 @@ class MirrorComponent ( _mirror ) :
 
     def __init__ ( self , compname , config ) :
         _mirror.__init__( self , config )
-        self.architectures = [ compname ]
+        self.compname = compname
         self.repomd = None
 
     def __str__ ( self ) :
-        return "%s" % self.architectures[0]
+        return "%s" % self.compname
 
     def get_metafile( self , metafile , _params=None ) :
         """Verifies checksums and optionally downloads metadata files for subrepo.

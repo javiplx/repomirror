@@ -89,7 +89,6 @@ class RepoConf ( dict ) :
         self['destdir'] = None
         self['detached'] = False
         self['version'] = None
-        self['architectures'] = None
         self['subdir'] = False
 
         if self.name not in config.sections() :
@@ -113,9 +112,10 @@ class RepoConf ( dict ) :
         self['type'] = config.get( self.name , "type" )
 
         self['version'] = config.get( self.name , "version" )
-        self['architectures'] = config.get( self.name , "architectures" ).split()
-        if config.has_option( self.name , "components" ) :
-            self['components'] = config.get( self.name , "components" ).split()
+
+        for keyword in ( "architectures" , "components" ) :
+            if config.has_option( self.name , keyword ) :
+                self[keyword] = config.get( self.name , keyword ).split()
 
         if config.has_option( self.name , "subdir" ) :
             if not self['type'] == "deb" :

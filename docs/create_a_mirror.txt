@@ -16,11 +16,19 @@ pkgvflags - define required checks for secondary files (Packages, primary.xml)
 Appart from a destdir keyword, there are some othe mandatory values to be
 defined in a mirror:
 
-type          - type of mirror (primary ones deb/yum, but subtypes exists)
+type          - type of mirror. Primary ones are deb & yum, but some subtypes
+                are cleated primaryly for yum to allow mirroring of multiple
+                architectures for some distributions (Fedora, CentOS)
+type          - type of mirror. Primary ones are deb/yum, but subtypes exists)
 version       - version to mirror (not required for some repo types)
-architectures - list of architectures to mirror
 url           - url for the repository toplevel, without version identification
                 can be specified as server, plus optional scheme and base_path
+
+The key 'architectures' holds a list of architectures to mirror, and although
+is internally required is optional for some repository types (deb and yum
+derived), where defaults to the common architectures (i386 + x86_64/amd64).
+In single architecture types as feed and yum, it is still required for
+informative purposes, but no selection is done.
 
 Optional keywords, appart from those mentioned for the global section, do
 currently only have sense for debian repositories:

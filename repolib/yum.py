@@ -32,10 +32,14 @@ visibility of methods overloaded on yum_repository object.
 
 class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
+    required = ( 'destdir' , 'type' , 'url' , 'version' , 'architectures' )
+
     sign_ext = ".asc"
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
+        # NOTE : although it is a required keyword, we set default for subclassing
+        self.architectures = config.get( "architectures" , [ "i386" , "x86_64" ] )
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.mode = self.mode
@@ -293,6 +297,8 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
 class fedora_repository ( yum_repository ) :
 
+    required = ( 'destdir' , 'type' , 'url' , 'version' )
+
     sign_ext = False
 
     def base_url_extend ( self ) :
@@ -307,9 +313,11 @@ class FedoraComponent ( YumComponent ) :
         return "%s/os/" % self
 
     def base_url_extend ( self ) :
-        return self.architectures[0]
+        return self.compname
 
 class fedora_update_repository ( yum_repository ) :
+
+    required = ( 'destdir' , 'type' , 'url' , 'version' )
 
     sign_ext = False
 
@@ -326,6 +334,8 @@ class FedoraUpdateComponent ( YumComponent ) :
 
 class centos_repository ( yum_repository ) :
 
+    required = ( 'destdir' , 'type' , 'url' , 'version' )
+
     sign_ext = False
 
     def base_url_extend ( self ) :
@@ -340,6 +350,8 @@ class CentosComponent ( YumComponent ) :
         return "os/%s/" % self
 
 class centos_update_repository ( yum_repository ) :
+
+    required = ( 'destdir' , 'type' , 'url' , 'version' )
 
     sign_ext = False
 

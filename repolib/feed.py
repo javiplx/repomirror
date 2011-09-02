@@ -41,7 +41,7 @@ class packages_build_repository :
         self.valid_extensions = parent.valid_extensions
 
         self.recursive = False
-        self.architectures = False
+        self.archfilters = ()
 
         config.mimetypes[''] = open
 
@@ -70,8 +70,8 @@ class packages_build_repository :
 
     def writer ( self , top , names ) :
         validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
-        if self.architectures :
-            validnames = filter( lambda x : os.path.splitext(x)[0].split('_')[-1] in self.architectures , validnames )
+        if self.archfilters :
+            validnames = filter( lambda x : os.path.splitext(x)[0].split('_')[-1] in self.archfilters , validnames )
         fullnames = map( lambda x : os.path.join( top , x ) , validnames )
         for fullpath in filter( os.path.isfile , fullnames ) :
             try :
@@ -95,6 +95,7 @@ class feed_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
+        self.architectures = config["architectures"]
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.mode = self.mode
