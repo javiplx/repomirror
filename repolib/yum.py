@@ -38,18 +38,22 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
+        self.detached = config["detached"]
         # NOTE : although it is a required keyword, we set default for subclassing
         self.architectures = config.get( "architectures" , [ "i386" , "x86_64" ] )
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.mode = self.mode
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
+            subrepo.detached = self.detached
             self.subrepos.update( { str(subrepo) : subrepo } )
 
         for subrepo in self.subrepos.values() :
             subrepo.repomd = os.path.join( subrepo.metadata_path() , "repomd.xml" )
 
     def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
         return os.path.join( self.destdir , self.version )
 
     def base_url ( self ) :
@@ -116,6 +120,8 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
     def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
         return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , partial=False ) :
