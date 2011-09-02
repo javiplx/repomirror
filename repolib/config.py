@@ -150,14 +150,15 @@ class MirrorConf ( RepoConf ) :
                 scheme = config.get( self.name , "scheme" )
             else :
                 scheme = "http"
-            if not config.has_option( self.name , "server" ) :
-                raise Exception( "Broken '%s' configuration" % self.name )
-            server = config.get( self.name , "server" )
-            if config.has_option( self.name , "base_path" ) :
-                base_path = config.get( self.name , "base_path" )
-            else :
-                base_path = ""
-            self.set_url( scheme , server , base_path )
+            if config.has_option( self.name , "server" ) :
+                server = config.get( self.name , "server" )
+                if config.has_option( self.name , "base_path" ) :
+                    base_path = config.get( self.name , "base_path" )
+                else :
+                    base_path = ""
+                self.set_url( scheme , server , base_path )
+        if not self['url'] :
+            raise Exception( "Broken configuration, no source url given" )
 
         if config.has_option( self.name , "filters" ) :
             for subfilter in config.get( self.name , "filters" ).split() :
