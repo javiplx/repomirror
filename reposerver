@@ -1,0 +1,104 @@
+#!/usr/bin/python
+
+# Copyright (C) 2011 Javier Palacios
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License Version 2
+# as published by the Free Software Foundation.
+# 
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# General Public License for more details.
+
+
+from BaseHTTPServer import BaseHTTPRequestHandler , HTTPServer
+
+from repocache.cache import get_file
+
+try :
+    from mod_python import apache
+except :
+    import repocache.apcompat as apache
+
+import os
+import repolib
+
+
+server_conf = { 
+    'cache' : "/home/repomirror" ,
+    'source_url' : "http://ftp.es.debian.org/debian/"
+    }
+
+for reponame in repolib.config.get_all_build_repos() :
+    try :
+        repo = repolib.BuildRepository.new( reponame )
+        server_conf[reponame] = repo.repo_path()
+    except Exception , ex :
+        print "Repo %s : %s" % ( reponame , ex )
+
+
+class Handler ( BaseHTTPRequestHandler ) :
+
+    status = None
+    content_type = None
+
+    def sendfile ( self , path ) :
+        fd = open( path )
+        self.wfile.write( fd.read() )
+        fd.close()
+
+    def write ( self , msg ) :
+        self.wfile.write( msg )
+
+    def log_error ( self , msg , severity=apache.APLOG_ERROR ) :
+        BaseHTTPRequestHandler.log_error( self , "%s : %s" % ( severity , msg ) )
+
+    def do_GET ( self ) :
+
+        repo , uri = os.path.normpath(self.path).strip('/').split('/',1)
+
+        if not server_conf.has_key( repo ) or repo == "source_url" :
+            self.status = 404
+            self.log_error( "Unknown repo '%s'" % repo )
+
+        else :
+
+            local_path = os.path.join( server_conf[repo] , uri )
+
+            if repo == "cache" :
+
+                if not server_conf['source_url'].endswith('/') :
+                    server_conf['source_url'] += "/"
+                    req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
+
+                remote_url = repolib.utils.urljoin( server_conf['source_url'] , uri )
+                retcode = get_file( self , local_path , remote_url )
+
+                if retcode :
+                    if self.status and self.status != retcode :
+                        self.log_error( "Return code '%s' didn't match status '%s'" % ( retcode , self.status ) )
+                    self.status = retcode
+
+            else :
+                if os.path.isfile( local_path ) :
+                    self.status = 200
+                    self.sendfile( local_path )
+                else :
+                    self.status = 404
+                    self.log_error( "%s not found" % self.path )
+
+        self.send_response( self.status )
+
+        if self.content_type :
+            self.send_header( "Content-Type" , self.content_type )
+
+        self.end_headers()
+
+
+try :
+    server = HTTPServer( ('',8080) , Handler )
+    server.serve_forever()
+except KeyboardInterrupt , ex :
+    server.socket.close()
+

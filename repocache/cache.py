@@ -32,7 +32,7 @@ def get_file ( req , local_path , remote_url ) :
 
     if not os.path.exists( local_path ) :
         try :
-            local = open( local_path , 'wb' )
+            local = os.open( local_path , os.O_CREAT | os.O_WRONLY )
         except Exception , ex :
             req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
             return apache.HTTP_NOT_FOUND

@@ -2,6 +2,7 @@ setup.py
 repomirror
 checkmirror
 buildlive
+reposerver
 repolib/__init__.py
 repolib/base.py
 repolib/utils.py
@@ -29,7 +30,6 @@ repocache/cache.py
 repocache/repocache.conf
 repocache/debcache.py
 repocache/debcache.conf
-repocache/httpd.py
 repocache/apcompat.py
 docs/create_a_mirror.txt
 docs/debcache_setup.txt
