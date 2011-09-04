@@ -1,5 +1,6 @@
 setup.py
 repomirror
+reposnapshot
 checkmirror
 buildlive
 reposerver
@@ -15,9 +16,7 @@ repolib/lists/debian.py
 repolib/lists/yum.py
 repolib/lists/yum_xml.py
 repolib/lists/debtarfile.py
-repomirror.conf
 buildrepo
-buildrepo.conf
 repomgr/__init__.py
 repomgr/settings.py
 repomgr/urls.py
@@ -32,6 +31,8 @@ repocache/debcache.py
 repocache/debcache.conf
 repocache/apcompat.py
 docs/create_a_mirror.txt
+docs/samples/repomirror.conf
+docs/samples/buildrepo.conf
 docs/debcache_setup.txt
 docs/debcache_setup/repomirror.conf
 docs/debcache_setup/repomirror.d
