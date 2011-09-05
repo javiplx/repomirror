@@ -12,6 +12,12 @@ logger = logging.getLogger()
 logger.addHandler( console )
 
 
+import pwd
+
+webserver_user = "apache"
+webuid , webgid = pwd.getpwnam( webserver_user )[2:4]
+
+
 from base import *
 
 from yum import *

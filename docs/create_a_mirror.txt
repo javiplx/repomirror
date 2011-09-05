@@ -30,6 +30,13 @@ derived), where defaults to the common architectures (i386 + x86_64/amd64).
 In single architecture types as feed and yum, it is still required for
 informative purposes, but no selection is done.
 
+There is another optional keyword (class), which is used to mark mirrors as
+exportable ones. If class is set to 'passthru' or 'cache', the mirror is taken
+into account by the reposerver program, so that mirrored content will be made
+available through webserver. Difference among both clases is that cache one
+download requested packages if not available locally, while passthru mirrors
+are subject to bulk updates with the repomirror command.
+
 Optional keywords, appart from those mentioned for the global section, do
 currently only have sense for debian repositories:
 

@@ -25,17 +25,49 @@ import os
 import repolib
 
 
-server_conf = { 
-    'cache' : "/home/repomirror" ,
-    'source_url' : "http://ftp.es.debian.org/debian/"
-    }
+class ServerConf ( dict ) :
+
+    def __init__ ( self ) :
+        dict.__init__ ( self )
+
+    def append ( self , key , ( reporoot , url ) , mirror_class=None ) :
+        if mirror_class and key in self.keys() :
+            print "WARNING: Repo %s : %s object from %s trying to overwrite existing entry at %s" % ( key , mirror_class , reporoot , self[key] )
+            return
+        if url and not url.endswith('/') :
+            print "WARNING : Repo %s : Fix configuration, url should have a trailing '/'" % key
+            url += "/"
+        self[key] = reporoot , url
+
+    def __getitem__ ( self , key ) :
+        return dict.__getitem__( self , key )[0]
+
+    def source_url ( self , key ) :
+        return dict.__getitem__( self , key )[1]
+
+
+server_conf = ServerConf()
 
 for reponame in repolib.config.get_all_build_repos() :
     try :
         repo = repolib.BuildRepository.new( reponame )
-        server_conf[reponame] = repo.repo_path()
+        server_conf.append( reponame , ( repo.repo_path() , None ) )
     except Exception , ex :
         print "Repo %s : %s" % ( reponame , ex )
+
+for repoconf in repolib.config.get_all_mirror_configs( "class" , "passthru" ) :
+    try :
+        repo = repolib.MirrorRepository.new( repoconf.name )
+        server_conf.append( reponame , ( repo.repo_path() , None ) , "passthru" )
+    except Exception , ex :
+        print "Repo %s : %s" % ( reponame , ex )
+
+for repoconf in repolib.config.get_all_mirror_configs( "class" , "cache" ) :
+    try :
+        repo = repolib.MirrorRepository.new( repoconf.name )
+        server_conf.append( reponame , ( repo.repo_path() , repo.base_url() ) , "cache" )
+    except Exception , ex :
+        print "Repo %s : %s" % ( repoconf.name , ex )
 
 
 class Handler ( BaseHTTPRequestHandler ) :
@@ -58,7 +90,7 @@ class Handler ( BaseHTTPRequestHandler ) :
 
         repo , uri = os.path.normpath(self.path).strip('/').split('/',1)
 
-        if not server_conf.has_key( repo ) or repo == "source_url" :
+        if not server_conf.has_key( repo ) :
             self.status = 404
             self.log_error( "Unknown repo '%s'" % repo )
 
@@ -66,13 +98,10 @@ class Handler ( BaseHTTPRequestHandler ) :
 
             local_path = os.path.join( server_conf[repo] , uri )
 
-            if repo == "cache" :
+            source_url = server_conf.source_url( repo )
+            if source_url :
 
-                if not server_conf['source_url'].endswith('/') :
-                    server_conf['source_url'] += "/"
-                    req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
-
-                remote_url = repolib.utils.urljoin( server_conf['source_url'] , uri )
+                remote_url = repolib.utils.urljoin( source_url , uri )
                 retcode = get_file( self , local_path , remote_url )
 
                 if retcode :

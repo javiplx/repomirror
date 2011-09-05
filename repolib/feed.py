@@ -116,6 +116,11 @@ class feed_repository ( repolib.MirrorRepository ) :
     def write_master_file ( self , metafiles ) :
         return self.__subrepo_dict( '' )
 
+    def build_local_tree( self ) :
+        repolib.MirrorRepository.build_local_tree( self )
+        if self.mirror_class == "cache" :
+            os.chown( self.repo_path() , repolib.webuid , repolib.webgid )
+
     def info ( self , metafile , cb ) :
         cb( "Mirroring %s" % self.name )
         cb( "Architectures : %s" % " ".join(self.architectures) )

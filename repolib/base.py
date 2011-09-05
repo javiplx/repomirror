@@ -33,7 +33,6 @@ class _repository :
 class _mirror ( _repository ) :
     """Convenience class primarily created only to avoid moving download method into base _repository"""
 
-    # (update|init) - decides if we stop processing for unchanged metadata files
     mode = "update"
 
     required = ( 'destdir' , 'type' , 'url' , 'version' )
@@ -50,6 +49,7 @@ class _mirror ( _repository ) :
         self.repo_url = config[ "url" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
+        self.mirror_class = config[ "class" ]
 
     def repo_path ( self ) :
         return os.path.join( self.destdir , self.name )
@@ -208,7 +208,6 @@ metadata is returned in 'init' mode and True in any other operation mode."""
         raise Exception( "Calling an abstract method" )
 
     def build_local_tree( self ) :
-
         for subrepo in self.subrepos.values() :
             packages_path = os.path.join( subrepo.repo_path() , subrepo.metadata_path() )
             if not os.path.exists( packages_path ) :

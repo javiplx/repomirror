@@ -109,6 +109,16 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
         return local
 
+    def build_local_tree( self ) :
+        repolib.MirrorRepository.build_local_tree( self )
+        if self.mirror_class == "cache" :
+            for subrepo in self.subrepos.values() :
+                packages_path = os.path.join( subrepo.repo_path() , subrepo.metadata_path() )
+                toppath = os.path.dirname( os.path.normpath( packages_path ) )
+                if not os.path.exists( packages_path ) :
+                    os.makedirs( packages_path )
+                os.chown( toppath , repolib.webuid , repolib.webgid )
+
     def info ( self , metafile , cb ) :
         cb( "Mirroring version %s" % self.version )
         cb( "Source at %s" % self.base_url() )

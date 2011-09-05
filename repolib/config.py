@@ -135,6 +135,7 @@ class MirrorConf ( RepoConf ) :
 
         self['url'] = None
         self.url_parts = None
+        self['class'] = "standard"
         self['filters'] = {}
         self['params'] = {}
         self['params'].update( default_params )
@@ -158,6 +159,9 @@ class MirrorConf ( RepoConf ) :
                 self.set_url( scheme , server , base_path )
         if not self['url'] :
             raise Exception( "Broken configuration, no source url given" )
+
+        if config.has_option( self.name , "class" ) :
+            self['class'] = config.get( self.name , "class" )
 
         if config.has_option( self.name , "filters" ) :
             for subfilter in config.get( self.name , "filters" ).split() :

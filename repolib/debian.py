@@ -168,6 +168,14 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         return self.__subrepo_dict( local )
 
+    def build_local_tree( self ) :
+        repolib.MirrorRepository.build_local_tree( self )
+        if self.mirror_class == "cache" :
+            pooldir = os.path.join( self.repo_path() , "pool" )
+            if not os.path.isdir( pooldir ) :
+                os.mkdir( pooldir )
+            os.chown( pooldir , repolib.webuid , repolib.webgid )
+
     def info ( self , metafile , cb ) :
 
         release_file = set(metafile.values()).pop()
