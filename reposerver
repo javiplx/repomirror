@@ -35,9 +35,11 @@ class ServerConf ( dict ) :
     def __init__ ( self ) :
         dict.__init__ ( self )
 
-    def append ( self , key , ( reporoot , url ) , mirror_class=None ) :
+    def append ( self , reporoot , mirror_class=None , url=None ) :
+        key = os.path.basename( reporoot )
         if mirror_class and key in self.keys() :
-            repolib.logger.warning( "Repo %s : %s object from %s trying to overwrite existing entry at %s" % ( key , mirror_class , reporoot , self[key] ) )
+            if url != self.source_url(key) :
+                repolib.logger.warning( "Directory %s : mismatching urls %s & %s" % ( key , self.source_url(key) , url ) )
             return
         if url and not url.endswith('/') :
             repolib.logger.warning( "Repo %s : Fix configuration, url should have a trailing '/'" % key )
@@ -54,21 +56,21 @@ class ServerConf ( dict ) :
         for reponame in repolib.config.get_all_build_repos() :
             try :
                 repo = repolib.BuildRepository.new( reponame )
-                server_conf.append( reponame , ( repo.repo_path() , None ) )
+                server_conf.append( repo.repo_path() )
             except Exception , ex :
                 repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
 
         for repoconf in repolib.config.get_all_mirror_configs( "class" , "passthru" ) :
             try :
                 repo = repolib.MirrorRepository.new( repoconf.name )
-                server_conf.append( repoconf.name , ( repo.repo_path() , None ) , "passthru" )
+                server_conf.append( repo.repo_path() , "passthru" )
             except Exception , ex :
                 repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
 
         for repoconf in repolib.config.get_all_mirror_configs( "class" , "cache" ) :
             try :
                 repo = repolib.MirrorRepository.new( repoconf.name )
-                server_conf.append( repoconf.name , ( repo.repo_path() , repo.base_url() ) , "cache" )
+                server_conf.append( repo.repo_path() , "cache" , repo.base_url() )
             except Exception , ex :
                 repolib.logger.warning( "Repo %s : %s" % ( repoconf.name , ex ) )
 
