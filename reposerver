@@ -12,6 +12,11 @@
 # General Public License for more details.
 
 
+__version__ = "1.0"
+
+__usage__ = """%prog [options]"""
+
+
 from BaseHTTPServer import BaseHTTPRequestHandler , HTTPServer
 
 from repocache.cache import get_file
@@ -32,10 +37,10 @@ class ServerConf ( dict ) :
 
     def append ( self , key , ( reporoot , url ) , mirror_class=None ) :
         if mirror_class and key in self.keys() :
-            print "WARNING: Repo %s : %s object from %s trying to overwrite existing entry at %s" % ( key , mirror_class , reporoot , self[key] )
+            repolib.logger.warning( "Repo %s : %s object from %s trying to overwrite existing entry at %s" % ( key , mirror_class , reporoot , self[key] ) )
             return
         if url and not url.endswith('/') :
-            print "WARNING : Repo %s : Fix configuration, url should have a trailing '/'" % key
+            repolib.logger.warning( "Repo %s : Fix configuration, url should have a trailing '/'" % key )
             url += "/"
         self[key] = reporoot , url
 
@@ -45,30 +50,44 @@ class ServerConf ( dict ) :
     def source_url ( self , key ) :
         return dict.__getitem__( self , key )[1]
 
+    def read ( self ) :
+        for reponame in repolib.config.get_all_build_repos() :
+            try :
+                repo = repolib.BuildRepository.new( reponame )
+                server_conf.append( reponame , ( repo.repo_path() , None ) )
+            except Exception , ex :
+                repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
+
+        for repoconf in repolib.config.get_all_mirror_configs( "class" , "passthru" ) :
+            try :
+                repo = repolib.MirrorRepository.new( repoconf.name )
+                server_conf.append( repoconf.name , ( repo.repo_path() , None ) , "passthru" )
+            except Exception , ex :
+                repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
+
+        for repoconf in repolib.config.get_all_mirror_configs( "class" , "cache" ) :
+            try :
+                repo = repolib.MirrorRepository.new( repoconf.name )
+                server_conf.append( repoconf.name , ( repo.repo_path() , repo.base_url() ) , "cache" )
+            except Exception , ex :
+                repolib.logger.warning( "Repo %s : %s" % ( repoconf.name , ex ) )
+
+    def dump ( self , key ) :
+        out = [ '' ]
+        out.append( 'Alias %s/%s "%s"' % ( repolib.apache_prefix , key , self[key] ) )
+        out.append( '<Directory "%s">' % self[key] )
+        out.append( '   Options Indexes MultiViews' )
+        url = server_conf.source_url( key )
+        if url :
+            out.append( '    SetHandler python-program' )
+            out.append( '    PythonOption source_url %s' % url )
+            out.append( '    PythonHandler repocache.debcache' )
+        out.append( '</Directory>' )
+        out.append( '' )
+        return "\n".join( out )
+
 
 server_conf = ServerConf()
-
-for reponame in repolib.config.get_all_build_repos() :
-    try :
-        repo = repolib.BuildRepository.new( reponame )
-        server_conf.append( reponame , ( repo.repo_path() , None ) )
-    except Exception , ex :
-        print "Repo %s : %s" % ( reponame , ex )
-
-for repoconf in repolib.config.get_all_mirror_configs( "class" , "passthru" ) :
-    try :
-        repo = repolib.MirrorRepository.new( repoconf.name )
-        server_conf.append( reponame , ( repo.repo_path() , None ) , "passthru" )
-    except Exception , ex :
-        print "Repo %s : %s" % ( reponame , ex )
-
-for repoconf in repolib.config.get_all_mirror_configs( "class" , "cache" ) :
-    try :
-        repo = repolib.MirrorRepository.new( repoconf.name )
-        server_conf.append( reponame , ( repo.repo_path() , repo.base_url() ) , "cache" )
-    except Exception , ex :
-        print "Repo %s : %s" % ( repoconf.name , ex )
-
 
 class Handler ( BaseHTTPRequestHandler ) :
 
@@ -125,9 +144,46 @@ class Handler ( BaseHTTPRequestHandler ) :
         self.end_headers()
 
 
-try :
+import optparse
+
+def option_parser () :
+    version_string = "%%prog %s" % __version__
+    parser = optparse.OptionParser( usage=__usage__ , version=version_string )
+    parser.set_defaults( outfile = os.path.join( repolib.apache_root , "conf.d" , "repomirror.conf" ) )
+    parser.add_option( "--apache" , action="store_true" ,
+        help="dump apache configuration" )
+    parser.add_option( "--outfile" , metavar="FILENAME" ,
+        help="file for configuration dump [defaults to ServerRoot+conf.d/repomirror.conf]" )
+    return parser
+
+
+def apache_conf ( outfile ) :
+    server_conf.read()
+    fd = open( outfile , "w" )
+    for k in server_conf :
+        fd.write( server_conf.dump(k) )
+    fd.close()
+
+
+def main () :
+  server_conf.read()
+  try :
     server = HTTPServer( ('',8080) , Handler )
     server.serve_forever()
-except KeyboardInterrupt , ex :
+  except KeyboardInterrupt , ex :
     server.socket.close()
+
+if __name__ == "__main__" :
+
+    parser = option_parser()
+    opts , args = parser.parse_args()
+
+    if args :
+        parser.print_help()
+        sys.exit(1)
+
+    if opts.apache :
+        apache_conf( opts.outfile )
+    else :
+        main()
 

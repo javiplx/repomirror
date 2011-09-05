@@ -10,6 +10,10 @@ of syncing local repository (repomirror) and build required metadata files to
 construct an exportable repository (buildrepo). Detailed documentation is
 available at the docs directory.
 
+There is also a reposerver program, intended to offer the repositories content.
+It can work as a pure python webserver on port 8080, but can also be used to
+generate a configuration file suitable for apache.
+
 Tested with Debian/Ubuntu, Fedora, CentOS, openSUSE and OpenWrt feeds.
 
 
