@@ -19,15 +19,9 @@ __usage__ = """%prog [options]"""
 
 from BaseHTTPServer import BaseHTTPRequestHandler , HTTPServer
 
-from repocache.cache import get_file
-
-try :
-    from mod_python import apache
-except :
-    import repocache.apcompat as apache
-
 import os
 import repolib
+import repolib.cache
 
 
 class ServerConf ( dict ) :
@@ -86,7 +80,7 @@ class ServerConf ( dict ) :
         if url :
             out.append( '    SetHandler python-program' )
             out.append( '    PythonOption source_url %s' % url )
-            out.append( '    PythonHandler repocache.debcache' )
+            out.append( '    PythonHandler repolib.cache' )
         out.append( '</Directory>' )
         out.append( '' )
         return "\n".join( out )
@@ -107,7 +101,7 @@ class Handler ( BaseHTTPRequestHandler ) :
     def write ( self , msg ) :
         self.wfile.write( msg )
 
-    def log_error ( self , msg , severity=apache.APLOG_ERROR ) :
+    def log_error ( self , msg , severity=repolib.cache.apache.APLOG_ERROR ) :
         BaseHTTPRequestHandler.log_error( self , "%s : %s" % ( severity , msg ) )
 
     def do_GET ( self ) :
@@ -126,7 +120,7 @@ class Handler ( BaseHTTPRequestHandler ) :
             if source_url :
 
                 remote_url = repolib.utils.urljoin( source_url , uri )
-                retcode = get_file( self , local_path , remote_url )
+                retcode = repolib.cache.get_file( self , local_path , remote_url )
 
                 if retcode :
                     if self.status and self.status != retcode :

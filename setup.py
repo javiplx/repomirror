@@ -12,11 +12,10 @@ setup(
     url = 'http://github.com/javiplx/repomirror',
     download_url = 'http://r26936.ovh.net/repomirror',
     scripts = [ 'repomirror' , 'reposnapshot' , 'buildrepo' , 'buildlive' , 'checkmirror' ],
-    packages = [ 'repolib' , 'repolib.lists' , 'repomgr' , 'repocache' ],
+    packages = [ 'repolib' , 'repolib.lists' , 'repomgr' , 'repolib.cache' ],
     data_files = [
                  ( 'share/repomirror' , [ 'docs/samples/repomirror.conf' , 'docs/samples/buildrepo.conf' ] ) ,
                  ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/detail.html' ] ) ,
-                 ( 'share/repocache' , [ 'repocache/repocache.conf' , 'repocache/debcache.conf' ] ) ,
                  ( 'share/repomgr' , [ 'repomgr/repomgr.conf' ] )
                  ]
     )

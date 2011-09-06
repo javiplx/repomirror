@@ -11,17 +11,11 @@ condition is that the url must be the same for each repository to share subdir,
 and means that security repositories cannot usually be merged.
 
 
-Once the repository metadata is downloaded, populating the 'dists' directory,
-apache webserver must be configured to get access to the upstream sources. And
-this goal is achived by setting the proper value for source_url in the apache
-configuration.
+The apache configuration required must be generated with reposerver command,
+but the repository metadata must be downloaded using repomirror, as with other
+repository types.
 
-And the final step is to grant permissions to the webserver user for writing
-under the repository tree. The safer way is to manually create the pool
-directory, setting ownership to the user that apache webserver run as.
-
-NOTE : Is it possible to run everything with the user of apache, but it is not
-recommended to allow uncontrolled updates under the metadata tree, as would
-happen if, for example, an apt client is configured with a component which is
-not configured for mirroring.
+NOTE : The repository metadata is owned by root user, to avoid uncontrolled
+updates under the metadata tree, as could happen if, for example, an apt
+client is configured with a component which is not included on mirroring.
 

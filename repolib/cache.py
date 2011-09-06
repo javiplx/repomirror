@@ -14,7 +14,19 @@
 try :
     from mod_python import apache
 except :
-    import apcompat as apache
+    class apache :
+
+        DONE = False
+
+        APLOG_CRITICAL = "CRITICAL"
+        APLOG_ERROR    = "ERROR"
+        APLOG_INFO     = "INFO"
+        APLOG_DEBUG    = "DEBUG"
+
+        # BaseHTTPServer.BaseHTTPRequestHandler.responses
+        OK = 200
+        HTTP_INTERNAL_SERVER_ERROR = 500
+        HTTP_NOT_FOUND = 404
 
 import os
 from repolib import utils
@@ -50,4 +62,20 @@ def get_file ( req , local_path , remote_url ) :
         req.sendfile(local_path)
 
     return apache.OK
+
+
+def handler ( req ) :
+
+    local_path = req.filename
+    subpath = local_path.replace( req.hlist.directory , "" , 1 )
+    remote_url = req.get_options().get('source_url')
+    if not remote_url.endswith('/') :
+        remote_url += "/"
+        req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
+
+    if req.used_path_info :
+        local_path += req.path_info
+        remote_url = utils.urljoin( remote_url , subpath + req.path_info )
+
+    return get_file( req , local_path , remote_url )
 

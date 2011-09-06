@@ -1,6 +1,7 @@
 setup.py
 repomirror
 reposnapshot
+buildrepo
 checkmirror
 buildlive
 reposerver
@@ -11,12 +12,12 @@ repolib/debian.py
 repolib/feed.py
 repolib/yum.py
 repolib/config.py
+repolib/cache.py
 repolib/lists/__init__.py
 repolib/lists/debian.py
 repolib/lists/yum.py
 repolib/lists/yum_xml.py
 repolib/lists/debtarfile.py
-buildrepo
 repomgr/__init__.py
 repomgr/settings.py
 repomgr/urls.py
@@ -24,12 +25,6 @@ repomgr/views.py
 repomgr/repomgr.conf
 repomgr/templates/index.html
 repomgr/templates/detail.html
-repocache/__init__.py
-repocache/cache.py
-repocache/repocache.conf
-repocache/debcache.py
-repocache/debcache.conf
-repocache/apcompat.py
 docs/create_a_mirror.txt
 docs/samples/repomirror.conf
 docs/samples/buildrepo.conf
@@ -38,6 +33,5 @@ docs/debcache_setup/repomirror.conf
 docs/debcache_setup/repomirror.d
 docs/debcache_setup/repomirror.d/debian.conf
 docs/debcache_setup/repomirror.d/ubuntu.conf
-docs/debcache_setup/repomirror-debproxy.conf
 docs/create_a_local_repository.txt
 docs/system_reconstruction.txt
