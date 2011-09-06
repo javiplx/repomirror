@@ -53,6 +53,10 @@ def main () :
     if opts.quiet :
         repolib.logger.setLevel( repolib.logging.ERROR )
 
+    if args[1] in repolib.config.get_all_build_repos() :
+        repolib.logger.error( "Snapshot %s : repository already exists" % args[1] )
+        sys.exit(-1)
+
     try :
         repo = repolib.MirrorRepository.new( args[0] )
         repo.set_mode( "keep" )
@@ -63,9 +67,11 @@ def main () :
     try :
         config = { 'type':"snapshot" , 'version':repo.version ,
                    'architectures':" ".join(repo.architectures) , 'source':repo.name }
-        snapshot = repolib.BuildRepository.new( args[1] , config )
+        repolib.config.write_build( args[1] , config )
+        snapshot = repolib.BuildRepository.new( args[1] )
+        snapshot.force = True
     except Exception , ex :
-        repolib.logger.error( "Snapshot %s : %s" % ( args[0] , ex ) )
+        repolib.logger.error( "Snapshot %s : %s" % ( args[1] , ex ) )
         sys.exit(-1)
 
     snapshot.build()

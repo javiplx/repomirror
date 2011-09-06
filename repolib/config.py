@@ -75,6 +75,19 @@ def get_file ( section , conffiles ) :
     return filename[0]
 
 
+def write_build ( reponame , values ) :
+    filename = os.path.join( builddir , reponame + ".conf" )
+    if os.path.exists( filename ) :
+        raise Exception( "Configuration file %s already exists" % filename )
+    cfg = ConfigParser.RawConfigParser()
+    cfg.add_section( reponame )
+    for k,v in values.iteritems() :
+        cfg.set( reponame , k , v )
+    fd = open( filename , "w" )
+    cfg.write(fd)
+    fd.close()
+
+
 class RepoConf ( dict ) :
 
     def __init__ ( self , reponame , config , filename ) :
@@ -261,7 +274,7 @@ def read_build_config ( repo_name , confdata=None ) :
     return BuildConf( repo_name , config , infile )
 
 
-def get_all_build_repos ( key=None , value=None ) :
+def get_all_build_repos () :
 
     conffiles = [ buildconf ]
     conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
@@ -273,6 +286,29 @@ def get_all_build_repos ( key=None , value=None ) :
     names = config.sections()
     names.remove( 'global' )
     return names
+
+
+def get_all_build_configs ( key=None , value=None ) :
+
+    conffiles = [ buildconf ]
+    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+
+    config = ConfigParser.RawConfigParser()
+    if not config.read( conffiles ) :
+        raise Exception( "Could not find a valid configuration file" )
+
+    conflist = []
+
+    for name in config.sections() :
+        if name != "global" :
+            try :
+                conf = BuildConf( name , config , get_file( name , conffiles ) )
+                if not key or conf[key] == value :
+                    conflist.append( conf )
+            except Exception , ex :
+                repolib.logger.error( ex )
+
+    return conflist
 
 
 if __name__ == "__main__" :

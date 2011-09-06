@@ -53,9 +53,12 @@ class ServerConf ( dict ) :
         return dict.__getitem__( self , key )[1]
 
     def read ( self ) :
-        for reponame in repolib.config.get_all_build_repos() :
+        for repoconf in repolib.config.get_all_build_configs() :
             try :
-                repo = repolib.BuildRepository.new( reponame )
+                if repoconf['type'] == "snapshot" :
+                    repolib.logger.warning( "Repo %s : snapshot repositories not yet supported" % repoconf.name )
+                    continue
+                repo = repolib.BuildRepository.new( repoconf.name )
                 server_conf.append( repo.repo_path() )
             except Exception , ex :
                 repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )

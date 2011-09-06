@@ -308,19 +308,13 @@ class BuildRepository ( _repository ) :
 
 class snapshot_build_repository ( BuildRepository ) :
 
-    valid_extensions = ( ".opk" , ".ipk" )
-
-    def __init__ ( self , config , name ) :
-        BuildRepository.__init__( self , config , name )
-
-	if self.source :
-            if os.path.isdir( self.repo_path() ) :
-                raise Exception( "Snapshot destination directory '%s' already dexists" % self.repo_path() )
-
+    def build ( self ) :
 	if self.force :
+	    if self.source :
+                if os.path.isdir( self.repo_path() ) :
+                    raise Exception( "Snapshot destination directory '%s' already dexists" % self.repo_path() )
             os.mkdir( self.repo_path() )
 
-    def build ( self ) :
         source = repolib.MirrorRepository.new( self.source )
         source.set_mode( "keep" )
 
