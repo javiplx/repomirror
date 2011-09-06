@@ -208,7 +208,7 @@ class DebianComponent ( SimpleComponent ) :
 
     def __init__ ( self , ( arch , comp ) , config ) :
         self.subdir = config["subdir"]
-        self.archname , self.compname = arch, comp
+        self.archname , self.component = arch, comp
         SimpleComponent.__init__( self , "%s/%s" % ( arch , comp ) , config )
 
     def repo_path ( self ) :
@@ -217,7 +217,7 @@ class DebianComponent ( SimpleComponent ) :
         return SimpleComponent.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
-        path = "%s/binary-%s/" % ( self.compname , self.archname )
+        path = "%s/binary-%s/" % ( self.component , self.archname )
         if not partial :
             path = "dists/%s/%s" % ( self.version , path )
         return path
