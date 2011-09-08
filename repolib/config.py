@@ -75,13 +75,15 @@ def get_file ( section , conffiles ) :
     return filename[0]
 
 
-def write_build ( reponame , values ) :
+def write_build ( reponame , values , filter=None ) :
     filename = os.path.join( builddir , reponame + ".conf" )
     if os.path.exists( filename ) :
         raise Exception( "Configuration file %s already exists" % filename )
     cfg = ConfigParser.RawConfigParser()
     cfg.add_section( reponame )
     for k,v in values.iteritems() :
+        if filter and key in filter :
+            continue
         cfg.set( reponame , k , v )
     fd = open( filename , "w" )
     cfg.write(fd)

@@ -65,9 +65,9 @@ def main () :
         sys.exit(-1)
 
     try :
-        config = { 'type':"snapshot" , 'version':repo.version ,
-                   'architectures':" ".join(repo.architectures) , 'source':repo.name }
-        repolib.config.write_build( args[1] , config )
+        config = { 'type':"snapshot" , 'source':repo.name }
+        config.update( repo.dump_conf() )
+        repolib.config.write_build( args[1] , config , ( 'url' , 'subdir' ) )
         snapshot = repolib.BuildRepository.new( args[1] )
         snapshot.force = True
     except Exception , ex :

@@ -37,6 +37,12 @@ class debian_repository ( repolib.MirrorRepository ) :
         for subrepo in self.subrepos.values() :
             subrepo.repomd = os.path.join( subrepo.metadata_path() , "Release" )
 
+    def dump_conf ( self ) :
+        data = repolib.MirrorRepository.dump_conf()
+        data.update( { 'subdir':self.subdir , 'components':self.components } )
+        if self.components :
+            data['components'] = " ".join(self.components)
+
     def __set_components ( self , config ) :
         for archname in self.architectures :
             for compname in self.components :

@@ -109,6 +109,12 @@ class MirrorRepository ( _mirror ) :
         self.repomd = None
         self.subrepos = {}
 
+    def dump_conf ( self ) :
+        data = { 'destdir':self.destdir , 'version':self.version ,
+                 'architectures':self.architectures , 'url':self.repo_url }
+        if self.architectures :
+            data['architectures'] = " ".join(self.architectures)
+
     def __str__ ( self ) :
         name = self.name
         if self.name != self.version :
