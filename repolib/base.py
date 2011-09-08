@@ -35,6 +35,7 @@ class _mirror ( _repository ) :
 
     mode = "update"
 
+    # architectures is actually required, but is not listed to allow type specific defaults
     required = ( 'destdir' , 'type' , 'url' , 'version' )
 
     def __init__ ( self , config ) :

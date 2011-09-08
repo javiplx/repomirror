@@ -104,7 +104,6 @@ class RepoConf ( dict ) :
         self['destdir'] = None
         self['detached'] = False
         self['version'] = None
-        self['subdir'] = False
 
         if self.name not in config.sections() :
             raise Exception( "Repository '%s' is not configured" % self.name )
@@ -128,14 +127,8 @@ class RepoConf ( dict ) :
 
         self['version'] = config.get( self.name , "version" )
 
-        for keyword in ( "architectures" , "components" ) :
-            if config.has_option( self.name , keyword ) :
-                self[keyword] = config.get( self.name , keyword ).split()
-
-        if config.has_option( self.name , "subdir" ) :
-            if not self['type'] == "deb" :
-                repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
-            self['subdir'] = config.get( self.name , "subdir" )
+        if config.has_option( self.name , "architectures" ) :
+            self['architectures'] = config.get( self.name , "architectures" ).split()
 
 
 class MirrorConf ( RepoConf ) :
@@ -151,6 +144,7 @@ class MirrorConf ( RepoConf ) :
         self['url'] = None
         self.url_parts = None
         self['class'] = "standard"
+        self['subdir'] = False
         self['filters'] = {}
         self['params'] = {}
         self['params'].update( default_params )
@@ -177,6 +171,14 @@ class MirrorConf ( RepoConf ) :
 
         if config.has_option( self.name , "class" ) :
             self['class'] = config.get( self.name , "class" )
+
+        if config.has_option( self.name , "components" ) :
+            self['components'] = config.get( self.name , "components" ).split()
+
+        if config.has_option( self.name , "subdir" ) :
+            if not self['type'] == "deb" :
+                repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
+            self['subdir'] = config.get( self.name , "subdir" )
 
         if config.has_option( self.name , "filters" ) :
             for subfilter in config.get( self.name , "filters" ).split() :
