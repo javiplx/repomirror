@@ -34,9 +34,6 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Not strictly required, but kept as member for convenience
         self.repomd = os.path.join( self.metadata_path() , "Release" )
 
-        for subrepo in self.subrepos.values() :
-            subrepo.repomd = os.path.join( subrepo.metadata_path() , "Release" )
-
     def dump_conf ( self ) :
         data = repolib.MirrorRepository.dump_conf()
         data.update( { 'subdir':self.subdir , 'components':self.components } )
@@ -47,8 +44,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             for compname in self.components :
                 subrepo = repolib.MirrorComponent.new( ( archname , compname ) , config )
-                subrepo.mode = self.mode
-                self.subrepos.update( { str(subrepo) : subrepo } )
+                self.subrepos[subrepo] = subrepo
 
     def __str__ ( self ) :
         # FIXME : consider suite, codename or real version, maybe coming from Release
@@ -136,6 +132,7 @@ class debian_repository ( repolib.MirrorRepository ) :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
                 self.components.extend( release_comps )
                 self.__set_components( self.__config )
+                self.set_mode( self.mode ) :
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
@@ -145,6 +142,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
             self.__set_components( self.__config )
+            self.set_mode( self.mode ) :
 
         # Remove temporarily stored items
         if self.components :
@@ -213,9 +211,10 @@ from feed import SimpleComponent , feed_build_repository , packages_build_reposi
 class DebianComponent ( SimpleComponent ) :
 
     def __init__ ( self , ( arch , comp ) , config ) :
+        SimpleComponent.__init__( self , "%s/%s" % ( arch , comp ) , config )
         self.subdir = config["subdir"]
         self.archname , self.component = arch, comp
-        SimpleComponent.__init__( self , "%s/%s" % ( arch , comp ) , config )
+        self.repomd = os.path.join( self.metadata_path() , "Release" )
 
     def repo_path ( self ) :
         if self.subdir :

@@ -38,18 +38,15 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
-        self.detached = config["detached"]
         # NOTE : although it is a required keyword, we set default for subclassing
         self.architectures = config.get( "architectures" , [ "i386" , "x86_64" ] )
+        self.__set_components( config )
+
+    def __set_components ( self , config ) :
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
-            subrepo.mode = self.mode
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
-            subrepo.detached = self.detached
-            self.subrepos.update( { str(subrepo) : subrepo } )
-
-        for subrepo in self.subrepos.values() :
-            subrepo.repomd = os.path.join( subrepo.metadata_path() , "repomd.xml" )
+            self.subrepos[subrepo] = subrepo
 
     def repo_path ( self ) :
         if self.detached :
@@ -128,6 +125,11 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
         return YumDownloadFile( self )
 
 class YumComponent ( repolib.MirrorComponent , path_handler ) :
+
+    def __init__ ( self , compname , config ) :
+        repolib.MirrorComponent.__init__( self , compname , config )
+        self.detached = config["detached"]
+        self.repomd = os.path.join( self.metadata_path() , "repomd.xml" )
 
     def repo_path ( self ) :
         if self.detached :

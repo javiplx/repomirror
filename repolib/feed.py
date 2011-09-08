@@ -99,7 +99,7 @@ class feed_repository ( repolib.MirrorRepository ) :
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
             subrepo.mode = self.mode
-            self.subrepos.update( { str(subrepo) : subrepo } )
+            self.subrepos[subrepo] = subrepo
 
     def __subrepo_dict ( self , value ) :
         d = {}

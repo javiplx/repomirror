@@ -226,6 +226,8 @@ metadata is returned in 'init' mode and True in any other operation mode."""
 
 class MirrorComponent ( _mirror ) :
 
+    mode = "update"
+
     def new ( name , _config ) :
         if _config['type'] == "yum" :
             return repolib.YumComponent( name , _config )
