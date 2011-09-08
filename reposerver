@@ -29,15 +29,21 @@ class ServerConf ( dict ) :
     def __init__ ( self ) :
         dict.__init__ ( self )
 
-    def append ( self , reporoot , mirror_class=None , url=None ) :
+    def append ( self , reporoot , mirror_class=None , source=None ) :
         key = os.path.basename( reporoot )
-        if mirror_class and key in self.keys() :
+        if mirror_class :
+          url = source
+          if key in self.keys() :
             if url != self.source_url(key) :
                 repolib.logger.warning( "Directory %s : mismatching urls %s & %s" % ( key , self.source_url(key) , url ) )
             return
-        if url and not url.endswith('/') :
+          # FIXME : this check is probably redundant
+          if not url.endswith('/') :
             repolib.logger.warning( "Repo %s : Fix configuration, url should have a trailing '/'" % key )
             url += "/"
+        else :
+            reporoot = source
+            url = None
         self[key] = reporoot , url
 
     def __getitem__ ( self , key ) :
@@ -53,21 +59,21 @@ class ServerConf ( dict ) :
                     repolib.logger.warning( "Repo %s : snapshot repositories not yet supported" % repoconf.name )
                     continue
                 repo = repolib.BuildRepository.new( repoconf.name )
-                server_conf.append( repo.repo_path() )
+                self.append( repoconf.name , source=repo.repo_path() )
             except Exception , ex :
-                repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
+                repolib.logger.warning( "Repo %s : %s" % ( repoconf.name , ex ) )
 
         for repoconf in repolib.config.get_all_mirror_configs( "class" , "passthru" ) :
             try :
                 repo = repolib.MirrorRepository.new( repoconf.name )
-                server_conf.append( repo.repo_path() , "passthru" )
+                self.append( repo.repo_path() , "passthru" )
             except Exception , ex :
-                repolib.logger.warning( "Repo %s : %s" % ( reponame , ex ) )
+                repolib.logger.warning( "Repo %s : %s" % ( repoconf.name , ex ) )
 
         for repoconf in repolib.config.get_all_mirror_configs( "class" , "cache" ) :
             try :
                 repo = repolib.MirrorRepository.new( repoconf.name )
-                server_conf.append( repo.repo_path() , "cache" , repo.base_url() )
+                self.append( repo.repo_path() , "cache" , repo.base_url() )
             except Exception , ex :
                 repolib.logger.warning( "Repo %s : %s" % ( repoconf.name , ex ) )
 
@@ -76,7 +82,7 @@ class ServerConf ( dict ) :
         out.append( 'Alias %s/%s "%s"' % ( repolib.apache_prefix , key , self[key] ) )
         out.append( '<Directory "%s">' % self[key] )
         out.append( '   Options Indexes MultiViews' )
-        url = server_conf.source_url( key )
+        url = self.source_url( key )
         if url :
             out.append( '    SetHandler python-program' )
             out.append( '    PythonOption source_url %s' % url )
