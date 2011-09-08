@@ -20,7 +20,7 @@ class _repository :
 
         self.name = config.name
 
-	self.destdir = config[ "destdir" ]
+        self.destdir = config[ "destdir" ]
         self.version = config[ "version" ]
 
         if not os.path.isdir( self.destdir ) :
@@ -45,7 +45,7 @@ class _mirror ( _repository ) :
         if missing :
             raise Exception( "Broken '%s' configuration : missing %s." % ( config.name , ", ".join(missing) ) )
 
-	_repository.__init__( self , config )
+        _repository.__init__( self , config )
         self.repo_url = config[ "url" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
@@ -105,7 +105,7 @@ class MirrorRepository ( _mirror ) :
     sign_ext = False
 
     def __init__ ( self , config ) :
-	_mirror.__init__( self , config )
+        _mirror.__init__( self , config )
         self.repomd = None
         self.subrepos = {}
 
@@ -309,11 +309,15 @@ class BuildRepository ( _repository ) :
 class snapshot_build_repository ( BuildRepository ) :
 
     def build ( self ) :
-	if self.force :
-	    if self.source :
-                if os.path.isdir( self.repo_path() ) :
-                    raise Exception( "Snapshot destination directory '%s' already dexists" % self.repo_path() )
-            os.mkdir( self.repo_path() )
+        if not self.force :
+            repolib.logger.critical( "Trying to build snapshot repo '%s'" % self.name )
+            return
+
+        if self.source :
+            if os.path.isdir( self.repo_path() ) :
+                raise Exception( "Snapshot destination directory '%s' already dexists" % self.repo_path() )
+
+        os.mkdir( self.repo_path() )
 
         source = repolib.MirrorRepository.new( self.source )
         source.set_mode( "keep" )
