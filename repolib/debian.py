@@ -24,7 +24,8 @@ class debian_repository ( repolib.MirrorRepository ) :
         self.architectures = config.get( "architectures" , [ "i386" , "amd64" ] )
 
         # Stored for later use during Release file checks
-        self.config = config
+        self.__config = config
+
         self.components = config.get( "components" , [] )
 
         if self.components :
@@ -128,7 +129,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             else :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
                 self.components.extend( release_comps )
-                self.__set_components( self.config )
+                self.__set_components( self.__config )
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
@@ -137,12 +138,11 @@ class debian_repository ( repolib.MirrorRepository ) :
         else :
             repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
-            self.__set_components( self.config )
+            self.__set_components( self.__config )
 
         # Remove temporarily stored items
-        del self.components
-        del self.config
-
+        if self.components :
+            del self.__config
 
         return self.__subrepo_dict( release_file )
 
