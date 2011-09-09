@@ -173,10 +173,12 @@ class MirrorConf ( RepoConf ) :
             self['class'] = config.get( self.name , "class" )
 
         if config.has_option( self.name , "components" ) :
+            if not self['type'] == "apt" :
+                repolib.logger.warning( "Specifying components for a non-debian repository" )
             self['components'] = config.get( self.name , "components" ).split()
 
         if config.has_option( self.name , "subdir" ) :
-            if not self['type'] == "deb" :
+            if not self['type'] == "apt" :
                 repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
             self['subdir'] = config.get( self.name , "subdir" )
 
@@ -320,5 +322,5 @@ if __name__ == "__main__" :
     print 
     print get_all_mirror_configs()
     print 
-    print get_all_mirror_configs( 'type' , 'deb' )
+    print get_all_mirror_configs( 'type' , 'apt' )
 

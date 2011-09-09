@@ -49,7 +49,7 @@ names of other keywords that should be used to decide if a single package will
 be mirrored or not. This block is very type specific, so a couple of examples
 are shown below
 
-type = deb
+type = apt
 filters = sections
 priorities = standard required important
 

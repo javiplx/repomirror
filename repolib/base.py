@@ -96,6 +96,10 @@ class MirrorRepository ( _mirror ) :
         elif _config['type'] == "centos_upd" :
             return repolib.centos_update_repository( _config )
         elif _config['type'] == "deb" :
+            repolib.logger.error( "Repo %s : 'deb' type on %s is obsolete, use 'apt' instead" % ( name , _config.__file__ ) )
+            _config['type'] = "apt"
+            return repolib.debian_repository( _config )
+        elif _config['type'] == "apt" :
             return repolib.debian_repository( _config )
         elif _config['type'] == "feed" :
             return repolib.feed_repository( _config )
@@ -240,7 +244,7 @@ class MirrorComponent ( _mirror ) :
             return repolib.CentosComponent( name , _config )
         elif _config['type'] == "centos_upd" :
             return repolib.CentosUpdateComponent( name , _config )
-        elif _config['type'] == "deb" :
+        elif _config['type'] == "apt" :
             return repolib.DebianComponent( name , _config )
         elif _config['type'] == "feed" :
             return repolib.SimpleComponent( name , _config )
