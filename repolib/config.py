@@ -178,8 +178,6 @@ class MirrorConf ( RepoConf ) :
             self['components'] = config.get( self.name , "components" ).split()
 
         if config.has_option( self.name , "subdir" ) :
-            if not self['type'] == "apt" :
-                repolib.logger.warning( "Specifying a subdirectory for a non-debian repository" )
             self['subdir'] = config.get( self.name , "subdir" )
 
         if config.has_option( self.name , "filters" ) :

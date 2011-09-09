@@ -48,11 +48,6 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
             subrepo.repo_url += os.path.join( self.base_url_extend() , subrepo.base_url_extend() )
             self.subrepos[subrepo] = subrepo
 
-    def repo_path ( self ) :
-        if self.detached :
-            return self.destdir
-        return os.path.join( self.destdir , self.version )
-
     def base_url ( self ) :
         return repolib.MirrorRepository.base_url(self) + self.base_url_extend()
 
@@ -129,11 +124,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     def __init__ ( self , compname , config ) :
         repolib.MirrorComponent.__init__( self , compname , config )
         self.repomd = os.path.join( self.metadata_path() , "repomd.xml" )
-
-    def repo_path ( self ) :
-        if self.detached :
-            return self.destdir
-        return os.path.join( self.destdir , self.version )
 
     def metadata_path ( self , partial=False ) :
         path = self.path_prefix()

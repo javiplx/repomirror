@@ -49,11 +49,16 @@ class _mirror ( _repository ) :
 
         _repository.__init__( self , config )
         self.repo_url = config[ "url" ]
+        self.subdir = config[ "subdir" ]
         self.params = config[ "params" ]
         self.filters = config[ "filters" ]
         self.mirror_class = config[ "class" ]
 
     def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
+        if self.subdir :
+            return os.path.join( self.destdir , self.subdir )
         return os.path.join( self.destdir , self.name )
 
     def base_url ( self ) :
@@ -312,11 +317,6 @@ class BuildRepository ( _repository ) :
         self.name = name
         self.source = config['source']
         self.force = config['force']
-
-    def repo_path ( self ) :
-        if self.detached :
-            return self.destdir
-        return os.path.join( self.destdir , self.name )
 
 
 class snapshot_build_repository ( BuildRepository ) :

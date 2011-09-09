@@ -19,8 +19,6 @@ class debian_repository ( repolib.MirrorRepository ) :
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
 
-        self.subdir = config["subdir"]
-
         self.architectures = config.get( "architectures" , [ "i386" , "amd64" ] )
 
         # Stored for later use during Release file checks
@@ -49,11 +47,6 @@ class debian_repository ( repolib.MirrorRepository ) :
     def __str__ ( self ) :
         # FIXME : consider suite, codename or real version, maybe coming from Release
         return self.version
-
-    def repo_path ( self ) :
-        if self.subdir :
-            return os.path.join( self.destdir , self.subdir )
-        return repolib.MirrorRepository.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
         path = ""
@@ -212,14 +205,8 @@ class DebianComponent ( SimpleComponent ) :
 
     def __init__ ( self , ( arch , comp ) , config ) :
         SimpleComponent.__init__( self , "%s/%s" % ( arch , comp ) , config )
-        self.subdir = config["subdir"]
         self.archname , self.component = arch, comp
         self.repomd = os.path.join( self.metadata_path() , "Release" )
-
-    def repo_path ( self ) :
-        if self.subdir :
-            return os.path.join( self.destdir , self.subdir )
-        return SimpleComponent.repo_path(self)
 
     def metadata_path ( self , partial=False ) :
         path = "%s/binary-%s/" % ( self.component , self.archname )
