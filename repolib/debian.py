@@ -132,7 +132,7 @@ class debian_repository ( repolib.MirrorRepository ) :
                 repolib.logger.warning( "No components specified, selected all components from Release file" )
                 self.components.extend( release_comps )
                 self.__set_components( self.__config )
-                self.set_mode( self.mode ) :
+                self.set_mode( self.mode )
 
         elif self.components :
             repolib.logger.error( "There is no components entry in Release file for '%s', please fix your configuration" % self.version )
