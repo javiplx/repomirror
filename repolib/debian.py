@@ -249,7 +249,7 @@ class DebianComponent ( SimpleComponent ) :
         params = self.params
         if _params : params.update( _params )
 
-        masterfile = metafile[str(self)]
+        masterfile = metafile[self]
 
         if isinstance(masterfile,bool) :
             raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
