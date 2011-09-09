@@ -21,6 +21,7 @@ class _repository :
         self.name = config.name
 
         self.destdir = config[ "destdir" ]
+        self.detached = config[ "detached" ]
         self.version = config[ "version" ]
 
         if not os.path.isdir( self.destdir ) :
@@ -107,7 +108,7 @@ class MirrorRepository ( _mirror ) :
             raise Exception( "Unknown repository type '%s'" % _config['type'] )
     new = staticmethod( new )
 
-    sign_ext = False
+    sign_ext = ""
 
     def __init__ ( self , config ) :
         _mirror.__init__( self , config )
@@ -177,7 +178,7 @@ metadata is returned in 'init' mode and True in any other operation mode."""
             if os.path.isfile( release_file ) :
                 if self.mode != "keep" :
                     os.unlink( release_file )
-                    if self.sign_ext : os.unlink( release_file + self.sign_ext )
+                    if self.sign_ext and _params['usegpg'] : os.unlink( release_file + self.sign_ext )
                 release_file = ""
 
 
@@ -309,7 +310,6 @@ class BuildRepository ( _repository ) :
     def __init__ ( self , config , name ) :
         _repository.__init__( self , config )
         self.name = name
-        self.detached = config['detached']
         self.source = config['source']
         self.force = config['force']
 

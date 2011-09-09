@@ -128,7 +128,6 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
     def __init__ ( self , compname , config ) :
         repolib.MirrorComponent.__init__( self , compname , config )
-        self.detached = config["detached"]
         self.repomd = os.path.join( self.metadata_path() , "repomd.xml" )
 
     def repo_path ( self ) :
@@ -317,7 +316,7 @@ class fedora_repository ( yum_repository ) :
 
     required = ( 'destdir' , 'type' , 'url' , 'version' )
 
-    sign_ext = False
+    sign_ext = ""
 
     def base_url_extend ( self ) :
         return "releases/%s/Fedora/" % self.version
@@ -337,7 +336,7 @@ class fedora_update_repository ( yum_repository ) :
 
     required = ( 'destdir' , 'type' , 'url' , 'version' )
 
-    sign_ext = False
+    sign_ext = ""
 
     def base_url_extend ( self ) :
         return "updates/%s/" % self.version
@@ -354,7 +353,7 @@ class centos_repository ( yum_repository ) :
 
     required = ( 'destdir' , 'type' , 'url' , 'version' )
 
-    sign_ext = False
+    sign_ext = ""
 
     def base_url_extend ( self ) :
         return "%s/" % self.version
@@ -371,7 +370,7 @@ class centos_update_repository ( yum_repository ) :
 
     required = ( 'destdir' , 'type' , 'url' , 'version' )
 
-    sign_ext = False
+    sign_ext = ""
 
     def base_url_extend ( self ) :
         return "%s/updates/" % self.version
