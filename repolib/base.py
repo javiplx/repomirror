@@ -192,8 +192,8 @@ metadata is returned in 'init' mode and True in any other operation mode."""
                         release_file = False
 
         if self.sign_ext :
+         if isinstance( signature_file , str ) :
           if isinstance(release_file,str) :
-           if isinstance( signature_file , str ) :
             self.safe_rename( signature_file , release_file + self.sign_ext )
           else :
             os.unlink( signature_file )
