@@ -174,7 +174,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             pooldir = os.path.join( self.repo_path() , "pool" )
             if not os.path.isdir( pooldir ) :
                 os.mkdir( pooldir )
-            os.chown( pooldir , repolib.webuid , repolib.webgid )
+            os.chown( pooldir , config.web['uid'] , config.web['gid'] )
 
     def info ( self , metafile , cb ) :
 

@@ -121,7 +121,7 @@ class feed_repository ( repolib.MirrorRepository ) :
     def build_local_tree( self ) :
         repolib.MirrorRepository.build_local_tree( self )
         if self.mirror_class == "cache" :
-            os.chown( self.repo_path() , repolib.webuid , repolib.webgid )
+            os.chown( self.repo_path() , config.web['uid'] , config.web['gid'] )
 
     def info ( self , metafile , cb ) :
         cb( "Mirroring %s" % self.name )

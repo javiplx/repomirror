@@ -111,7 +111,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
                 toppath = os.path.dirname( os.path.normpath( packages_path ) )
                 if not os.path.exists( packages_path ) :
                     os.makedirs( packages_path )
-                os.chown( toppath , repolib.webuid , repolib.webgid )
+                os.chown( toppath , config.web['uid'] , config.web['gid'] )
 
     def info ( self , metafile , cb ) :
         cb( "Mirroring version %s" % self.version )

@@ -1,5 +1,5 @@
 
-import os
+import os , pwd
 import glob
 
 import repolib
@@ -53,6 +53,10 @@ default_params['usegpg'] = repolib.with_gpg
 
 default_params['pkgvflags'] = "SKIP_NONE"
 
+
+
+# Webserver related values. Default values are for stock debian systems
+web = { 'uid':33 , 'gid':33 , 'uri':"/mirror" , 'conf':"/etc/apache2" }
 
 
 # NOTE : if a section name is duplicated in the same file,
@@ -125,6 +129,15 @@ class RepoConf ( dict ) :
 
         if config.has_option( self.name , "architectures" ) :
             self['architectures'] = config.get( self.name , "architectures" ).split()
+
+        if config.has_section( "global" ) :
+            if config.has_option( "global" , "webuser" ) :
+                webuser = config.get( "global" , "webuser" )
+                web['uid'] , web['gid'] = pwd.getpwnam( webuser )[2:4]
+            if config.has_option( "global" , "weburi" ) :
+                web['uri'] = config.get( "global" , "weburi" )
+            if config.has_option( "global" , "webconf" ) :
+                web['conf'] = config.get( "global" , "webconf" )
 
 
 class MirrorConf ( RepoConf ) :

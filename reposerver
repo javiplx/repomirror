@@ -79,7 +79,7 @@ class ServerConf ( dict ) :
 
     def dump ( self , key ) :
         out = [ '' ]
-        out.append( 'Alias %s/%s "%s"' % ( repolib.apache_prefix , key , self[key] ) )
+        out.append( 'Alias %s/%s "%s"' % ( repolib.config.web['uri'] , key , self[key] ) )
         out.append( '<Directory "%s">' % self[key] )
         out.append( '   Options Indexes MultiViews' )
         url = self.source_url( key )
@@ -155,7 +155,7 @@ def option_parser () :
     version_string = "%%prog %s" % __version__
     parser = optparse.OptionParser( usage=__usage__ , version=version_string )
     parser.set_defaults( port = 8080 )
-    parser.set_defaults( outfile = os.path.join( repolib.apache_root , "conf.d" , "repomirror.conf" ) )
+    parser.set_defaults( outfile = os.path.join( repolib.config.web['conf'] , "conf.d" , "repomirror.conf" ) )
     parser.add_option( "--port" , type=int ,
         help="listen port for server (defaults 8080)" )
     parser.add_option( "--apache" , action="store_true" ,

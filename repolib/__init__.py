@@ -12,14 +12,6 @@ logger = logging.getLogger()
 logger.addHandler( console )
 
 
-import pwd
-
-webserver_user = "apache"
-webuid , webgid = pwd.getpwnam( webserver_user )[2:4]
-apache_prefix = "/mirror"
-apache_root = "/etc/httpd"
-
-
 from utils import *
 
 from base import *
