@@ -32,6 +32,9 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Not strictly required, but kept as member for convenience
         self.repomd = os.path.join( self.metadata_path() , "Release" )
 
+        if self.params['pkgvflags'] != utils.SKIP_NONE :
+            repolib.logger.warning( "Some checks skipped for %s" % self.name )
+
     def dump_conf ( self ) :
         data = repolib.MirrorRepository.dump_conf()
         data.update( { 'subdir':self.subdir , 'components':self.components } )
@@ -222,10 +225,9 @@ class DebianComponent ( SimpleComponent ) :
                     if item['name'] == _name :
                         _item.update( item )
         if _item :
-            if utils.integrity_check( filename , _item ) is False :
-                return False
-
-            return True
+            if utils.integrity_check( filename , _item , params['pkgvflags'] ) :
+                return True
+            return False
 
         else :
             repolib.logger.error( "Checksum for file '%s' not found, exiting." % _name ) 

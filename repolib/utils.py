@@ -53,18 +53,16 @@ def download ( remote , handle=None , request=None ) :
 SKIP_NONE = 0
 SKIP_SIZE = 1
 SKIP_CKSUM = 2
+SKIP_ALL = SKIP_SIZE | SKIP_CKSUM
 
-def integrity_check ( filename , item , skip_check=0 , bsize=128 ) :
-    """Checks integrity of the given file with values supplied on a dictionary, skipping some if requested.
-Returns true for successfull checks, and false when some check fails. If no checksums were actually performed, returns None.
+def integrity_check ( filename , item , skip_check=SKIP_NONE , bsize=128 ) :
+    """Checks integrity of the given file with values supplied on a dictionary.
+Will return False on failure of any check, and True if no verification fails.
+If all checks are skipped or no checksum can be verified, string "OK" is
+returned, which still evaluates to boolean true, but serves to detect partial
+verification if required."""
 
-NOTE : None could be returned if size is verified but no known checksum type exists. This counter-intuitive result can
-be avoided specifying SKIP_CKSUM for those cases where the absence of valid checksums is known in advance, but cannot be
-globally fixed.
-"""
-
-    keysout = ( "name" , "href" , "filename" , "arch" ,
-                "sha256" ,
+    keysout = ( "name" , "href" , "filename" , "arch" , "size" ,
                 "group" , "provides" , "requires" )
 
     checksums = filter( lambda x : x not in keysout ,
@@ -73,23 +71,20 @@ globally fixed.
 
     name = os.path.basename(filename)
 
-    if skip_check == ( SKIP_SIZE | SKIP_CKSUM ) :
+    if skip_check == SKIP_ALL :
         logger.warning( "No check selected for '%s'" % name )
-        # FIXME : This return should n't be required if setting res=None in advance
-        return None
+        return "OK"
+
+    res = True
 
     if not ( skip_check & SKIP_SIZE ) :
         if os.stat( filename ).st_size != int( item['size'] ) :
             logger.warning( "Bad size on file '%s'" % name )
             return False
-        res = True
-    checksums.remove( "size" )
 
     # Policy is to verify all the available checksums
     if not ( skip_check & SKIP_CKSUM ) :
-        res = None
-        if not checksums :
-            logger.warning( "No checksum defined for %s" % item['name'] )
+        res = "OK"
         for cktype in cksum_handles.keys() :
             if item.has_key( cktype ) :
                 if cksum_handles[cktype]( filename , bsize ) == item[cktype] :
@@ -98,14 +93,21 @@ globally fixed.
                     logger.warning( "Bad %s checksum '%s'" % ( cktype , name ) )
                     return False
 
-        if res is None :
-            logger.warning( "Unknown checksum types available for %s : %s" % ( item['name'] , checksums ) )
+        if res == "OK" :
+          if not checksums :
+            logger.warning( "No checksum defined for %s" % name )
+          else :
+            logger.warning( "Unknown checksum types available for %s : %s" % ( name , checksums ) )
 
     return res
 
+import hashlib
+
+cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha1 , 'sha256':calc_sha256 }
+
 def calc_md5(filename, bsize=128):
     f = open( filename , 'rb' )
-    _md5 = md5.md5()
+    _md5 = hashlib.md5()
     data = f.read(bsize)
     while data :
         _md5.update(data)
@@ -113,9 +115,9 @@ def calc_md5(filename, bsize=128):
     f.close()
     return _md5.hexdigest()
 
-def calc_sha(filename, bsize=128):
+def calc_sha1(filename, bsize=128):
     f = open( filename , 'rb' )
-    _sha = sha.sha()
+    _sha = hashlib.sha1()
     data = f.read(bsize)
     while data :
         _sha.update(data)
@@ -123,9 +125,15 @@ def calc_sha(filename, bsize=128):
     f.close()
     return _sha.hexdigest()
 
-import md5 , sha
-
-cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha , 'sha':calc_sha }
+def calc_sha256(filename, bsize=128):
+    f = open( filename , 'rb' )
+    _sha256 = hashlib.sha256()
+    data = f.read(bsize)
+    while data :
+        _sha256.update(data)
+        data = f.read(bsize)
+    f.close()
+    return _sha256.hexdigest()
 
 
 # NOTE : full_verification is never used. What was the purpose ??

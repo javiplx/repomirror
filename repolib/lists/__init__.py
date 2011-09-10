@@ -157,10 +157,9 @@ Used in while loop context to enable element extraction"""
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            if repolib.utils.integrity_check( destname , pkg ) is False :
-                os.unlink( destname )
-            else :
+            if repolib.utils.integrity_check( destname , pkg , params['pkgvflags'] ) :
                 return
+            os.unlink( destname )
         else :
             path , name = os.path.split( destname )
             if not os.path.exists( path ) :

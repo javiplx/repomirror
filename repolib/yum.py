@@ -138,9 +138,9 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
     def verify( self , filename , item , params ) :
         # FIXME : no matching on filename vs. href within item is done
-        if repolib.utils.integrity_check( filename , item , params['pkgvflags'] ) is False :
-            return False
-        return True
+        if repolib.utils.integrity_check( filename , item , params['pkgvflags'] ) :
+            return True
+        return False
 
     def get_metafile( self , metafile , _params=None ) :
 
