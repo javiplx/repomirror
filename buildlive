@@ -20,7 +20,7 @@ __usage__ = """%prog [options] reponame"""
 import debian_bundle.deb822 , debian_bundle.debian_support
 import repolib.lists.debian
 from repolib.debian import debian_component_repository
-from repolib import utils
+import repolib
 
 import os , sys , platform
 
@@ -120,13 +120,13 @@ def main ( all_sources ) :
           path = buildpath( pkginfo , compname )
           for repo,(name,baseurl) in sources.items() :
 
-            filepath = utils.urljoin( name , path )
-            pkginfo['Filename'] = utils.urljoin( filepath , filename )
+            filepath = repolib.urljoin( name , path )
+            pkginfo['Filename'] = repolib.urljoin( filepath , filename )
             if pkginfo.has_key('Conffiles') : pkginfo.pop('Conffiles')
 
-            url = utils.urljoin( baseurl , pkginfo['Filename'] )
-            request = utils.download_head( url )
-            response = utils.download( request )
+            url = repolib.urljoin( baseurl , pkginfo['Filename'] )
+            request = repolib.download_head( url )
+            response = repolib.download( request )
             if response :
                 if compname not in newrepo.components :
                     repolib.logger.info( "Adding component %s/%s" % ( opts.architecture , compname ) )

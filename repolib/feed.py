@@ -5,7 +5,7 @@ import os
 import tempfile
 
 
-import config , utils
+import config
 
 
 import repolib
@@ -83,7 +83,7 @@ class packages_build_repository :
             if not control.has_key("Size") :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
             for type in ( 'MD5sum' ,) :
-                control[type] = utils.cksum_handles[type.lower()]( fullpath )
+                control[type] = repolib.cksum_handles[type.lower()]( fullpath )
             for pkgsfile in self.outchannels :
                 pkgsfile.write( "%s\n" % control )
     writer = staticmethod(writer)

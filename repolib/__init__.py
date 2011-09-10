@@ -20,6 +20,8 @@ apache_prefix = "/mirror"
 apache_root = "/etc/httpd"
 
 
+from utils import *
+
 from base import *
 
 from yum import *

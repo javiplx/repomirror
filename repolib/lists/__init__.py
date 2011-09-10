@@ -66,8 +66,7 @@ __all__ = [ "PackageList" , "DownloadList" , "DownloadThread" ]
 
 import os
 
-from repolib import logger
-import repolib.utils
+import repolib
 
 
 def safe_encode ( str ) :
@@ -157,7 +156,7 @@ Used in while loop context to enable element extraction"""
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            if repolib.utils.integrity_check( destname , pkg , params['pkgvflags'] ) :
+            if repolib.integrity_check( destname , pkg , params['pkgvflags'] ) :
                 return
             os.unlink( destname )
         else :
@@ -166,7 +165,7 @@ Used in while loop context to enable element extraction"""
                 os.makedirs( path )
 
         if not self.repo.downloadRawFile ( pkg['Filename'] , destname ) :
-            logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
+            repolib.logger.warning( "Failure downloading file '%s'" % os.path.basename(pkg['Filename']) )
 
 
 class AbstractDownloadList ( DownloadListInterface ) :

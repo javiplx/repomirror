@@ -8,7 +8,6 @@ import stat
 
 
 import repolib
-import utils
 from lists import *
 
 class _repository :
@@ -75,14 +74,14 @@ class _mirror ( _repository ) :
 
         Returns the local file name or False if errors"""
 
-        remote = utils.urljoin( self.base_url() , remote ) 
+        remote = repolib.urljoin( self.base_url() , remote ) 
 
         if not local :
             (handle, fname) = tempfile.mkstemp()
         else :
             fname = local
             handle = os.open( fname , os.O_WRONLY | os.O_TRUNC | os.O_CREAT )
-        if not utils.download( remote , handle ) :
+        if not repolib.download( remote , handle ) :
             os.unlink(fname)
             return False
         return fname
@@ -167,7 +166,7 @@ metadata is returned in 'init' mode and True in any other operation mode."""
           if _params['usegpg'] :
 
             if os.path.isfile( release_file ) :
-                if not utils.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
+                if not repolib.gpg_verify( signature_file , release_file , repolib.logger.warning ) :
                     if self.mode != "keep" :
                         os.unlink( release_file )
                         os.unlink( release_file + self.sign_ext )
@@ -193,7 +192,7 @@ metadata is returned in 'init' mode and True in any other operation mode."""
 
             if release_file :
                 if self.sign_ext and _params['usegpg'] :
-                    if not utils.gpg_verify( signature_file , release_file , repolib.logger.error ) :
+                    if not repolib.gpg_verify( signature_file , release_file , repolib.logger.error ) :
                         os.unlink( release_file )
                         release_file = False
 

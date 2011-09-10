@@ -125,7 +125,7 @@ class Handler ( BaseHTTPRequestHandler ) :
             source_url = server_conf.source_url( repo )
             if source_url :
 
-                remote_url = repolib.utils.urljoin( source_url , uri )
+                remote_url = repolib.urljoin( source_url , uri )
                 retcode = repolib.cache.get_file( self , local_path , remote_url )
 
                 if retcode :

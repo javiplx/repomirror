@@ -2,7 +2,8 @@
 import os
 import glob
 
-import utils , repolib
+import repolib
+
 import ConfigParser
 
 
@@ -48,12 +49,7 @@ except :
 
 default_params = {}
 
-default_params['usegpg'] = True
-try :
-    import GnuPGInterface
-    default_params['usegpg'] = True
-except :
-    default_params['usegpg'] = False
+default_params['usegpg'] = repolib.with_gpg
 
 default_params['pkgvflags'] = "SKIP_NONE"
 
@@ -135,7 +131,7 @@ class MirrorConf ( RepoConf ) :
 
     def set_url ( self , scheme , server , base_path ) :
         self.url_parts = ( scheme , server , base_path )
-        self['url'] = utils.unsplit( scheme , server , "%s/" % base_path )
+        self['url'] = repolib.unsplit( scheme , server , "%s/" % base_path )
 
     def read ( self , config ) :
 
@@ -197,7 +193,7 @@ class MirrorConf ( RepoConf ) :
                 except ValueError , ex :
                     self['params'][ key ] = config.get( self.name , key )
 
-        self['params']['pkgvflags'] = eval( "utils.%s" % self['params']['pkgvflags'] )
+        self['params']['pkgvflags'] = eval( "repolib.%s" % self['params']['pkgvflags'] )
 
 def read_mirror_config ( repo_name ) :
 

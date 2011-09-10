@@ -140,7 +140,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
     def verify( self , filename , item , params ) :
         # FIXME : no matching on filename vs. href within item is done
-        if repolib.utils.integrity_check( filename , item , params['pkgvflags'] ) :
+        if repolib.integrity_check( filename , item , params['pkgvflags'] ) :
             return True
         return False
 
@@ -170,7 +170,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     
         if not primary and self.mode != "keep" :
             repolib.logger.warning( "No local primary file exist for %s. Downloading." % self )
-            url = repolib.utils.urljoin( self.metadata_path(True) , item['href'] )
+            url = repolib.urljoin( self.metadata_path(True) , item['href'] )
             if self.downloadRawFile( url , _primary ) :
                 if self.verify( _primary , item , params ) :
                     primary = _primary
@@ -187,7 +187,7 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
     
         if not secondary and self.mode != "keep" :
             repolib.logger.warning( "No local filelists file exist for %s. Downloading." % self )
-            url = repolib.utils.urljoin( self.metadata_path(True) , filelist['href'] )
+            url = repolib.urljoin( self.metadata_path(True) , filelist['href'] )
             if self.downloadRawFile( url , _secondary ) :
                 if self.verify( _secondary , filelist , params ) :
                     secondary = _secondary

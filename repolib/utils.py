@@ -1,10 +1,15 @@
 
+__all__ = [ 'with_gpg' , 'gpg_verify' ,
+            'integrity_check' , 'cksum_handles' , 'SKIP_NONE' , 'SKIP_SIZE' , 'SKIP_CKSUM' , 'SKIP_ALL' ,
+            'urljoin' , 'unsplit' , 'download_head' , 'download' ]
+
 from repolib import logger
 
 try :
     import GnuPGInterface
+    with_gpg = True
 except :
-    pass
+    with_gpg = False
 
 import os
 
@@ -103,8 +108,6 @@ verification if required."""
 
 import hashlib
 
-cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha1 , 'sha256':calc_sha256 }
-
 def calc_md5(filename, bsize=128):
     f = open( filename , 'rb' )
     _md5 = hashlib.md5()
@@ -134,6 +137,8 @@ def calc_sha256(filename, bsize=128):
         data = f.read(bsize)
     f.close()
     return _sha256.hexdigest()
+
+cksum_handles = { 'md5sum':calc_md5 , 'sha1':calc_sha1 , 'sha256':calc_sha256 }
 
 
 # NOTE : full_verification is never used. What was the purpose ??

@@ -5,7 +5,7 @@ import os , sys
 import stat
 
 
-import config , utils
+import config
 
 
 import repolib
@@ -32,7 +32,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         # Not strictly required, but kept as member for convenience
         self.repomd = os.path.join( self.metadata_path() , "Release" )
 
-        if self.params['pkgvflags'] != utils.SKIP_NONE :
+        if self.params['pkgvflags'] != repolib.SKIP_NONE :
             repolib.logger.warning( "Some checks skipped for %s" % self.name )
 
     def dump_conf ( self ) :
@@ -225,7 +225,7 @@ class DebianComponent ( SimpleComponent ) :
                     if item['name'] == _name :
                         _item.update( item )
         if _item :
-            if utils.integrity_check( filename , _item , params['pkgvflags'] ) :
+            if repolib.integrity_check( filename , _item , params['pkgvflags'] ) :
                 return True
             return False
 
@@ -412,7 +412,7 @@ class debian_build_apt ( repolib.BuildRepository ) :
                 basename = "Packages" + extension
                 packages = os.path.join( feed.metadata_path(True) , basename )
                 _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
-                cksum = utils.calc_md5( _packages )
+                cksum = repolib.cksum_handles['md5sum']( _packages )
                 fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
         fd.close()
 

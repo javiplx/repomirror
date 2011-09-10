@@ -29,7 +29,7 @@ except :
         HTTP_NOT_FOUND = 404
 
 import os
-from repolib import utils
+import repolib
 
 
 def get_file ( req , local_path , remote_url ) :
@@ -49,7 +49,7 @@ def get_file ( req , local_path , remote_url ) :
             req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
             return apache.HTTP_NOT_FOUND
         req.log_error( "Downloading %s" % remote_url , apache.APLOG_INFO )
-        remote = utils.download( remote_url , local , req )
+        remote = repolib.download( remote_url , local , req )
         if not remote :
             req.log_error( "Cannot download remote %s" % remote_url )
             return apache.HTTP_NOT_FOUND
@@ -75,7 +75,7 @@ def handler ( req ) :
 
     if req.used_path_info :
         local_path += req.path_info
-        remote_url = utils.urljoin( remote_url , subpath + req.path_info )
+        remote_url = repolib.urljoin( remote_url , subpath + req.path_info )
 
     return get_file( req , local_path , remote_url )
 
