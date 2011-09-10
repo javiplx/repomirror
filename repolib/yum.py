@@ -38,6 +38,8 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
+        if self.mirror_class == "cache" :
+            repolib.logger.warning( "Class 'cache' not implemented for %s (type %s)" % ( self.name , config['type'] ) )
         # NOTE : although it is a required keyword, we set default for subclassing
         self.architectures = config.get( "architectures" , [ "i386" , "x86_64" ] )
         self.__set_components( config )
@@ -213,6 +215,10 @@ class YumComponent ( repolib.MirrorComponent , path_handler ) :
 
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
+
+        if self.mirror_class == "cache" :
+            repolib.logger.warning( "Trying to get packages for %s cached repository" % self.name )
+            return download_pkgs , []
 
         fd = gzip.open( local_repodata[0] )
         packages = xml_package_list( fd )

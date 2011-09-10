@@ -95,6 +95,8 @@ class feed_repository ( repolib.MirrorRepository ) :
 
     def __init__ ( self , config ) :
         repolib.MirrorRepository.__init__( self , config )
+        if self.mirror_class == "cache" :
+            repolib.logger.warning( "Class 'cache' not implemented for %s (type %s)" % ( self.name , config['type'] ) )
         self.architectures = config["architectures"]
         for archname in self.architectures :
             subrepo = repolib.MirrorComponent.new( archname , config )
@@ -193,6 +195,10 @@ class SimpleComponent ( repolib.MirrorComponent ) :
 
         download_pkgs = self.pkg_list()
         rejected_pkgs = self.pkg_list()
+
+        if self.mirror_class == "cache" :
+            repolib.logger.warning( "Trying to get packages for %s cached repository" % self.name )
+            return download_pkgs , []
 
         if 'name' in dir(fd) :
             fdname = fd.name
