@@ -116,7 +116,7 @@ class yum_repository ( repolib.MirrorRepository , path_handler ) :
     def info ( self , metafile , cb ) :
         cb( "Mirroring version %s" % self.version )
         cb( "Source at %s" % self.base_url() )
-        cb( "Subrepos : %s" % " ".join( self.subrepos ) )
+        cb( "Subrepos : %s" % " ".join( map( str , self.subrepos.keys() ) ) )
 
     def get_download_list( self ) :
         return YumDownloadFile( self )

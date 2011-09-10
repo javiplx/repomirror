@@ -1,7 +1,8 @@
 
 To setup a debian cached repository, the first step is to configure the
-repository as done with any other repository. The only step where the
-standard procedure changes is that the 'subdir' key is required. The primary
+repository as done with any other repository. Deviations for standard
+standard procedure are the requirement of the class keyword (set to 'cache')
+and the strong recommendation about the use of 'subdir' keyword. The primary
 use of this keyword is to map to a different apache webserver <Directory />
 directive, which in turns means use distinct URL value for the packages source.
 

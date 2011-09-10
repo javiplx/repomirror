@@ -156,7 +156,7 @@ Used in while loop context to enable element extraction"""
 
         # FIXME : Perform this check while appending to download_pkgs ???
         if os.path.isfile( destname ) :
-            if repolib.integrity_check( destname , pkg , params['pkgvflags'] ) :
+            if repolib.integrity_check( destname , pkg , self.repo.params['pkgvflags'] ) :
                 return
             os.unlink( destname )
         else :

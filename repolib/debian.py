@@ -138,7 +138,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             repolib.logger.warning( "Component list undefined, setting to main" )
             self.components = ( "main" ,)
             self.__set_components( self.__config )
-            self.set_mode( self.mode ) :
+            self.set_mode( self.mode )
 
         # Remove temporarily stored items
         if self.components :
@@ -197,7 +197,7 @@ class debian_repository ( repolib.MirrorRepository ) :
 
         cb( "Mirroring %(Label)s %(Version)s(%(Codename)s)" % release )
         cb( "%(Origin)s %(Suite)s%(Date)s" % release )
-        cb( "Subrepos : %s" % " ".join( self.subrepos ) )
+        cb( "Subrepos : %s" % " ".join( map( str , self.subrepos.keys() ) ) )
 
     def get_download_list( self ) :
         return DebianDownloadFile( self )

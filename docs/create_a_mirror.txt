@@ -10,44 +10,54 @@ repositories. The values typically defined in this global section are:
 
 destdir   - default top directory for all the mirrored respositories
 usegpg    - enable/disable GPG verification of primary metadata files
-pkgvflags - define required checks for secondary files (Packages, primary.xml)
+pkgvflags - define required checks for secondary metadata files, such as
+            Packages or primary.xml, and also used while downloading packages.
 
+Repositories of cache class described below must be aware of the user which
+runs the webserver, so another keyword can be specified on global section to
+inform about it. Default is sensible for debian systems.
+NOTE : to make simpler a setup only with cached repos, keywords required for
+reposerver (webconf & weburi) can also be specified in repomirror global
+section.
 
-Appart from a destdir keyword, there are some othe mandatory values to be
-defined in a mirror:
+If not defined on global section, destdir keyword is mandatory, but there are
+other keywords that must be defined in a mirror:
 
-type          - type of mirror. Primary ones are deb & yum, but some subtypes
-                are cleated primaryly for yum to allow mirroring of multiple
-                architectures for some distributions (Fedora, CentOS)
-type          - type of mirror. Primary ones are deb/yum, but subtypes exists)
-version       - version to mirror (not required for some repo types)
-url           - url for the repository toplevel, without version identification
-                can be specified as server, plus optional scheme and base_path
+type     - type of mirror. Primary ones are apt & yum, but some subtypes
+           exists, primarily for yum to allow intelligent mirroring of some
+           distributions (Fedora, CentOS)
+version  - version to mirror (not required for some repo types)
+url      - url for the repository. Must be full path for simple types, but
+           for advanced repos a toplevel url is enough, without version or
+           architecture indication.
+           Can be specified as server name, plus optional scheme and base_path
 
 The key 'architectures' holds a list of architectures to mirror, and although
-is internally required is optional for some repository types (deb and yum
-derived), where defaults to the common architectures (i386 + x86_64/amd64).
+internally required is optional for some repo types (apt and yum derived),
+where defaults to the common architectures (i386 + x86_64/amd64).
 In single architecture types as feed and yum, it is still required for
 informative purposes, but no selection is done.
 
-There is another optional keyword (class), which is used to mark mirrors as
+There is another optional keyword (class) which is used to mark mirrors as
 exportable ones. If class is set to 'passthru' or 'cache', the mirror is taken
 into account by the reposerver program, so that mirrored content will be made
 available through webserver. Difference among both clases is that cache one
-download requested packages if not available locally, while passthru mirrors
-are subject to bulk updates with the repomirror command.
+download requested packages on demand only if not available locally, while
+passthru mirrors are subject to standard bulk updates using repomirror command.
 
-Optional keywords, appart from those mentioned for the global section, do
-currently only have sense for debian repositories:
+Finally, 'subdir' allows to change the name of the directory where the mirror
+will be located, which defaults to the repository name. It only has effect if
+no specific destdir is supplied on the configuration entry for repository.
 
-components - name of debian components to mirror
-subdir     - name of subdirectory for mirror (default is section name)
-
+Appart from those mentioned for the global section, there is an extra optional
+keyword, that currently only have sense for debian repositories. The keyword
+is 'components', and lists the debian components that we want to include in
+the mirror.
 
 Finally, the keyword 'filters' can be also specified, and should contain the
 names of other keywords that should be used to decide if a single package will
-be mirrored or not. This block is very type specific, so a couple of examples
-are shown below
+be mirrored or not. This block is specific to each repository type, so a
+couple of examples are shown below
 
 type = apt
 filters = sections

@@ -317,6 +317,11 @@ class BuildRepository ( _repository ) :
         self.source = config['source']
         self.force = config['force']
 
+    def repo_path ( self ) :
+        if self.detached :
+            return self.destdir
+        return os.path.join( self.destdir , self.name )
+
 
 class snapshot_build_repository ( BuildRepository ) :
 

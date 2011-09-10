@@ -29,14 +29,14 @@ class download_head ( urllib2.Request ) :
     def get_method(self):
         return "HEAD"
 
-def download ( remote , handle=None , request=None ) :
+def download ( remote , handle=None , request=None , bsize=512 ) :
     response = False
     try:
         response = urllib2.urlopen( remote )
 
         if handle :
             while True:
-                buffer = response.read(512)
+                buffer = response.read(bsize)
                 if not buffer:
                     break
                 os.write(handle,buffer)

@@ -4,15 +4,15 @@ migrated into a repomirror configuration.
 
 The most easy case is that of debian derived distros. The parent directory,
 up to the 'dists' directory will be used for the destdir keyword, and the
-remaining required keywords are the standard deb, url and version (must be
-the codename). If architectures or components are not specified, they will
-default to all the values defined at Release file.
+remaining required keywords are the standard for apt mirrorrs: url and
+version (that must be the codename). If components are not specified, they
+will default to all the values defined at Release file.
 
 Yum based repos can go into more complex cases, so the easiest path is to
 configure a pure-yum single architecture repository for each one. With this
 approach, destdir will be the parent directory of the 'repodata' directory,
 and only url must be set to a real value. Keywords version and architectures,
 although yet required, are just informative, and depending on the source we
-are using, setting usepgp and pkgvflags to False and SKIP_CKSUM can be needed
-to successfully run repomirror.
+are using, setting usepgp and pkgvflags to False and SKIP_CKSUM could be
+needed to successfully run repomirror.
 

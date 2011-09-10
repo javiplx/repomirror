@@ -15,23 +15,24 @@ packages is built by concatenating the repository name to this toplevel
 directory.
 
 If repositories are going to be served using apache, some extra entries are
-required on the global section. The keywords webconf and weburi are required
-to generate the apache configuration, and point to the value of ServerRoot and
-to the path prefix that will be used to access the repositories. If cache class
-repositories are going to be used, it is also required to supply webuser, which
-is the username than webserver run as. Defatuls are sensible for debian systems
-where only weburi should be needed if default value '/mirror' needs to be
-modified.
+required on the global section to allow reposerver generate configurations.
+The keywords are webconf, that must be ServerRoot to properly locate the
+generated configuration, and weburi to indicate the path prefix for served
+repositories (defaults to /mirror).
 
 
 Definitions of build repositories currently allow much less keywords than
 repomirror does. The most important keyword is 'type', and defines the kind
-of repository to be built. Three repository types are implemented:
+of repository to be built. Four repository types are implemented:
  - feed - creates an OpenWrt feed repository (indexes ipk & opk files)
  - deb  - will create a 'simple' debian repository, only with Packages file
           (only differs from feed in the indexed extensions)
  - yum  - builds a yum compatible repository using createrepo
  - apt  - builds an apt repository, from a populated pool tree
+There is also a special 'snapshot' repository, which is a special type which
+links the exported repo to a mirror, allowing it to get frozen while still
+being updated. These repository type also requires the keyword 'source',
+although are usually created and managed with the command reposnapshot.
 
 Keyword 'version' is also required, although is currently unused.
 
@@ -40,8 +41,8 @@ for package search, without appending repository name. Other optional keyword
 for deb & feed repositories is 'extensions', which overrides the default file
 extensions indexed.
 
-apt repositories required two additional keywords, to define which architectures
-and components will be included.
+apt repositories required two additional keywords, to define architectures
+and components that will be indexed.
 
 
 A sample repo building configuration is shown below
@@ -53,8 +54,8 @@ destdir = /home/repomirror
 type = feed
 version = 1.18
 
-[javiplx]
-destdir = /home/in-house/javiplx
+[apt-test]
+destdir = /home/in-house/debs
 type = apt
 version = test
 architectures = i386 amd64

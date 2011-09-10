@@ -130,16 +130,6 @@ class RepoConf ( dict ) :
         if config.has_option( self.name , "architectures" ) :
             self['architectures'] = config.get( self.name , "architectures" ).split()
 
-        if config.has_section( "global" ) :
-            if config.has_option( "global" , "webuser" ) :
-                webuser = config.get( "global" , "webuser" )
-                web['uid'] , web['gid'] = pwd.getpwnam( webuser )[2:4]
-            if config.has_option( "global" , "weburi" ) :
-                web['uri'] = config.get( "global" , "weburi" )
-            if config.has_option( "global" , "webconf" ) :
-                web['conf'] = config.get( "global" , "webconf" )
-
-
 class MirrorConf ( RepoConf ) :
 
     def set_url ( self , scheme , server , base_path ) :
@@ -208,6 +198,15 @@ class MirrorConf ( RepoConf ) :
 
         self['params']['pkgvflags'] = eval( "repolib.%s" % self['params']['pkgvflags'] )
 
+        if config.has_section( "global" ) :
+            if config.has_option( "global" , "webuser" ) :
+                webuser = config.get( "global" , "webuser" )
+                web['uid'] , web['gid'] = pwd.getpwnam( webuser )[2:4]
+            if config.has_option( "global" , "weburi" ) :
+                web['uri'] = config.get( "global" , "weburi" )
+            if config.has_option( "global" , "webconf" ) :
+                web['conf'] = config.get( "global" , "webconf" )
+
 def read_mirror_config ( repo_name ) :
 
     conffiles = [ mirrorconf ]
@@ -263,6 +262,13 @@ class BuildConf ( RepoConf ) :
 
         if config.has_option( self.name , "source" ) :
             self['source'] = config.get( self.name , "source" )
+
+        if config.has_section( "global" ) :
+            if config.has_option( "global" , "weburi" ) :
+                web['uri'] = config.get( "global" , "weburi" )
+            if config.has_option( "global" , "webconf" ) :
+                web['conf'] = config.get( "global" , "webconf" )
+
 
 def read_build_config ( repo_name , confdata=None ) :
 

@@ -166,19 +166,21 @@ def option_parser () :
 
 
 def main ( opts ) :
-    server_conf.read()
     if opts.apache :
         fd = open( opts.outfile , "w" )
         for k in server_conf :
             fd.write( server_conf.dump(k) )
         fd.close()
-    try :
+    else :
+      try :
         server = HTTPServer( ('',opts.port) , Handler )
         server.serve_forever()
-    except KeyboardInterrupt , ex :
+      except KeyboardInterrupt , ex :
         server.socket.close()
 
 if __name__ == "__main__" :
+
+    server_conf.read()
 
     parser = option_parser()
     opts , args = parser.parse_args()
