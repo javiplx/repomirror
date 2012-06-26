@@ -1,5 +1,5 @@
 
-import debian_bundle.deb822 , debian_bundle.debian_support
+import debian.deb822
 
 import os , sys
 import stat
@@ -9,7 +9,7 @@ import config
 
 
 import repolib
-from lists.debian import *
+from lists.repodeb import *
 
 
 class debian_repository ( repolib.MirrorRepository ) :
@@ -77,7 +77,7 @@ class debian_repository ( repolib.MirrorRepository ) :
             return self.__subrepo_dict( True )
 
         repolib.logger.info( "Content verification of metafile %s" % release_file )
-        release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+        release = debian.deb822.Release( sequence=open( release_file ) )
 
 
         # Although both names and suites can be used within sources.list, we
@@ -181,7 +181,7 @@ class debian_repository ( repolib.MirrorRepository ) :
         release_file = set(metafile.values()).pop()
         if release_file is True :
             release_file = os.path.join( self.repo_path() , self.repomd )
-        release = debian_bundle.deb822.Release( sequence=open( release_file ) )
+        release = debian.deb822.Release( sequence=open( release_file ) )
 
         # Some Release files hold no 'version' information
         if not release.has_key( 'Version' ) :
@@ -243,7 +243,7 @@ class DebianComponent ( SimpleComponent ) :
         if isinstance(masterfile,bool) :
             raise Exception( "Calling %s.get_metafile( %s )" % ( self , metafile ) )
 
-        release = debian_bundle.deb822.Release( sequence=open( masterfile ) )
+        release = debian.deb822.Release( sequence=open( masterfile ) )
 
         if self.mode in ( "init" , "metadata" ) :
           # NOTE : ubuntu has no Release file on installer components

@@ -1,5 +1,5 @@
 
-import debian_bundle.debfile
+import debian.debfile
 
 import os
 import tempfile
@@ -75,8 +75,8 @@ class packages_build_repository :
         fullnames = map( lambda x : os.path.join( top , x ) , validnames )
         for fullpath in filter( os.path.isfile , fullnames ) :
             try :
-                pkg = debian_bundle.debfile.DebFile( fullpath )
-            except debian_bundle.arfile.ArError , ex :
+                pkg = debian.debfile.DebFile( fullpath )
+            except debian.arfile.ArError , ex :
                 pkg = DebTarFile( fullpath )
             control = pkg.control.debcontrol()
             control["Filename"] = self.extract_filename( fullpath )
@@ -204,7 +204,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
             fdname = fd.name
         else :
             fdname = fd.filename
-        packages = debian_bundle.debian_support.PackageFile( fdname , fd )
+        packages = debian.debian_support.PackageFile( fdname , fd )
 
 # FIXME : If any minor filter is used, Packages file must be recreated for the exported repo
 #         Solution : Disable filtering on first approach
@@ -212,7 +212,7 @@ class SimpleComponent ( repolib.MirrorComponent ) :
 
         for pkg in packages :
             self.forward( fd )
-            pkginfo = debian_bundle.deb822.Deb822Dict( pkg )
+            pkginfo = debian.deb822.Deb822Dict( pkg )
 
             # name is used as key to get the package name
             pkginfo['Name'] = pkginfo['Package']

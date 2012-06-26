@@ -20,7 +20,7 @@ __all__ = [ "DebTarFile" ]
 import gzip
 import tarfile
 
-import debian_bundle.debfile
+import debian.debfile
 
 DATA_PART = './data.tar.gz'
 CTRL_PART = './control.tar.gz'
@@ -47,8 +47,8 @@ class DebTarFile(tarfile.TarFile):
                             + string.join(required_names - actual_names))
 
         self.__parts = {}
-        self.__parts[CTRL_PART] = debian_bundle.debfile.DebControl(self.extractfile(CTRL_PART))
-        self.__parts[DATA_PART] = debian_bundle.debfile.DebData(self.extractfile(DATA_PART))
+        self.__parts[CTRL_PART] = debian.debfile.DebControl(self.extractfile(CTRL_PART))
+        self.__parts[DATA_PART] = debian.debfile.DebData(self.extractfile(DATA_PART))
         self.__pkgname = None   # updated lazily by __updatePkgName
 
         f = self.extractfile(INFO_PART)

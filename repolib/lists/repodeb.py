@@ -1,7 +1,7 @@
 
 __all__ = [ "DebianPackageFile" , "DebianDownloadFile" ]
 
-import debian_bundle.deb822 , debian_bundle.debian_support
+import debian.deb822 , debian.debian_support
 
 import tempfile
 
@@ -29,12 +29,12 @@ def dump_package(deb822 , fd):
                     fd.write(' %s\n' % safe_encode(_v))
     fd.write('\n')
 
-class PackageFile ( debian_bundle.debian_support.PackageFile ) :
+class PackageFile ( debian.debian_support.PackageFile ) :
     """Implements of a read & write PackageFile."""
 
     def __init__ ( self ) :
         self.pkgfd = tempfile.NamedTemporaryFile()
-        debian_bundle.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
+        debian.debian_support.PackageFile.__init__( self , self.pkgfd.name , self.pkgfd )
         self.index = 0
         self.__cnt = 0
 
@@ -43,13 +43,13 @@ class PackageFile ( debian_bundle.debian_support.PackageFile ) :
 
     def __iter__ ( self ) :
         self.rewind()
-        _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+        _pkg = debian.debian_support.PackageFile.__iter__( self )
         while _pkg :
-            pkg = debian_bundle.deb822.Deb822()
+            pkg = debian.deb822.Deb822()
             pkg.update( _pkg.next() )
             self.index += 1
             yield pkg
-            _pkg = debian_bundle.debian_support.PackageFile.__iter__( self )
+            _pkg = debian.debian_support.PackageFile.__iter__( self )
 
     # This is a final method, not overridable
     def rewind ( self ) :

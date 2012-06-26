@@ -17,6 +17,6 @@ from utils import *
 from base import *
 
 from yum import *
-from debian import *
+from repodeb import *
 from feed import *
 
