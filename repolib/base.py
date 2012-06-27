@@ -230,7 +230,6 @@ metadata is returned in 'init' mode and True in any other operation mode."""
                 os.makedirs( packages_path )
 
     def get_download_list( self ) :
-        return DownloadThread( self )
         return DownloadList( self )
 
 
