@@ -54,9 +54,8 @@ def get_file ( req , local_path , remote_url ) :
             req.log_error( "Cannot download remote %s" % remote_url )
             return apache.HTTP_NOT_FOUND
 
-        file_size = int( remote.info().getheaders("Content-Length")[0] )
-        if 'content-type' in remote.info().keys() :
-            req.content_type = remote.info().getheader('Content-Type')
+        for key in ( 'Content-Length' , 'Content-Type' ) :
+            req.info[key] = remote.headers[key]
         req.fd = os.fdopen( local )
         req.fd.seek(0)
 
