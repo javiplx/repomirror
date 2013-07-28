@@ -40,8 +40,7 @@ def download ( remote , handle=None , request=None , bsize=512 ) :
                 if not buffer:
                     break
                 os.write(handle,buffer)
-                if request : request.write(buffer)
-            os.close(handle)
+            if not request : os.close(handle)
 
     except Exception , ex :
         if request :

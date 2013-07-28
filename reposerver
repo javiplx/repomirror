@@ -99,11 +99,6 @@ class Handler ( BaseHTTPRequestHandler ) :
     status = None
     content_type = None
 
-    def sendfile ( self , path ) :
-        fd = open( path )
-        self.wfile.write( fd.read() )
-        fd.close()
-
     def write ( self , msg ) :
         self.wfile.write( msg )
 
@@ -111,6 +106,8 @@ class Handler ( BaseHTTPRequestHandler ) :
         BaseHTTPRequestHandler.log_error( self , "%s : %s" % ( severity , msg ) )
 
     def do_GET ( self ) :
+
+        self.fd = None
 
         repo , uri = os.path.normpath(self.path).strip('/').split('/',1)
 
@@ -136,7 +133,7 @@ class Handler ( BaseHTTPRequestHandler ) :
             else :
                 if os.path.isfile( local_path ) :
                     self.status = 200
-                    self.sendfile( local_path )
+                    self.fd = open( local_path )
                 else :
                     self.status = 404
                     self.log_error( "%s not found" % self.path )
@@ -147,6 +144,10 @@ class Handler ( BaseHTTPRequestHandler ) :
             self.send_header( "Content-Type" , self.content_type )
 
         self.end_headers()
+
+        if self.status == 200 :
+            self.wfile.write( self.fd.read() )
+            self.fd.close()
 
 
 import optparse

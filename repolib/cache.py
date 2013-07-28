@@ -44,7 +44,7 @@ def get_file ( req , local_path , remote_url ) :
 
     if not os.path.exists( local_path ) :
         try :
-            local = os.open( local_path , os.O_CREAT | os.O_WRONLY )
+            local = os.open( local_path , os.O_CREAT | os.O_RDWR )
         except Exception , ex :
             req.log_error( "Cannot write local copy %s : %s" % ( local_path , ex ) )
             return apache.HTTP_NOT_FOUND
@@ -57,9 +57,11 @@ def get_file ( req , local_path , remote_url ) :
         file_size = int( remote.info().getheaders("Content-Length")[0] )
         if 'content-type' in remote.info().keys() :
             req.content_type = remote.info().getheader('Content-Type')
+        req.fd = os.fdopen( local )
+        req.fd.seek(0)
 
     else :
-        req.sendfile(local_path)
+        req.fd = open( local_path )
 
     return apache.OK
 
