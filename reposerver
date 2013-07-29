@@ -145,10 +145,11 @@ class Handler ( BaseHTTPRequestHandler ) :
         self.end_headers()
 
         if self.status == 200 :
-            buffer = self.fd.read( 4096 )
+            buffsize = 4096
+            buffer = self.fd.read( buffsize )
             while buffer :
                 self.wfile.write( buffer )
-                buffer = self.fd.read( self.wbufsize )
+                buffer = self.fd.read( buffsize )
             self.fd.close()
 
 
