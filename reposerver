@@ -132,6 +132,7 @@ class Handler ( BaseHTTPRequestHandler ) :
                 if os.path.isfile( local_path ) :
                     self.status = 200
                     self.fd = open( local_path )
+                    req.info['Content-Length'] = os.fstat( self.fd.fileno() ).st_size
                 else :
                     self.status = 404
                     self.log_error( "%s not found" % self.path )

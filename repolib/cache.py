@@ -61,6 +61,7 @@ def get_file ( req , local_path , remote_url ) :
 
     else :
         req.fd = open( local_path )
+        req.info['Content-Length'] = os.fstat( req.fd.fileno() ).st_size
 
     return apache.OK
 
