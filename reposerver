@@ -99,9 +99,6 @@ class Handler ( BaseHTTPRequestHandler ) :
     status = None
     content_type = None
 
-    def write ( self , msg ) :
-        self.wfile.write( msg )
-
     def log_error ( self , msg , severity=repolib.cache.apache.APLOG_ERROR ) :
         BaseHTTPRequestHandler.log_error( self , "%s : %s" % ( severity , msg ) )
 
@@ -147,7 +144,10 @@ class Handler ( BaseHTTPRequestHandler ) :
         self.end_headers()
 
         if self.status == 200 :
-            self.wfile.write( self.fd.read() )
+            buffer = self.fd.read( 4096 )
+            while buffer :
+                self.wfile.write( buffer )
+                buffer = self.fd.read( self.wbufsize )
             self.fd.close()
 
 
