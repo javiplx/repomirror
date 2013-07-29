@@ -52,6 +52,7 @@ def get_file ( req , local_path , remote_url ) :
         remote = repolib.download( remote_url , local , req )
         if not remote :
             req.log_error( "Cannot download remote %s" % remote_url )
+            os.unlink( local_path )
             return apache.HTTP_NOT_FOUND
 
         for key in ( 'Content-Length' , 'Content-Type' ) :
