@@ -28,7 +28,7 @@ except :
         HTTP_INTERNAL_SERVER_ERROR = 500
         HTTP_NOT_FOUND = 404
 
-import os
+import os , time
 import repolib
 
 
@@ -55,14 +55,20 @@ def get_file ( req , local_path , remote_url ) :
             os.unlink( local_path )
             return apache.HTTP_NOT_FOUND
 
-        for key in ( 'Content-Length' , 'Content-Type' ) :
+        for key in ( 'Content-Length' , 'Content-Type' , 'Last-Modified' ) :
             req.info[key] = remote.headers[key]
+            if key == 'Last-Modified' :
+                mtime = time.strptime( remote.headers['Last-Modified'] , '%a, %d %b %Y %H:%M:%S %Z' )
+                mstamp = time.mktime( mtime )
+                os.utime( local_path , (mstamp,mstamp))
         req.fd = os.fdopen( local )
         req.fd.seek(0)
 
     else :
         req.fd = open( local_path )
-        req.info['Content-Length'] = os.fstat( req.fd.fileno() ).st_size
+        fileinfo = os.fstat( req.fd.fileno() )
+        req.info['Content-Length'] = fileinfo.st_size
+        req.info['Last-Modified'] = time.strftime( '%a, %d %b %Y %T GMT' , time.gmtime( fileinfo.st_mtime ) )
 
     return apache.OK
 
