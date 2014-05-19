@@ -67,7 +67,7 @@ def get_file ( req , local_path , remote_url ) :
     else :
         req.fd = open( local_path )
         fileinfo = os.fstat( req.fd.fileno() )
-        req.headers_out['Content-Length'] = fileinfo.st_size
+        req.headers_out['Content-Length'] = "%s" % fileinfo.st_size
         req.headers_out['Last-Modified'] = time.strftime( '%a, %d %b %Y %T GMT' , time.gmtime( fileinfo.st_mtime ) )
 
     req.sendfile( local_path )
