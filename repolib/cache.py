@@ -56,7 +56,7 @@ def get_file ( req , local_path , remote_url ) :
             return apache.HTTP_NOT_FOUND
 
         for key in ( 'Content-Length' , 'Content-Type' , 'Last-Modified' ) :
-            req.info[key] = remote.headers[key]
+            req.headers_out[key] = remote.headers[key]
             if key == 'Last-Modified' :
                 mtime = time.strptime( remote.headers['Last-Modified'] , '%a, %d %b %Y %H:%M:%S %Z' )
                 mstamp = time.mktime( mtime )
@@ -67,8 +67,8 @@ def get_file ( req , local_path , remote_url ) :
     else :
         req.fd = open( local_path )
         fileinfo = os.fstat( req.fd.fileno() )
-        req.info['Content-Length'] = fileinfo.st_size
-        req.info['Last-Modified'] = time.strftime( '%a, %d %b %Y %T GMT' , time.gmtime( fileinfo.st_mtime ) )
+        req.headers_out['Content-Length'] = fileinfo.st_size
+        req.headers_out['Last-Modified'] = time.strftime( '%a, %d %b %Y %T GMT' , time.gmtime( fileinfo.st_mtime ) )
 
     return apache.OK
 
