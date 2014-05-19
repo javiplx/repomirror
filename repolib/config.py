@@ -56,7 +56,9 @@ default_params['pkgvflags'] = "SKIP_NONE"
 
 
 # Webserver related values. Default values are for stock debian systems
-web = { 'uid':33 , 'gid':33 , 'uri':"/mirror" , 'conf':"/etc/apache2" }
+#web = { 'uid':33 , 'gid':33 , 'uri':"/mirror" , 'conf':"/etc/apache2" }
+# Values for RedhHat systems
+web = { 'uid':48 , 'gid':48 , 'uri':"/mirror" , 'conf':"/etc/httpd" }
 
 
 # NOTE : if a section name is duplicated in the same file,
