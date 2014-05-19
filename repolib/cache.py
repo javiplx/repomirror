@@ -85,8 +85,10 @@ def handler ( req ) :
         req.log_error( "Fix configuration, source_url should have a trailing '/'" , apache.APLOG_INFO )
 
     if req.used_path_info :
-        local_path += req.path_info
-        remote_url = repolib.urljoin( remote_url , subpath + req.path_info )
+        remote_url = repolib.urljoin( remote_url , subpath )
+        if req.path_info :
+            local_path += req.path_info
+            remote_url += req.path_info
 
     return get_file( req , local_path , remote_url )
 
