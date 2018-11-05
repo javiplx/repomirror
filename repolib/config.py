@@ -129,6 +129,8 @@ class RepoConf ( dict ) :
 
         if config.has_option( self.name , "architectures" ) :
             self['architectures'] = config.get( self.name , "architectures" ).split()
+        if config.has_option( self.name , "components" ) :
+            self['components'] = config.get( self.name , "components" ).split()
 
 class MirrorConf ( RepoConf ) :
 
