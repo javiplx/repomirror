@@ -1,5 +1,6 @@
 
 import debian.deb822
+import gnupg
 
 import os , sys
 import stat
@@ -382,6 +383,9 @@ class debian_build_apt ( repolib.BuildRepository ) :
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
+        self.gpgkey = config.get('usegpg', False)
+        self.gpgpass = config.get('gpgpass')
+
         self.feeds = []
         for arch in self.architectures :
             for compname in self.components :
@@ -402,7 +406,8 @@ class debian_build_apt ( repolib.BuildRepository ) :
         self.build_release()
 
     def build_release ( self ) :
-        fd = open( os.path.join( self.repo_path() , self.metadata_path() , "Release" ) , 'w' )
+        release_file =  os.path.join( self.repo_path() , self.metadata_path() , "Release" )
+        fd = open( release_file , 'w' )
         fd.write( "Version: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
         fd.write( "Components: %s\n" % " ".join(self.components) )
@@ -416,4 +421,7 @@ class debian_build_apt ( repolib.BuildRepository ) :
                 fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
         fd.close()
 
+        if self.gpgkey :
+            gpg = gnupg.GPG()
+            print gpg.sign_file(open(release_file, 'rb'), keyid=self.gpgkey, passphrase=self.gpgpass, detach=True, output=release_file+'.gpg')
 
