@@ -1,5 +1,6 @@
 
 import os , pwd
+import getpass
 import glob
 
 import repolib
@@ -270,6 +271,8 @@ class BuildConf ( RepoConf ) :
 
         if config.has_option( self.name , "gpgpass" ) :
             self['gpgpass'] = config.get( self.name , "gpgpass" )
+        elif self['usegpg'] :
+            self['gpgpass'] = getpass.getpass( "Supply passphrase for %s required on %s" % ( self['usegpg'] , self.name ) )
 
         if config.has_section( "global" ) :
             if config.has_option( "global" , "weburi" ) :
