@@ -13,6 +13,7 @@ setup(
     download_url = 'http://r26936.ovh.net/repomirror',
     scripts = [ 'repomirror' , 'reposnapshot' , 'buildrepo' , 'reposerver' , 'buildlive' , 'checkmirror' ],
     packages = [ 'repolib' , 'repolib.lists' , 'repomgr' ],
+    requires = [ 'gnupg' ],
     data_files = [
                  ( 'share/repomirror' , [ 'docs/samples/repomirror.conf' , 'docs/samples/buildrepo.conf' ] ) ,
                  ( 'share/repomgr/templates' , [ 'repomgr/templates/index.html' , 'repomgr/templates/detail.html' ] ) ,
