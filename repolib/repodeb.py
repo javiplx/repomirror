@@ -411,14 +411,16 @@ class debian_build_apt ( repolib.BuildRepository ) :
         fd.write( "Version: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
         fd.write( "Components: %s\n" % " ".join(self.components) )
-        fd.write( "MD5Sum:\n" )
-        for feed in self.feeds :
-            for extension in config.mimetypes :
-                basename = "Packages" + extension
-                packages = os.path.join( feed.metadata_path(True) , basename )
-                _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
-                cksum = repolib.cksum_handles['md5sum']( _packages )
-                fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
+        labels = { 'md5sum':'MD5Sum' , 'sha1':'SHA1' , 'sha256':'SHA256' }
+        for type in labels :
+            fd.write( "%s:\n"  % labels[type] )
+            for feed in self.feeds :
+                for extension in config.mimetypes :
+                    basename = "Packages" + extension
+                    packages = os.path.join( feed.metadata_path(True) , basename )
+                    _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
+                    cksum = repolib.cksum_handles[type]( _packages )
+                    fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
         fd.close()
 
         if self.gpgkey :
