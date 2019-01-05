@@ -135,6 +135,8 @@ class RepoConf ( dict ) :
 
         if config.has_option( self.name , "usegpg" ) :
             self['usegpg'] = config.get( self.name , "usegpg" )
+        else :
+            self['usegpg'] = False
 
 class MirrorConf ( RepoConf ) :
 
