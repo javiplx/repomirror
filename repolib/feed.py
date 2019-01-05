@@ -82,7 +82,7 @@ class packages_build_repository :
             control["Filename"] = self.extract_filename( fullpath )
             if not control.has_key("Size") :
                 control["Size"] = "%s" % os.stat( fullpath ).st_size
-            for type in ( 'MD5sum' ,) :
+            for type in ( 'MD5sum' , 'SHA1' , 'SHA256' ) :
                 control[type] = repolib.cksum_handles[type.lower()]( fullpath )
             for pkgsfile in self.outchannels :
                 pkgsfile.write( "%s\n" % control )
