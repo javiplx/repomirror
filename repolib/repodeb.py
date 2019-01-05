@@ -408,9 +408,10 @@ class debian_build_apt ( repolib.BuildRepository ) :
     def build_release ( self ) :
         release_file =  os.path.join( self.repo_path() , self.metadata_path() , "Release" )
         fd = open( release_file , 'w' )
-        fd.write( "Version: %s\n" % self.version )
+        fd.write( "Codename: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
         fd.write( "Components: %s\n" % " ".join(self.components) )
+        fd.write( "Date: %s\n" % debian.deb822.email.utils.formatdate() )
         labels = { 'md5sum':'MD5Sum' , 'sha1':'SHA1' , 'sha256':'SHA256' }
         for type in labels :
             fd.write( "%s:\n"  % labels[type] )
