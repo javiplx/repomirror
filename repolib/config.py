@@ -13,8 +13,8 @@ import ConfigParser
 mirrorconf = "/etc/repomirror.conf"
 mirrordir  = "/etc/repomirror.d"
 
-buildconf = "/etc/buildrepo.conf"
-builddir  = "/etc/buildrepo.d"
+buildconf = "buildrepo.conf"
+builddir  = "buildrepo.d"
 
 
 
@@ -284,8 +284,11 @@ class BuildConf ( RepoConf ) :
 
 def read_build_config ( repo_name , confdata=None ) :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -307,8 +310,11 @@ def read_build_config ( repo_name , confdata=None ) :
 
 def get_all_build_repos () :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -321,8 +327,11 @@ def get_all_build_repos () :
 
 def get_all_build_configs ( key=None , value=None ) :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
