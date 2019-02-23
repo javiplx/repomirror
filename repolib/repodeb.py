@@ -406,7 +406,7 @@ class debian_build_apt ( repolib.BuildRepository ) :
         self.build_release()
 
     def build_release ( self ) :
-        release_file =  os.path.join( self.repo_path() , self.metadata_path() , "Release" )
+        release_file =  os.path.join( self.repo_path() , self.metadata_path() , "InRelease" )
         fd = open( release_file , 'w' )
         fd.write( "Codename: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
@@ -426,5 +426,5 @@ class debian_build_apt ( repolib.BuildRepository ) :
 
         if self.gpgkey :
             gpg = gnupg.GPG()
-            print gpg.sign_file(open(release_file, 'rb'), keyid=self.gpgkey, passphrase=self.gpgpass, detach=True, output=release_file+'.gpg')
+            gpg.sign_file(open(release_file, 'rb'), keyid=self.gpgkey, passphrase=self.gpgpass, output=release_file)
 
