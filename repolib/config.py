@@ -1,5 +1,6 @@
 
 import os , pwd
+import getpass
 import glob
 
 import repolib
@@ -12,8 +13,8 @@ import ConfigParser
 mirrorconf = "/etc/repomirror.conf"
 mirrordir  = "/etc/repomirror.d"
 
-buildconf = "/etc/buildrepo.conf"
-builddir  = "/etc/buildrepo.d"
+buildconf = "buildrepo.conf"
+builddir  = "buildrepo.d"
 
 
 
@@ -129,6 +130,13 @@ class RepoConf ( dict ) :
 
         if config.has_option( self.name , "architectures" ) :
             self['architectures'] = config.get( self.name , "architectures" ).split()
+        if config.has_option( self.name , "components" ) :
+            self['components'] = config.get( self.name , "components" ).split()
+
+        if config.has_option( self.name , "usegpg" ) :
+            self['usegpg'] = config.get( self.name , "usegpg" )
+        else :
+            self['usegpg'] = False
 
 class MirrorConf ( RepoConf ) :
 
@@ -263,17 +271,24 @@ class BuildConf ( RepoConf ) :
         if config.has_option( self.name , "source" ) :
             self['source'] = config.get( self.name , "source" )
 
+        if config.has_option( self.name , "gpgpass" ) :
+            self['gpgpass'] = config.get( self.name , "gpgpass" )
+        elif self['usegpg'] :
+            self['gpgpass'] = getpass.getpass( "Supply passphrase for %s required on %s" % ( self['usegpg'] , self.name ) )
+
         if config.has_section( "global" ) :
             if config.has_option( "global" , "weburi" ) :
                 web['uri'] = config.get( "global" , "weburi" )
             if config.has_option( "global" , "webconf" ) :
                 web['conf'] = config.get( "global" , "webconf" )
 
-
 def read_build_config ( repo_name , confdata=None ) :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -295,8 +310,11 @@ def read_build_config ( repo_name , confdata=None ) :
 
 def get_all_build_repos () :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :
@@ -309,8 +327,11 @@ def get_all_build_repos () :
 
 def get_all_build_configs ( key=None , value=None ) :
 
-    conffiles = [ buildconf ]
-    conffiles.extend( glob.glob( os.path.join( builddir , "*.conf" ) ) )
+    paths = [ path for path in [ '/etc' , os.getcwd() ] if os.path.isfile( os.path.join( path , buildconf ) ) ]
+    conffiles = []
+    for path in paths :
+        conffiles.append( os.path.join( path , buildconf ) )
+        conffiles.extend( glob.glob( os.path.join( path , builddir , "*.conf" ) ) )
 
     config = ConfigParser.RawConfigParser()
     if not config.read( conffiles ) :

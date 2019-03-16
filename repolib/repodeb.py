@@ -1,5 +1,6 @@
 
 import debian.deb822
+import gnupg
 
 import os , sys
 import stat
@@ -382,6 +383,9 @@ class debian_build_apt ( repolib.BuildRepository ) :
 	if not os.path.isdir( self.repo_path() ) :
             raise Exception( "Repository directory %s does not exists" % self.repo_path() )
 
+        self.gpgkey = config.get('usegpg', False)
+        self.gpgpass = config.get('gpgpass')
+
         self.feeds = []
         for arch in self.architectures :
             for compname in self.components :
@@ -402,18 +406,25 @@ class debian_build_apt ( repolib.BuildRepository ) :
         self.build_release()
 
     def build_release ( self ) :
-        fd = open( os.path.join( self.repo_path() , self.metadata_path() , "Release" ) , 'w' )
-        fd.write( "Version: %s\n" % self.version )
+        release_file =  os.path.join( self.repo_path() , self.metadata_path() , "InRelease" )
+        fd = open( release_file , 'w' )
+        fd.write( "Codename: %s\n" % self.version )
         fd.write( "Architectures: %s\n" % " ".join(self.architectures) )
         fd.write( "Components: %s\n" % " ".join(self.components) )
-        fd.write( "MD5Sum:\n" )
-        for feed in self.feeds :
-            for extension in config.mimetypes :
-                basename = "Packages" + extension
-                packages = os.path.join( feed.metadata_path(True) , basename )
-                _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
-                cksum = repolib.cksum_handles['md5sum']( _packages )
-                fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
+        fd.write( "Date: %s\n" % debian.deb822.email.utils.formatdate() )
+        labels = { 'md5sum':'MD5Sum' , 'sha1':'SHA1' , 'sha256':'SHA256' }
+        for type in labels :
+            fd.write( "%s:\n"  % labels[type] )
+            for feed in self.feeds :
+                for extension in config.mimetypes :
+                    basename = "Packages" + extension
+                    packages = os.path.join( feed.metadata_path(True) , basename )
+                    _packages = os.path.join( feed.repo_path , feed.metadata_path() , basename )
+                    cksum = repolib.cksum_handles[type]( _packages )
+                    fd.write( "  %s  %15s %s\n" % ( cksum , os.stat(_packages).st_size , packages ) )
         fd.close()
 
+        if self.gpgkey :
+            gpg = gnupg.GPG()
+            gpg.sign_file(open(release_file, 'rb'), keyid=self.gpgkey, passphrase=self.gpgpass, output=release_file)
 
