@@ -342,7 +342,7 @@ class debian_component_repository ( packages_build_repository ) :
         return path
 
     def extract_filename ( self , name ) :
-        return name.replace( "%s/" % self.repo_path , "" )
+        return name.replace( "%s/" % os.path.normpath(self.repo_path) , "" )
 
     def build ( self ) :
         packages_build_repository.build( self )

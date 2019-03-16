@@ -66,7 +66,7 @@ class packages_build_repository :
         return ""
 
     def extract_filename ( self , name ) :
-            return "./%s" % name.replace( "%s/" % self.repo_path , "" )
+        return "./%s" % name.replace( "%s/" % os.path.normpath(self.repo_path) , "" )
 
     def writer ( self , top , names ) :
         validnames = filter( lambda x : os.path.splitext( x )[1] in self.valid_extensions , names )
